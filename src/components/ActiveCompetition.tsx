@@ -3,7 +3,7 @@ import { Spinner } from "@radix-ui/themes";
 import { checkRegistration, getCompetitions, getCompRegistrationInfo } from "@/services/api";
 import { CompetitionResponse, MessageProps, RegisterToCompResponse } from "@/types";
 import CalloutMessage from "./user_feedback/CalloutMessage";
-import ProblemGrid from "./ProblemGrid";
+import CompetitionScores from "./CompetitionScores";
 
 export function ActiveCompetition() {
   const [activeCompetition, setActiveCompetition] = useState<CompetitionResponse | null>(null);
@@ -106,7 +106,7 @@ export function ActiveCompetition() {
         )}
       </div>
 
-      <ProblemGrid competitionId={activeCompetition.id} />
+      <CompetitionScores competitionId={activeCompetition.id} />
     </div>
   );
 }

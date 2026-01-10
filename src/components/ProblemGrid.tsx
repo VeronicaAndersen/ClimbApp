@@ -5,6 +5,7 @@ import { useScores } from "@/hooks/useScores";
 import CalloutMessage from "./user_feedback/CalloutMessage";
 import { Button, Spinner } from "@radix-ui/themes";
 import { useUpdateScore } from "@/hooks/useUpdateScore";
+import { useUpdateScoreBatch } from "@/hooks/useUpdateScoreBatchResult";
 
 interface ProblemGridProps {
   competitionId: number;
@@ -42,6 +43,12 @@ export default function ProblemGrid({ competitionId }: ProblemGridProps) {
   } = useScores(competitionId);
 
   const { saving, error: saveError, saveMessage, saveAll } = useUpdateScore();
+  const {
+    saving: batchSaving,
+    error: batchSaveError,
+    saveMessage: batchSaveMessage,
+    saveAll: saveAllBatch,
+  } = useUpdateScoreBatch();
   const [savedProblemNo, setSavedProblemNo] = useState<number | null>(null);
   const [errorProblemNo, setErrorProblemNo] = useState<number | null>(null);
 
@@ -117,6 +124,30 @@ export default function ProblemGrid({ competitionId }: ProblemGridProps) {
     [updateField]
   );
 
+  const hasAnyChanges = useMemo(() => {
+    return problems.some((problem) => {
+      const originalScore = initialScoreMap.get(problem.problem_no);
+      return SCORE_FIELDS.some((field) => {
+        const currentValue = Number(problem.score[field]) || 0;
+        const originalValue = Number(originalScore?.[field]) || 0;
+        return currentValue !== originalValue;
+      });
+    });
+  }, [problems, initialScoreMap]);
+
+  const handleSaveAll = async () => {
+    if (!gradeLevel) return;
+
+    const success = await saveAllBatch(competitionId, gradeLevel, problems);
+
+    if (success) {
+      // Update initialProblems to reflect all saved states
+      setInitialProblems(JSON.parse(JSON.stringify(problems)));
+      setSavedProblemNo(null);
+      setErrorProblemNo(null);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -129,6 +160,22 @@ export default function ProblemGrid({ competitionId }: ProblemGridProps) {
 
   return (
     <div className="space-y-4">
+      {batchSaveMessage && <CalloutMessage message={batchSaveMessage} color="green" />}
+      {batchSaveError && <CalloutMessage message={batchSaveError} color="red" />}
+
+      {problems.length > 0 && (
+        <div className="flex justify-end mb-4">
+          <Button
+            onClick={handleSaveAll}
+            disabled={batchSaving || !gradeLevel || !hasAnyChanges}
+            className={`bg-[#505654] hover:bg-[#7b8579] text-white px-6 py-2 rounded-full
+              shadow font-medium cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed`}
+          >
+            {batchSaving ? "Sparar alla..." : "Spara alla ändringar"}
+          </Button>
+        </div>
+      )}
+
       {!problems.length && (
         <p className="text-center text-sm text-gray-500">
           Inga problem att visa ännu. Försök uppdatera sidan eller välj en annan tävling.
