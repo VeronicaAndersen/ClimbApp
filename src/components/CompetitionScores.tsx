@@ -7,9 +7,15 @@ import ProblemGrid from "./ProblemGrid";
 
 interface CompetitionScoresProps {
   competitionId: number;
+  competitionDate: string;
+  userScope: string;
 }
 
-export default function CompetitionScores({ competitionId }: CompetitionScoresProps) {
+export default function CompetitionScores({
+  competitionId,
+  competitionDate,
+  userScope,
+}: CompetitionScoresProps) {
   const { problems, initialProblems, gradeLevel, isLoading, error } = useScores(competitionId);
 
   if (isLoading) {
@@ -29,7 +35,11 @@ export default function CompetitionScores({ competitionId }: CompetitionScoresPr
     <div className="space-y-6">
       <ScoreSummary problems={problems} gradeLevel={gradeLevel} />
       <ScoreHistory currentProblems={problems} initialProblems={initialProblems} />
-      <ProblemGrid competitionId={competitionId} />
+      <ProblemGrid
+        competitionId={competitionId}
+        competitionDate={competitionDate}
+        userScope={userScope}
+      />
     </div>
   );
 }

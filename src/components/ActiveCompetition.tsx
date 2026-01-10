@@ -1,6 +1,11 @@
 import { useState, useEffect } from "react";
 import { Spinner } from "@radix-ui/themes";
-import { checkRegistration, getCompetitions, getCompRegistrationInfo } from "@/services/api";
+import {
+  checkRegistration,
+  getCompetitions,
+  getCompRegistrationInfo,
+  getMyInfo,
+} from "@/services/api";
 import { CompetitionResponse, MessageProps, RegisterToCompResponse } from "@/types";
 import CalloutMessage from "./user_feedback/CalloutMessage";
 import CompetitionScores from "./CompetitionScores";
@@ -9,12 +14,19 @@ export function ActiveCompetition() {
   const [activeCompetition, setActiveCompetition] = useState<CompetitionResponse | null>(null);
   const [messageInfo, setMessageInfo] = useState<MessageProps | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [userScope, setUserScope] = useState<string>("");
 
   useEffect(() => {
     async function fetchActiveCompetition() {
       setLoading(true);
 
       try {
+        // Fetch user info to get user scope
+        const userInfo = await getMyInfo();
+        if (userInfo) {
+          setUserScope(userInfo.user_scope);
+        }
+
         const competitions = await getCompetitions();
 
         if (!Array.isArray(competitions) || competitions.length === 0) {
@@ -106,7 +118,11 @@ export function ActiveCompetition() {
         )}
       </div>
 
-      <CompetitionScores competitionId={activeCompetition.id} />
+      <CompetitionScores
+        competitionId={activeCompetition.id}
+        competitionDate={activeCompetition.comp_date}
+        userScope={userScope}
+      />
     </div>
   );
 }

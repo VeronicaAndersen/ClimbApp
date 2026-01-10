@@ -1,14 +1,17 @@
 import { useCallback, useMemo, useState, useEffect } from "react";
-import { Star, Medal } from "lucide-react";
+import { Star, Medal, Lock, Unlock } from "lucide-react";
 import { ScoreBatchResponse } from "@/types";
 import { useScores } from "@/hooks/useScores";
 import CalloutMessage from "./user_feedback/CalloutMessage";
 import { Button, Spinner } from "@radix-ui/themes";
 import { useUpdateScore } from "@/hooks/useUpdateScore";
 import { useUpdateScoreBatch } from "@/hooks/useUpdateScoreBatchResult";
+import { canEditCompetition, isAdmin, isToday } from "@/utils/competitionUtils";
 
 interface ProblemGridProps {
   competitionId: number;
+  competitionDate: string;
+  userScope: string;
 }
 //change gradeLevel to hex color codes for different levels
 const DEFAULT_GRADE_COLOR = "#D1D5DB";
@@ -31,7 +34,11 @@ const SCORE_FIELD_LABELS: Record<(typeof SCORE_FIELDS)[number], string> = {
 
 const MIN_SCORE_VALUE = 0;
 
-export default function ProblemGrid({ competitionId }: ProblemGridProps) {
+export default function ProblemGrid({
+  competitionId,
+  competitionDate,
+  userScope,
+}: ProblemGridProps) {
   const {
     problems,
     initialProblems,
@@ -51,6 +58,16 @@ export default function ProblemGrid({ competitionId }: ProblemGridProps) {
   } = useUpdateScoreBatch();
   const [savedProblemNo, setSavedProblemNo] = useState<number | null>(null);
   const [errorProblemNo, setErrorProblemNo] = useState<number | null>(null);
+  const [adminOverride, setAdminOverride] = useState(false);
+
+  // Determine if editing is allowed
+  const canEdit = useMemo(
+    () => canEditCompetition(competitionDate, userScope, adminOverride),
+    [competitionDate, userScope, adminOverride]
+  );
+
+  const userIsAdmin = useMemo(() => isAdmin(userScope), [userScope]);
+  const isCompetitionToday = useMemo(() => isToday(competitionDate), [competitionDate]);
 
   // Clear the saved problem message after 3 seconds
   useEffect(() => {
@@ -163,7 +180,60 @@ export default function ProblemGrid({ competitionId }: ProblemGridProps) {
       {batchSaveMessage && <CalloutMessage message={batchSaveMessage} color="green" />}
       {batchSaveError && <CalloutMessage message={batchSaveError} color="red" />}
 
-      {problems.length > 0 && (
+      {/* Edit status and admin controls */}
+      {!canEdit && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+          <div className="flex items-start gap-3">
+            <Lock className="w-5 h-5 text-yellow-700 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-yellow-800">
+                {isCompetitionToday
+                  ? "Redigering är aktiverad för tävlingsdagen"
+                  : "Denna tävling kan inte redigeras"}
+              </p>
+              <p className="text-xs text-yellow-700 mt-1">
+                {isCompetitionToday
+                  ? "Du kan redigera poäng under tävlingsdagen."
+                  : "Poäng kan endast redigeras på tävlingsdagen."}
+                {userIsAdmin &&
+                  !isCompetitionToday &&
+                  " Som administratör kan du aktivera redigering nedan."}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Admin override toggle */}
+      {userIsAdmin && !isCompetitionToday && (
+        <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+          <div className="flex items-center gap-3">
+            {adminOverride ? (
+              <Unlock className="w-5 h-5 text-blue-700" />
+            ) : (
+              <Lock className="w-5 h-5 text-blue-700" />
+            )}
+            <div>
+              <p className="text-sm font-medium text-blue-800">Admin-åsidosättning</p>
+              <p className="text-xs text-blue-700">
+                Aktivera för att redigera utanför tävlingsdagen
+              </p>
+            </div>
+          </div>
+          <Button
+            onClick={() => setAdminOverride(!adminOverride)}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              adminOverride
+                ? "bg-blue-600 hover:bg-blue-700 text-white"
+                : "bg-white hover:bg-blue-100 text-blue-700 border border-blue-300"
+            }`}
+          >
+            {adminOverride ? "Inaktivera" : "Aktivera"}
+          </Button>
+        </div>
+      )}
+
+      {problems.length > 0 && canEdit && (
         <div className="flex justify-end mb-4">
           <Button
             onClick={handleSaveAll}
@@ -249,8 +319,8 @@ export default function ProblemGrid({ competitionId }: ProblemGridProps) {
                   <div className="flex items-center gap-2">
                     <Button
                       onClick={() => dec(problem, key)}
-                      disabled={saving}
-                      className={`w-8 h-8 rounded-full bg-[#505654] hover:bg-[#7b8579] 
+                      disabled={saving || !canEdit}
+                      className={`w-8 h-8 rounded-full bg-[#505654] hover:bg-[#7b8579]
                                 text-white font-bold text-lg cursor-pointer`}
                       aria-label={`Minska ${SCORE_FIELD_LABELS[key]}`}
                     >
@@ -259,7 +329,7 @@ export default function ProblemGrid({ competitionId }: ProblemGridProps) {
                     <input
                       id={`problem-${problem.problem_no}-${key}`}
                       type="number"
-                      disabled={saving}
+                      disabled={saving || !canEdit}
                       min={MIN_SCORE_VALUE}
                       inputMode="numeric"
                       value={String(sanitizeValue(Number(problem.score[key])))}
@@ -270,8 +340,8 @@ export default function ProblemGrid({ competitionId }: ProblemGridProps) {
                     />
                     <Button
                       onClick={() => inc(problem, key)}
-                      disabled={saving}
-                      className={`w-8 h-8 rounded-full bg-[#505654] hover:bg-[#7b8579] 
+                      disabled={saving || !canEdit}
+                      className={`w-8 h-8 rounded-full bg-[#505654] hover:bg-[#7b8579]
                                 text-white font-bold text-lg cursor-pointer`}
                       aria-label={`Öka ${SCORE_FIELD_LABELS[key]}`}
                     >
@@ -317,15 +387,17 @@ export default function ProblemGrid({ competitionId }: ProblemGridProps) {
                       setSavedProblemNo(null); // Clear any previous success message
                     }
                   }}
-                  disabled={saving || !gradeLevel}
-                  className={`bg-[#505654] hover:bg-[#7b8579] text-white px-6 py-2 mt-4 rounded-full 
+                  disabled={saving || !gradeLevel || !canEdit}
+                  className={`bg-[#505654] hover:bg-[#7b8579] text-white px-6 py-2 mt-4 rounded-full
                     shadow font-medium cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed w-full`}
                 >
                   {saving
                     ? "Sparar..."
-                    : gradeLevel
-                      ? "Spara försök"
-                      : "Välj gradnivå för att spara"}
+                    : !canEdit
+                      ? "Redigering inaktiverad"
+                      : gradeLevel
+                        ? "Spara försök"
+                        : "Välj gradnivå för att spara"}
                 </Button>
               </div>
             </div>
