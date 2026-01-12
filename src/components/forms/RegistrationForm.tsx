@@ -15,6 +15,7 @@ export function RegistrationForm() {
     name: "",
     password: "",
   });
+  const [gdprConsent, setGdprConsent] = useState<boolean>(false);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,6 +41,7 @@ export function RegistrationForm() {
     !registerClimberData.name ||
     !registerClimberData.password ||
     registerClimberData.password.length < 6 ||
+    !gdprConsent ||
     loading;
 
   return (
@@ -83,6 +85,21 @@ export function RegistrationForm() {
             {registerClimberData.password.length > 0 && registerClimberData.password.length < 6 && (
               <p className="text-red-500 text-xs italic">Måste innehålla minst sex tecken.</p>
             )}
+          </div>
+
+          <div className="flex items-start space-x-2">
+            <input
+              type="checkbox"
+              id="gdpr-consent"
+              checked={gdprConsent}
+              onChange={(e) => setGdprConsent(e.target.checked)}
+              disabled={loading}
+              className="mt-1 h-4 w-4 cursor-pointer disabled:cursor-not-allowed"
+            />
+            <Label.Root htmlFor="gdpr-consent" className="text-xs text-gray-700 leading-tight">
+              Jag godkänner att mina personuppgifter (namn och lösenord) lagras för att kunna använda
+              tjänsten. Uppgifterna används endast för inloggning och tävlingshantering.
+            </Label.Root>
           </div>
 
           <Button
