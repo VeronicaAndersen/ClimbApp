@@ -11,12 +11,14 @@ import CalloutMessage from "@/components/user_feedback/CalloutMessage";
 import ProfilInfo from "@/components/ProfilInfo";
 import { AssignToCompetitionsList } from "@/components/AssignToCompetitionsList";
 import { CompetitionList } from "@/components/CompetitionList";
+import { ClimberList } from "@/components/ClimberList";
 
 export default function Profile() {
   const { setClimber, setToken } = useAuthStore();
   const navigate = useNavigate();
   const [seasonRefreshKey, setSeasonRefreshKey] = useState(0);
   const [competitionRefreshKey, setCompetitionRefreshKey] = useState(0);
+  const [climberRefreshKey, setClimberRefreshKey] = useState(0);
 
   const { userInfo, messageInfo } = useGetUserInfo();
 
@@ -83,6 +85,7 @@ export default function Profile() {
                   <CompetitionForm
                     onCompetitionCreated={() => setCompetitionRefreshKey((prev) => prev + 1)}
                   />
+                  <ClimberList refreshKey={climberRefreshKey} />
                 </div>
               </Tabs.Content>
             )}

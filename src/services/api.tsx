@@ -16,6 +16,8 @@ import {
   SignupRequest,
   ScoreBatchResponse,
   CompetitionResponse,
+  ClimberResponse,
+  ClimberUpdateRequest,
 } from "@/types";
 
 // Auth
@@ -35,6 +37,11 @@ export async function signupClimber(payload: RegistrationRequest): Promise<Signu
 export const getMyInfo = () => api.get<MyInfoResponse>("/climber/me", true);
 
 export const getClimberById = (id: number) => api.get(`/climber/${id}`);
+
+export const getAllClimbers = () => api.get<ClimberResponse[]>("/climber", true);
+
+export const updateClimberById = (climberId: number, payload: ClimberUpdateRequest) =>
+  api.patch(`/climber/${climberId}`, payload, true);
 
 export const registerClimber = (payload: RegistrationRequest) => api.post("/climber", payload);
 

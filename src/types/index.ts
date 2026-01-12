@@ -39,6 +39,18 @@ export type MyInfoResponse = {
   user_scope: string;
   created_at: string;
 };
+
+export type ClimberResponse = {
+  id: number;
+  name: string;
+  user_scope: string;
+  created_at: string;
+};
+
+export type ClimberUpdateRequest = {
+  name?: string;
+  password?: string;
+};
 // Competition
 export type CompetitionRequest = {
   name: string;
