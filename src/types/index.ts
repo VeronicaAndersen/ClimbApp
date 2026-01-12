@@ -50,6 +50,7 @@ export type ClimberResponse = {
 export type ClimberUpdateRequest = {
   name?: string;
   password?: string;
+  user_scope?: string;
 };
 // Competition
 export type CompetitionRequest = {

@@ -10,10 +10,17 @@ interface ClimberListProps {
   refreshKey?: number;
 }
 
+const USER_SCOPES = [
+  { value: "climber", label: "Climber" },
+  { value: "setter", label: "Setter" },
+  { value: "analyst", label: "Analyst" },
+  { value: "admin", label: "Admin" },
+];
+
 export function ClimberList({ refreshKey }: ClimberListProps = {}) {
   const { climbers: climberList, loading, error, refetch } = useClimbers(refreshKey);
 
-  const emptyEditValues: ClimberUpdateRequest = { name: "", password: "" };
+  const emptyEditValues: ClimberUpdateRequest = { name: "", password: "", user_scope: "" };
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editValues, setEditValues] = useState<ClimberUpdateRequest>(emptyEditValues);
@@ -30,7 +37,7 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
 
   const startEdit = (climber: ClimberResponse) => {
     setEditingId(climber.id);
-    setEditValues({ name: climber.name, password: "" });
+    setEditValues({ name: climber.name, password: "", user_scope: climber.user_scope });
     setRowError(null);
     setDeleteConfirm(null);
   };
@@ -48,6 +55,9 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
       }
       if (editValues.password && editValues.password.trim()) {
         payload.password = editValues.password.trim();
+      }
+      if (editValues.user_scope && editValues.user_scope.trim()) {
+        payload.user_scope = editValues.user_scope.trim();
       }
 
       // Don't send empty payload
@@ -157,7 +167,26 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
                       )}
                     </td>
 
-                    <td className="p-2 text-gray-800">{climber.user_scope}</td>
+                    <td className="p-2">
+                      {isEditing ? (
+                        <select
+                          value={editValues.user_scope}
+                          onChange={(e) =>
+                            setEditValues({ ...editValues, user_scope: e.target.value })
+                          }
+                          className="w-full px-2 py-1 border border-gray-300 rounded"
+                          disabled={isSavingRow}
+                        >
+                          {USER_SCOPES.map((scope) => (
+                            <option key={scope.value} value={scope.value}>
+                              {scope.label}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className="text-gray-800">{climber.user_scope}</span>
+                      )}
+                    </td>
                     <td className="p-2 text-gray-800">{formatDate(climber.created_at)}</td>
 
                     <td className="p-2">
