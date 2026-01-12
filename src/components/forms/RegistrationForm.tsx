@@ -97,8 +97,8 @@ export function RegistrationForm() {
               className="mt-1 h-4 w-4 cursor-pointer disabled:cursor-not-allowed"
             />
             <Label.Root htmlFor="gdpr-consent" className="text-xs text-gray-700 leading-tight">
-              Jag godkänner att mina personuppgifter (namn och lösenord) lagras för att kunna använda
-              tjänsten. Uppgifterna används endast för inloggning och tävlingshantering.
+              Jag godkänner att mina personuppgifter (namn och lösenord) lagras för att kunna
+              använda tjänsten. Uppgifterna används endast för inloggning och tävlingshantering.
             </Label.Root>
           </div>
 

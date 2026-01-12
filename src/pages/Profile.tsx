@@ -12,6 +12,8 @@ import ProfilInfo from "@/components/ProfilInfo";
 import { AssignToCompetitionsList } from "@/components/AssignToCompetitionsList";
 import { CompetitionList } from "@/components/CompetitionList";
 import { ClimberList } from "@/components/ClimberList";
+import { CompetitionRegistrations } from "@/components/CompetitionRegistrations";
+import { useCompetitions } from "@/hooks/useCompetitions";
 
 export default function Profile() {
   const { setClimber, setToken } = useAuthStore();
@@ -20,6 +22,7 @@ export default function Profile() {
   const [competitionRefreshKey, setCompetitionRefreshKey] = useState(0);
 
   const { userInfo, messageInfo } = useGetUserInfo();
+  const { competitions } = useCompetitions();
 
   useEffect(() => {
     const storedUser = localStorage.getItem("tokens");
@@ -77,6 +80,23 @@ export default function Profile() {
             {userInfo?.user_scope === "admin" && (
               <Tabs.Content value="admin">
                 <div className="grid grid-cols-1 gap-2">
+                  <h3 className="text-xl font-semibold mb-2 text-gray-800">Godkänn anmälda</h3>
+                  {competitions && competitions.length > 0 ? (
+                    competitions.map((comp) => (
+                      <CompetitionRegistrations key={comp.id} competition={comp} />
+                    ))
+                  ) : (
+                    <p className="text-gray-600 mb-4">Inga tävlingar tillgängliga.</p>
+                  )}
+
+                  <h3 className="text-xl font-semibold mt-4 mb-2 text-gray-800">
+                    Hantera klättrare
+                  </h3>
+                  <ClimberList />
+
+                  <h3 className="text-xl font-semibold mt-4 mb-2 text-gray-800">
+                    Hantera säsonger och tävlingar
+                  </h3>
                   <SeasonList refreshKey={seasonRefreshKey} />
                   <CompetitionList refreshKey={competitionRefreshKey} />
 
@@ -84,7 +104,6 @@ export default function Profile() {
                   <CompetitionForm
                     onCompetitionCreated={() => setCompetitionRefreshKey((prev) => prev + 1)}
                   />
-                  <ClimberList />
                 </div>
               </Tabs.Content>
             )}

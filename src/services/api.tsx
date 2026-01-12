@@ -73,6 +73,23 @@ export const checkRegistration = (competitionId: number) =>
 export const registerClimberToCompetition = (competitionId: number, level: number) =>
   api.post(`/competition/${competitionId}/register`, { level }, true);
 
+export const getAllRegistrations = (competitionId: number) =>
+  api.get<import("@/types").RegistrationWithClimber[]>(
+    `/competition/${competitionId}/registrations`,
+    true
+  );
+
+export const updateRegistrationApproval = (
+  competitionId: number,
+  userId: number,
+  approved: boolean
+) =>
+  api.patch<import("@/types").RegisterToCompResponse, import("@/types").RegistrationApprovalUpdate>(
+    `/competition/${competitionId}/registration/${userId}`,
+    { approved },
+    true
+  );
+
 // Seasons
 export const createSeason = (payload: SeasonRequest) => api.post("/season", payload, true);
 

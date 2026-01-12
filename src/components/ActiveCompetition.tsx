@@ -46,12 +46,22 @@ export function ActiveCompetition() {
             if (isRegistered) {
               const regInfo = await getCompRegistrationInfo(comp.id);
               if (regInfo) {
-                if (
-                  !best ||
-                  new Date(comp.comp_date).getTime() >
-                    new Date(best.competition.comp_date).getTime()
-                ) {
-                  best = { competition: comp, registrationInfo: regInfo };
+                // Only include competitions where registration is approved
+                if (regInfo.approved) {
+                  if (
+                    !best ||
+                    new Date(comp.comp_date).getTime() >
+                      new Date(best.competition.comp_date).getTime()
+                  ) {
+                    best = { competition: comp, registrationInfo: regInfo };
+                  }
+                } else if (!best) {
+                  // Show pending message if no approved competitions found
+                  setMessageInfo({
+                    message:
+                      "Din registrering väntar på godkännande. Du får tillgång till tävlingen när en admin har godkänt din registrering och betalning.",
+                    color: "amber",
+                  });
                 }
               }
             }
