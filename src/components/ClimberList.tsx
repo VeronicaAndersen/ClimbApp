@@ -1,10 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import CalloutMessage from "./user_feedback/CalloutMessage";
 import { Spinner, Button } from "@radix-ui/themes";
 import { useClimbers } from "@/hooks/useClimbers";
-import { updateClimberById } from "@/services/api";
+import { updateClimberById, deleteClimberById } from "@/services/api";
 import { ClimberResponse, ClimberUpdateRequest } from "@/types";
-import { Pencil, Check, X } from "lucide-react";
+import { Pencil, Trash2, Check, X } from "lucide-react";
 
 interface ClimberListProps {
   refreshKey?: number;
@@ -18,7 +18,9 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editValues, setEditValues] = useState<ClimberUpdateRequest>(emptyEditValues);
   const [saving, setSaving] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState<number | null>(null);
   const [rowError, setRowError] = useState<{ id: number; message: string } | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
 
   const resetState = () => {
     setEditingId(null);
@@ -30,6 +32,7 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
     setEditingId(climber.id);
     setEditValues({ name: climber.name, password: "" });
     setRowError(null);
+    setDeleteConfirm(null);
   };
 
   const handleSave = async (climberId: number) => {
@@ -62,6 +65,22 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
       setRowError({ id: climberId, message });
     } finally {
       setSaving(null);
+    }
+  };
+
+  const handleDelete = async (climberId: number) => {
+    setDeleting(climberId);
+    setRowError(null);
+    setDeleteConfirm(null);
+
+    try {
+      await deleteClimberById(climberId);
+      await refetch();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Misslyckades att radera klättrare.";
+      setRowError({ id: climberId, message });
+    } finally {
+      setDeleting(null);
     }
   };
 
@@ -98,6 +117,8 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
               {climberList.map((climber) => {
                 const isEditing = editingId === climber.id;
                 const isSavingRow = saving === climber.id;
+                const isDeletingRow = deleting === climber.id;
+                const showDeleteConfirm = deleteConfirm === climber.id;
                 const errorForRow = rowError?.id === climber.id;
 
                 return (
@@ -109,9 +130,7 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
                         <input
                           type="text"
                           value={editValues.name}
-                          onChange={(e) =>
-                            setEditValues({ ...editValues, name: e.target.value })
-                          }
+                          onChange={(e) => setEditValues({ ...editValues, name: e.target.value })}
                           className="w-full px-2 py-1 border border-gray-300 rounded"
                           disabled={isSavingRow}
                           placeholder="Nytt namn"
@@ -164,14 +183,47 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
                             </Button>
                           </>
                         ) : (
-                          <Button
-                            onClick={() => startEdit(climber)}
-                            disabled={isSavingRow || editingId !== null}
-                            className="bg-[#505654] hover:bg-[#868f79] text-white px-3 py-1 rounded disabled:opacity-50"
-                            size="1"
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </Button>
+                          <>
+                            <Button
+                              onClick={() => startEdit(climber)}
+                              disabled={isSavingRow || isDeletingRow || editingId !== null}
+                              className="bg-[#505654] hover:bg-[#868f79] text-white px-3 py-1 rounded disabled:opacity-50"
+                              size="1"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+
+                            {showDeleteConfirm ? (
+                              <>
+                                <Button
+                                  onClick={() => handleDelete(climber.id)}
+                                  disabled={isDeletingRow}
+                                  className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs disabled:opacity-50"
+                                  size="1"
+                                >
+                                  {isDeletingRow ? <Spinner size="1" /> : "Bekräfta"}
+                                </Button>
+
+                                <Button
+                                  onClick={() => setDeleteConfirm(null)}
+                                  disabled={isDeletingRow}
+                                  className="bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs disabled:opacity-50"
+                                  size="1"
+                                >
+                                  Avbryt
+                                </Button>
+                              </>
+                            ) : (
+                              <Button
+                                onClick={() => setDeleteConfirm(climber.id)}
+                                disabled={isSavingRow || isDeletingRow || editingId !== null}
+                                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded disabled:opacity-50"
+                                size="1"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </>
                         )}
                       </div>
 

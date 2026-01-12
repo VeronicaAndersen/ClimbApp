@@ -43,6 +43,8 @@ export const getAllClimbers = () => api.get<ClimberResponse[]>("/climber", true)
 export const updateClimberById = (climberId: number, payload: ClimberUpdateRequest) =>
   api.patch(`/climber/${climberId}`, payload, true);
 
+export const deleteClimberById = (climberId: number) => api.delete(`/climber/${climberId}`, true);
+
 export const registerClimber = (payload: RegistrationRequest) => api.post("/climber", payload);
 
 // Competition

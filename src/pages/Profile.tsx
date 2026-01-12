@@ -18,7 +18,6 @@ export default function Profile() {
   const navigate = useNavigate();
   const [seasonRefreshKey, setSeasonRefreshKey] = useState(0);
   const [competitionRefreshKey, setCompetitionRefreshKey] = useState(0);
-  const [climberRefreshKey, setClimberRefreshKey] = useState(0);
 
   const { userInfo, messageInfo } = useGetUserInfo();
 
@@ -85,7 +84,7 @@ export default function Profile() {
                   <CompetitionForm
                     onCompetitionCreated={() => setCompetitionRefreshKey((prev) => prev + 1)}
                   />
-                  <ClimberList refreshKey={climberRefreshKey} />
+                  <ClimberList />
                 </div>
               </Tabs.Content>
             )}
