@@ -14,6 +14,7 @@ import { CompetitionList } from "@/components/CompetitionList";
 import { ClimberList } from "@/components/ClimberList";
 import { CompetitionRegistrations } from "@/components/CompetitionRegistrations";
 import { useCompetitions } from "@/hooks/useCompetitions";
+import { AllLeaderboards } from "@/components/AllLeaderboards";
 
 export default function Profile() {
   const { setClimber, setToken } = useAuthStore();
@@ -60,6 +61,7 @@ export default function Profile() {
           <Tabs.List color="cyan">
             <Tabs.Trigger value="competition">Tävlingar</Tabs.Trigger>
             <Tabs.Trigger value="active_competition">Aktiv Tävling</Tabs.Trigger>
+            <Tabs.Trigger value="leaderboard">Topplistor</Tabs.Trigger>
             <Tabs.Trigger value="profile">Profil</Tabs.Trigger>
             {userInfo?.user_scope === "admin" && <Tabs.Trigger value="admin">Admin</Tabs.Trigger>}
           </Tabs.List>
@@ -71,6 +73,10 @@ export default function Profile() {
 
             <Tabs.Content value="active_competition">
               <ActiveCompetition />
+            </Tabs.Content>
+
+            <Tabs.Content value="leaderboard">
+              <AllLeaderboards />
             </Tabs.Content>
 
             <Tabs.Content value="profile">

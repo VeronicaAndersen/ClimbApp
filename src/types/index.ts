@@ -196,3 +196,21 @@ export type MessageProps = {
     | "sky"
     | "green";
 };
+
+// Leaderboard
+export type LeaderboardEntry = {
+  rank: number;
+  climber_id: number;
+  climber_name: string;
+  total_score: number;
+  tops: number;
+  bonuses: number;
+  attempts_to_top: number;
+  attempts_to_bonus: number;
+};
+
+export type LevelLeaderboard = {
+  competition_id: number;
+  level: number;
+  entries: LeaderboardEntry[];
+};

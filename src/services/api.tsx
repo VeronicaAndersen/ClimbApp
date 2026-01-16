@@ -116,3 +116,10 @@ export const updateScoreBatch = ({ comp_id, level }: UrlParams, payload: ScoreBa
     payload,
     true
   );
+
+// Leaderboard
+export const getLeaderboard = (competitionId: number, level: number) =>
+  api.get<import("@/types").LevelLeaderboard>(
+    `/competition/${competitionId}/leaderboard/level/${level}`,
+    true
+  );
