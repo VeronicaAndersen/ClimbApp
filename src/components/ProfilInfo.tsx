@@ -29,6 +29,9 @@ export default function ProfilInfo() {
               <strong>Namn:</strong> {userInfo.name}
             </p>
             <p className="text-sm text-gray-600 mt-1">
+              <strong>Klättrar-ID:</strong> {userInfo.id}
+            </p>
+            <p className="text-sm text-gray-600 mt-1">
               Medlem sedan: {new Date(userInfo.created_at).toLocaleDateString("sv-SE")}
             </p>
           </div>

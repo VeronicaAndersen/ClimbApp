@@ -104,7 +104,7 @@ export default function ScoreSummary({ problems, gradeLevel }: ScoreSummaryProps
   const statCards = useMemo(() => createStatCards(summary), [summary]);
 
   return (
-    <div className="bg-white/90 backdrop-blur p-6 rounded-lg shadow-md mb-6">
+    <div className="bg-white/90 backdrop-blur p-6 rounded-lg shadow-md mb-6 border border-gray-300">
       <header className="flex items-center justify-between mb-4">
         <h3 className="text-xl font-semibold text-gray-800">Sammanfattning</h3>
         {gradeLevel && (

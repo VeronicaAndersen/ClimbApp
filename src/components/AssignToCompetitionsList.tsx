@@ -33,7 +33,7 @@ export function AssignToCompetitionsList() {
             if (regInfo) {
               setRegistrationDetails((prev) => ({ ...prev, [comp.id]: regInfo }));
             }
-          } catch (err) {
+          } catch {
             console.error("Failed to fetch registration details for comp:", comp.id);
           }
         }
@@ -43,6 +43,7 @@ export function AssignToCompetitionsList() {
     if (competitionList.length > 0) {
       fetchRegistrationDetails();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [competitionList, registrationStatus]);
 
   const renderCompetition = (comp: CompetitionResponse) => {

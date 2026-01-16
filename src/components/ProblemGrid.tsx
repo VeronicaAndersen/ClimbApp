@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState, useEffect } from "react";
-import { Star, Medal, Lock, Unlock } from "lucide-react";
+import { Star, Medal, Lock, Unlock, ChevronDown, ChevronUp } from "lucide-react";
 import { ScoreBatchResponse } from "@/types";
 import { useScores } from "@/hooks/useScores";
 import CalloutMessage from "./user_feedback/CalloutMessage";
@@ -27,9 +27,9 @@ const gradeColors: Record<number, string> = {
 
 const SCORE_FIELDS = ["attempts_total", "attempts_to_bonus", "attempts_to_top"] as const;
 const SCORE_FIELD_LABELS: Record<(typeof SCORE_FIELDS)[number], string> = {
-  attempts_total: "Totalt antal försök",
-  attempts_to_bonus: "Försök till bonus",
-  attempts_to_top: "Försök till topp",
+  attempts_total: "Antal försök",
+  attempts_to_bonus: "Bonus",
+  attempts_to_top: "Topp",
 };
 
 const MIN_SCORE_VALUE = 0;
@@ -59,6 +59,7 @@ export default function ProblemGrid({
   const [savedProblemNo, setSavedProblemNo] = useState<number | null>(null);
   const [errorProblemNo, setErrorProblemNo] = useState<number | null>(null);
   const [adminOverride, setAdminOverride] = useState(false);
+  const [collapsedProblems, setCollapsedProblems] = useState<Set<number>>(new Set());
 
   // Determine if editing is allowed
   const canEdit = useMemo(
@@ -141,6 +142,18 @@ export default function ProblemGrid({
     [updateField]
   );
 
+  const toggleCollapse = useCallback((problemNo: number) => {
+    setCollapsedProblems((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(problemNo)) {
+        newSet.delete(problemNo);
+      } else {
+        newSet.add(problemNo);
+      }
+      return newSet;
+    });
+  }, []);
+
   const hasAnyChanges = useMemo(() => {
     return problems.some((problem) => {
       const originalScore = initialScoreMap.get(problem.problem_no);
@@ -189,15 +202,7 @@ export default function ProblemGrid({
               <p className="text-sm font-medium text-yellow-800">
                 {isCompetitionToday
                   ? "Redigering är aktiverad för tävlingsdagen"
-                  : "Denna tävling kan inte redigeras"}
-              </p>
-              <p className="text-xs text-yellow-700 mt-1">
-                {isCompetitionToday
-                  ? "Du kan redigera poäng under tävlingsdagen."
-                  : "Poäng kan endast redigeras på tävlingsdagen."}
-                {userIsAdmin &&
-                  !isCompetitionToday &&
-                  " Som administratör kan du aktivera redigering nedan."}
+                  : "Tävlingen har inte öppnat ännu."}
               </p>
             </div>
           </div>
@@ -214,7 +219,7 @@ export default function ProblemGrid({
               <Lock className="w-5 h-5 text-blue-700" />
             )}
             <div>
-              <p className="text-sm font-medium text-blue-800">Admin-åsidosättning</p>
+              <p className="text-sm font-medium text-blue-800">Admin</p>
               <p className="text-xs text-blue-700">
                 Aktivera för att redigera utanför tävlingsdagen
               </p>
@@ -263,6 +268,7 @@ export default function ProblemGrid({
 
           const isSaved = savedProblemNo === problem.problem_no && saveMessage;
           const hasError = errorProblemNo === problem.problem_no && saveError;
+          const isCollapsed = collapsedProblems.has(problem.problem_no);
 
           return (
             <div
@@ -276,15 +282,18 @@ export default function ProblemGrid({
 
               {isChanged && !isSaved && (
                 <span
-                  className={`absolute top-2 right-2 text-xs font-medium text-yellow-700 
+                  className={`absolute top-2 right-2 text-xs font-medium text-yellow-700
                       bg-yellow-100 border border-yellow-300 rounded-md px-2 py-0.5`}
                 >
                   Ej sparad
                 </span>
               )}
 
-              <div className="flex justify-between items-center py-6">
-                <div className="flex items-center gap-2 ">
+              <div
+                className="flex justify-between items-center py-6 cursor-pointer"
+                onClick={() => toggleCollapse(problem.problem_no)}
+              >
+                <div className="flex items-center gap-2">
                   <h3 className="text-lg font-semibold text-gray-800">
                     Problem {problem.problem_no}
                   </h3>
@@ -297,109 +306,125 @@ export default function ProblemGrid({
                 <p className="text-sm text-[#7b8579]">
                   B{problem.score.attempts_to_bonus}T{problem.score.attempts_to_top}
                 </p>
-                <div className="flex gap-1">
+                <div className="flex gap-1 items-center">
                   {problem.score.attempts_to_bonus > 0 && (
                     <Star className="w-5 h-5 text-[#c6d1b8]/80" aria-hidden />
                   )}
                   {problem.score.attempts_to_top > 0 && (
                     <Medal className="w-5 h-5 text-amber-300" aria-hidden />
                   )}
+                  {isCollapsed ? (
+                    <ChevronDown className="w-5 h-5 text-gray-600" aria-hidden />
+                  ) : (
+                    <ChevronUp className="w-5 h-5 text-gray-600" aria-hidden />
+                  )}
                 </div>
               </div>
 
-              {SCORE_FIELDS.map((key) => (
-                <div key={key} className="flex flex-row justify-between m-2">
-                  <label
-                    htmlFor={`problem-${problem.problem_no}-${key}`}
-                    className="block text-sm text-[#7b8579] font-medium capitalize mb-1"
-                  >
-                    {SCORE_FIELD_LABELS[key]}
-                  </label>
+              {!isCollapsed && (
+                <>
+                  {SCORE_FIELDS.map((key) => (
+                    <div key={key} className="flex flex-row justify-between m-2">
+                      <label
+                        htmlFor={`problem-${problem.problem_no}-${key}`}
+                        className="block text-sm text-[#7b8579] font-medium capitalize mb-1"
+                      >
+                        {SCORE_FIELD_LABELS[key]}
+                      </label>
 
-                  <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2">
+                        <Button
+                          onClick={() => dec(problem, key)}
+                          disabled={saving || !canEdit}
+                          className={`w-8 h-8 rounded-full bg-[#505654] hover:bg-[#7b8579]
+                                    text-white font-bold text-lg cursor-pointer`}
+                          aria-label={`Minska ${SCORE_FIELD_LABELS[key]}`}
+                        >
+                          −
+                        </Button>
+                        <input
+                          id={`problem-${problem.problem_no}-${key}`}
+                          type="number"
+                          disabled={saving || !canEdit}
+                          min={MIN_SCORE_VALUE}
+                          inputMode="numeric"
+                          value={String(sanitizeValue(Number(problem.score[key])))}
+                          onChange={(event) =>
+                            updateField(problem.problem_no, key, Number(event.target.value))
+                          }
+                          className="w-14 text-center border border-gray-300 rounded-full px-2 py-1 text-base"
+                        />
+                        <Button
+                          onClick={() => inc(problem, key)}
+                          disabled={saving || !canEdit}
+                          className={`w-8 h-8 rounded-full bg-[#505654] hover:bg-[#7b8579]
+                                    text-white font-bold text-lg cursor-pointer`}
+                          aria-label={`Öka ${SCORE_FIELD_LABELS[key]}`}
+                        >
+                          +
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  <div className="flex justify-center">
                     <Button
-                      onClick={() => dec(problem, key)}
-                      disabled={saving || !canEdit}
-                      className={`w-8 h-8 rounded-full bg-[#505654] hover:bg-[#7b8579]
-                                text-white font-bold text-lg cursor-pointer`}
-                      aria-label={`Minska ${SCORE_FIELD_LABELS[key]}`}
+                      onClick={async () => {
+                        if (!gradeLevel) return;
+                        const success = await saveAll(
+                          competitionId,
+                          gradeLevel,
+                          problem.problem_no,
+                          problem.score
+                        );
+                        if (success) {
+                          // Track which problem was saved to show message over it
+                          setSavedProblemNo(problem.problem_no);
+                          setErrorProblemNo(null); // Clear any previous error
+                          // Update initialProblems to reflect the saved state, so isChanged will be false
+                          setInitialProblems((prev) =>
+                            prev.map((p) =>
+                              p.problem_no === problem.problem_no
+                                ? {
+                                    ...p,
+                                    score: {
+                                      attempts_total: problem.score.attempts_total,
+                                      got_bonus: problem.score.got_bonus,
+                                      got_top: problem.score.got_top,
+                                      attempts_to_bonus: problem.score.attempts_to_bonus,
+                                      attempts_to_top: problem.score.attempts_to_top,
+                                    },
+                                  }
+                                : p
+                            )
+                          );
+
+                          // Auto-collapse if problem has a top
+                          if (problem.score.attempts_to_top > 0) {
+                            setTimeout(() => {
+                              toggleCollapse(problem.problem_no);
+                            }, 1500); // Wait 1.5 seconds to show success message first
+                          }
+                        } else {
+                          // Track which problem had an error
+                          setErrorProblemNo(problem.problem_no);
+                          setSavedProblemNo(null); // Clear any previous success message
+                        }
+                      }}
+                      disabled={saving || !gradeLevel || !canEdit}
+                      className={`bg-[#505654] hover:bg-[#7b8579] text-white px-6 py-2 mt-4 rounded-full
+                        shadow font-medium cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed w-full`}
                     >
-                      −
-                    </Button>
-                    <input
-                      id={`problem-${problem.problem_no}-${key}`}
-                      type="number"
-                      disabled={saving || !canEdit}
-                      min={MIN_SCORE_VALUE}
-                      inputMode="numeric"
-                      value={String(sanitizeValue(Number(problem.score[key])))}
-                      onChange={(event) =>
-                        updateField(problem.problem_no, key, Number(event.target.value))
-                      }
-                      className="w-14 text-center border border-gray-300 rounded-full px-2 py-1 text-base"
-                    />
-                    <Button
-                      onClick={() => inc(problem, key)}
-                      disabled={saving || !canEdit}
-                      className={`w-8 h-8 rounded-full bg-[#505654] hover:bg-[#7b8579]
-                                text-white font-bold text-lg cursor-pointer`}
-                      aria-label={`Öka ${SCORE_FIELD_LABELS[key]}`}
-                    >
-                      +
+                      {saving
+                        ? "Sparar..."
+                        : !canEdit
+                          ? "Redigering inaktiverad"
+                          : gradeLevel
+                            ? "Spara försök"
+                            : "Välj gradnivå för att spara"}
                     </Button>
                   </div>
-                </div>
-              ))}
-              <div className="flex justify-center">
-                <Button
-                  onClick={async () => {
-                    if (!gradeLevel) return;
-                    const success = await saveAll(
-                      competitionId,
-                      gradeLevel,
-                      problem.problem_no,
-                      problem.score
-                    );
-                    if (success) {
-                      // Track which problem was saved to show message over it
-                      setSavedProblemNo(problem.problem_no);
-                      setErrorProblemNo(null); // Clear any previous error
-                      // Update initialProblems to reflect the saved state, so isChanged will be false
-                      setInitialProblems((prev) =>
-                        prev.map((p) =>
-                          p.problem_no === problem.problem_no
-                            ? {
-                                ...p,
-                                score: {
-                                  attempts_total: problem.score.attempts_total,
-                                  got_bonus: problem.score.got_bonus,
-                                  got_top: problem.score.got_top,
-                                  attempts_to_bonus: problem.score.attempts_to_bonus,
-                                  attempts_to_top: problem.score.attempts_to_top,
-                                },
-                              }
-                            : p
-                        )
-                      );
-                    } else {
-                      // Track which problem had an error
-                      setErrorProblemNo(problem.problem_no);
-                      setSavedProblemNo(null); // Clear any previous success message
-                    }
-                  }}
-                  disabled={saving || !gradeLevel || !canEdit}
-                  className={`bg-[#505654] hover:bg-[#7b8579] text-white px-6 py-2 mt-4 rounded-full
-                    shadow font-medium cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed w-full`}
-                >
-                  {saving
-                    ? "Sparar..."
-                    : !canEdit
-                      ? "Redigering inaktiverad"
-                      : gradeLevel
-                        ? "Spara försök"
-                        : "Välj gradnivå för att spara"}
-                </Button>
-              </div>
+                </>
+              )}
             </div>
           );
         })}

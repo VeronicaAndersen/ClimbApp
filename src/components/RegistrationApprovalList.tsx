@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { RegistrationWithClimber } from "@/types";
 import { getAllRegistrations, updateRegistrationApproval } from "@/services/api";
 import { Spinner, Button } from "@radix-ui/themes";
@@ -15,7 +15,7 @@ export function RegistrationApprovalList({ competitionId }: RegistrationApproval
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
 
-  const fetchRegistrations = async () => {
+  const fetchRegistrations = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -27,11 +27,11 @@ export function RegistrationApprovalList({ competitionId }: RegistrationApproval
     } finally {
       setLoading(false);
     }
-  };
+  }, [competitionId]);
 
   useEffect(() => {
     fetchRegistrations();
-  }, [competitionId]);
+  }, [fetchRegistrations]);
 
   const handleApprovalChange = async (userId: number, approved: boolean) => {
     setUpdatingId(userId);
