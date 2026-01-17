@@ -157,7 +157,7 @@ export function SeasonList({ refreshKey }: SeasonListProps = {}) {
                             <Button
                               onClick={() => startEdit(season)}
                               disabled={isSavingRow || isDeletingRow || editingId !== null}
-                              className="bg-[#505654] hover:bg-[#868f79] text-white px-3 py-1 rounded disabled:opacity-50"
+                              className="bg-[--secondary-color] hover:bg-[--secondary-color-hover] text-white px-3 py-1 rounded disabled:opacity-50"
                               size="1"
                             >
                               <Pencil className="w-4 h-4" />

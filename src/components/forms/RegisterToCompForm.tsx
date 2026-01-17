@@ -40,7 +40,7 @@ export default function RegisterToCompForm({
     <>
       <Dialog.Root>
         <Dialog.Trigger>
-          <Button className="bg-[#505654] hover:bg-[#868f79] cursor-pointer rounded-full my-2">
+          <Button className="bg-[--secondary-color] hover:bg-[--secondary-color-hover] cursor-pointer rounded-full my-2">
             Anmälan
           </Button>
         </Dialog.Trigger>
@@ -87,7 +87,7 @@ export default function RegisterToCompForm({
             <Dialog.Close>
               <Button
                 onClick={handleRegidtration}
-                className="bg-[#505654] hover:bg-[#868f79] text-white cursor-pointer rounded-full flex items-center justify-center"
+                className="bg-[--secondary-color] hover:bg-[--secondary-color-hover] text-white cursor-pointer rounded-full flex items-center justify-center"
                 disabled={loading}
               >
                 {loading ? (

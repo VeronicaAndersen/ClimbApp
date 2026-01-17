@@ -175,7 +175,7 @@ export function CompetitionList({ refreshKey }: CompetitionListProps = {}) {
                             <Button
                               onClick={() => startEdit(competition)}
                               disabled={isSavingRow || isDeletingRow || editingId !== null}
-                              className="bg-[#505654] hover:bg-[#868f79] text-white px-3 py-1 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="bg-[--secondary-color] hover:bg-[--secondary-color-hover] text-white px-3 py-1 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                               size="1"
                             >
                               <Pencil className="w-4 h-4" />

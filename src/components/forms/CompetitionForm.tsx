@@ -130,7 +130,7 @@ export function CompetitionForm({ onCompetitionCreated }: CompetitionFormProps =
         />
 
         <Button
-          className="mt-4 w-full cursor-pointer rounded-full bg-[#505654] hover:bg-[#868f79] disabled:bg-[#505654]/50 disabled:cursor-not-allowed flex items-center justify-center"
+          className="mt-4 w-full cursor-pointer rounded-full bg-[--secondary-color] hover:bg-[--secondary-color-hover] disabled:bg-[--secondary-color]/50 disabled:cursor-not-allowed flex items-center justify-center"
           type="submit"
           disabled={loading}
         >

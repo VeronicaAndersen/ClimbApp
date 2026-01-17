@@ -58,7 +58,7 @@ export default function Profile() {
   return (
     <div className="h-fit flex flex-col items-center justify-center">
       <img src="./grepp.svg" alt="grepp logo" className="w-28 absolute top-8 left-5" />
-      <div className="flex flex-col items-center my-24 mx-4 p-4 shadow-md rounded-lg bg-[#c6d1b8]/80 backdrop-blur max-w-6xl w-full overflow-y-auto">
+      <div className="flex flex-col items-center my-24 mx-4 p-4 shadow-md rounded-lg bg-[--primary-color] backdrop-blur max-w-6xl w-full overflow-y-auto">
         {messageInfo && <CalloutMessage message={messageInfo.message} color={messageInfo.color} />}
 
         {/* Navigation Menubar */}
@@ -68,7 +68,7 @@ export default function Profile() {
               onClick={() => setActiveView("competition")}
               className={`px-4 py-2 rounded cursor-pointer select-none outline-none transition-colors ${
                 activeView === "competition"
-                  ? "bg-[#505654] text-white"
+                  ? "bg-[--secondary-color] text-white"
                   : "text-gray-700 hover:bg-gray-100"
               }`}
             >
@@ -79,9 +79,9 @@ export default function Profile() {
           <Menubar.Menu value="active_competition">
             <Menubar.Trigger
               onClick={() => setActiveView("active_competition")}
-              className={`px-2 py-1 rounded cursor-pointer select-none outline-none transition-colors ${
+              className={`px-4 py-2 rounded cursor-pointer select-none outline-none transition-colors ${
                 activeView === "active_competition"
-                  ? "bg-[#505654] text-white"
+                  ? "bg-[--secondary-color] text-white"
                   : "text-gray-700 hover:bg-gray-100"
               }`}
             >
@@ -94,20 +94,21 @@ export default function Profile() {
               onClick={() => setActiveView("profile")}
               className={`px-4 py-2 rounded cursor-pointer select-none outline-none transition-colors ${
                 activeView === "profile"
-                  ? "bg-[#505654] text-white"
+                  ? "bg-[--secondary-color] text-white"
                   : "text-gray-700 hover:bg-gray-100"
               }`}
             >
               Profil
             </Menubar.Trigger>
           </Menubar.Menu>
+
           {userInfo?.user_scope === "admin" && (
-            <Menubar.Menu value="admin">
+            <Menubar.Menu value="users">
               <Menubar.Trigger
-                onClick={() => setActiveView("admin")}
+                onClick={() => setActiveView("users")}
                 className={`px-4 py-2 rounded cursor-pointer select-none outline-none transition-colors ${
-                  activeView === "admin"
-                    ? "bg-[#505654] text-white"
+                  activeView === "users"
+                    ? "bg-[--secondary-color] text-white"
                     : "text-gray-700 hover:bg-gray-100"
                 }`}
               >
@@ -122,7 +123,7 @@ export default function Profile() {
                 onClick={() => setActiveView("admin")}
                 className={`px-4 py-2 rounded cursor-pointer select-none outline-none transition-colors ${
                   activeView === "admin"
-                    ? "bg-[#505654] text-white"
+                    ? "bg-[--secondary-color] text-white"
                     : "text-gray-700 hover:bg-gray-100"
                 }`}
               >
@@ -140,7 +141,7 @@ export default function Profile() {
 
           {activeView === "profile" && <ProfilInfo />}
 
-          {activeView === "admin" && userInfo?.user_scope === "admin" && (
+          {activeView === "users" && userInfo?.user_scope === "admin" && (
             <div>
               <h3 className="text-xl font-semibold mt-4 mb-2 text-gray-800">Hantera klättrare</h3>
               <ClimberList />
@@ -173,7 +174,7 @@ export default function Profile() {
         </div>
       </div>
       <Button
-        className="absolute cursor-pointer bg-[#505654] hover:bg-[#868f79] rounded-full px-4 py-2 mt-4 text-white top-4 right-4"
+        className="absolute cursor-pointer bg-[--secondary-color] hover:bg-[--secondary-color-hover] rounded-full px-4 py-2 mt-4 text-white top-4 right-4"
         onClick={handleLogout}
       >
         Logga ut {userInfo?.name}

@@ -104,7 +104,7 @@ export function RegistrationForm() {
 
           <Button
             type="submit"
-            className="w-full cursor-pointer rounded-full bg-[#505654] hover:bg-[#868f79] disabled:bg-[#505654]/50 disabled:cursor-not-allowed flex items-center justify-center"
+            className="w-full cursor-pointer rounded-full bg-[--secondary-color] hover:bg-[--secondary-color-hover] disabled:bg-[--secondary-color]/50 disabled:cursor-not-allowed flex items-center justify-center"
             disabled={isSubmitDisabled}
           >
             {loading ? (
@@ -118,7 +118,7 @@ export function RegistrationForm() {
 
           <Link
             to="/"
-            className="w-fit text-sm text-center text-[#505654] underline flex justify-center mx-auto"
+            className="w-fit text-sm text-center text-[--secondary-color] underline flex justify-center mx-auto"
           >
             Redan ett konto? Klicka här!
           </Link>

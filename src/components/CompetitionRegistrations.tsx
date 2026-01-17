@@ -22,7 +22,7 @@ export function CompetitionRegistrations({ competition }: CompetitionRegistratio
         </div>
         <Button
           onClick={() => setIsOpen(!isOpen)}
-          className="bg-[#505654] hover:bg-[#868f79] text-white px-3 py-2 rounded cursor-pointer"
+          className="bg-[--secondary-color] hover:bg-[--secondary-color-hover] text-white px-3 py-2 rounded cursor-pointer"
           size="2"
         >
           {isOpen ? (
