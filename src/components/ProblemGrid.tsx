@@ -1,9 +1,8 @@
 import { useCallback, useMemo, useState, useEffect } from "react";
 import { Star, Medal, Lock, Unlock, ChevronDown, ChevronUp } from "lucide-react";
 import { ScoreBatchResponse } from "@/types";
-import { useScores } from "@/hooks/useScores";
 import CalloutMessage from "./user_feedback/CalloutMessage";
-import { Button, Spinner } from "@radix-ui/themes";
+import { Button } from "@radix-ui/themes";
 import { useUpdateScore } from "@/hooks/useUpdateScore";
 import { useUpdateScoreBatch } from "@/hooks/useUpdateScoreBatchResult";
 import { canEditCompetition, isAdmin, isToday } from "@/utils/competitionUtils";
@@ -12,6 +11,12 @@ interface ProblemGridProps {
   competitionId: number;
   competitionDate: string;
   userScope: string;
+  viewingClimberName?: string;
+  problems: ScoreBatchResponse[];
+  initialProblems: ScoreBatchResponse[];
+  setProblems: React.Dispatch<React.SetStateAction<ScoreBatchResponse[]>>;
+  setInitialProblems: React.Dispatch<React.SetStateAction<ScoreBatchResponse[]>>;
+  gradeLevel: number | null;
 }
 //change gradeLevel to hex color codes for different levels
 const DEFAULT_GRADE_COLOR = "#D1D5DB";
@@ -38,17 +43,13 @@ export default function ProblemGrid({
   competitionId,
   competitionDate,
   userScope,
+  viewingClimberName,
+  problems,
+  initialProblems,
+  setProblems,
+  setInitialProblems,
+  gradeLevel,
 }: ProblemGridProps) {
-  const {
-    problems,
-    initialProblems,
-    setProblems,
-    setInitialProblems,
-    isLoading,
-    error,
-    gradeLevel,
-  } = useScores(competitionId);
-
   const { saving, error: saveError, saveMessage, saveAll } = useUpdateScore();
   const {
     saving: batchSaving,
@@ -177,16 +178,6 @@ export default function ProblemGrid({
       setErrorProblemNo(null);
     }
   };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <Spinner size="3" />
-        <span className="ml-2">Hämtar poäng...</span>
-      </div>
-    );
-  }
-  if (error) return <CalloutMessage message={error} color="red" />;
 
   return (
     <div className="space-y-4">
@@ -419,7 +410,7 @@ export default function ProblemGrid({
                         : !canEdit
                           ? "Redigering inaktiverad"
                           : gradeLevel
-                            ? "Spara försök"
+                            ? `Spara försök för ${viewingClimberName || "dig"}`
                             : "Välj gradnivå för att spara"}
                     </Button>
                   </div>

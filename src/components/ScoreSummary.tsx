@@ -2,6 +2,17 @@ import { useMemo } from "react";
 import { ScoreBatchResponse } from "@/types";
 import { Trophy, Star, Medal, Target, LucideIcon } from "lucide-react";
 
+const DEFAULT_GRADE_COLOR = "#D1D5DB";
+const gradeColors: Record<number, string> = {
+  1: "#C084FC",
+  2: "#F9A8D4",
+  3: "#FDBA74",
+  4: "#FACC15",
+  5: "#4ADE80",
+  6: "#FFFFFF",
+  7: "#000000",
+};
+
 interface ScoreSummaryProps {
   problems: ScoreBatchResponse[];
   gradeLevel?: number | null;
@@ -103,13 +114,23 @@ export default function ScoreSummary({ problems, gradeLevel }: ScoreSummaryProps
   const summary = useMemo(() => calculateSummaryStats(problems), [problems]);
   const statCards = useMemo(() => createStatCards(summary), [summary]);
 
+  const gradeColor = gradeLevel
+    ? (gradeColors[gradeLevel] ?? DEFAULT_GRADE_COLOR)
+    : DEFAULT_GRADE_COLOR;
+  const gradeLabel = gradeLevel ? `Gradnivå: ${gradeLevel}` : "Gradnivå: ej tilldelad";
+
   return (
     <div className="bg-white/90 backdrop-blur p-6 rounded-lg shadow-md mb-6 border border-gray-300">
       <header className="flex items-center justify-between mb-4">
         <h3 className="text-xl font-semibold text-gray-800">Sammanfattning</h3>
         {gradeLevel && (
-          <span className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
-            Gradnivå: {gradeLevel}
+          <span className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full flex items-center gap-2">
+            Nivå:
+            <span
+              className="w-5 h-5 rounded-full border border-gray-300"
+              style={{ backgroundColor: gradeColor }}
+              title={gradeLabel}
+            />
           </span>
         )}
       </header>

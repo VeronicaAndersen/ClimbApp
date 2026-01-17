@@ -2,21 +2,30 @@ import { useScores } from "@/hooks/useScores";
 import { Spinner } from "@radix-ui/themes";
 import CalloutMessage from "./user_feedback/CalloutMessage";
 import ScoreSummary from "./ScoreSummary";
-import ScoreHistory from "./ScoreHistory";
 import ProblemGrid from "./ProblemGrid";
 
 interface CompetitionScoresProps {
   competitionId: number;
   competitionDate: string;
   userScope: string;
+  viewingClimberName?: string;
 }
 
 export default function CompetitionScores({
   competitionId,
   competitionDate,
   userScope,
+  viewingClimberName,
 }: CompetitionScoresProps) {
-  const { problems, initialProblems, gradeLevel, isLoading, error } = useScores(competitionId);
+  const {
+    problems,
+    initialProblems,
+    setProblems,
+    setInitialProblems,
+    gradeLevel,
+    isLoading,
+    error,
+  } = useScores(competitionId);
 
   if (isLoading) {
     return (
@@ -34,11 +43,16 @@ export default function CompetitionScores({
   return (
     <div className="space-y-6">
       <ScoreSummary problems={problems} gradeLevel={gradeLevel} />
-      <ScoreHistory currentProblems={problems} initialProblems={initialProblems} />
       <ProblemGrid
         competitionId={competitionId}
         competitionDate={competitionDate}
         userScope={userScope}
+        viewingClimberName={viewingClimberName}
+        problems={problems}
+        initialProblems={initialProblems}
+        setProblems={setProblems}
+        setInitialProblems={setInitialProblems}
+        gradeLevel={gradeLevel}
       />
     </div>
   );
