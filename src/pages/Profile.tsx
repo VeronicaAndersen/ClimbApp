@@ -101,19 +101,20 @@ export default function Profile() {
               Profil
             </Menubar.Trigger>
           </Menubar.Menu>
-
-          <Menubar.Menu value="users">
-            <Menubar.Trigger
-              onClick={() => setActiveView("users")}
-              className={`px-4 py-2 rounded cursor-pointer select-none outline-none transition-colors ${
-                activeView === "users"
-                  ? "bg-[#505654] text-white"
-                  : "text-gray-700 hover:bg-gray-100"
-              }`}
-            >
-              Klättrare
-            </Menubar.Trigger>
-          </Menubar.Menu>
+          {userInfo?.user_scope === "admin" && (
+            <Menubar.Menu value="admin">
+              <Menubar.Trigger
+                onClick={() => setActiveView("admin")}
+                className={`px-4 py-2 rounded cursor-pointer select-none outline-none transition-colors ${
+                  activeView === "admin"
+                    ? "bg-[#505654] text-white"
+                    : "text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                Klättrare
+              </Menubar.Trigger>
+            </Menubar.Menu>
+          )}
 
           {userInfo?.user_scope === "admin" && (
             <Menubar.Menu value="admin">
@@ -139,7 +140,7 @@ export default function Profile() {
 
           {activeView === "profile" && <ProfilInfo />}
 
-          {activeView === "users" && (
+          {activeView === "admin" && userInfo?.user_scope === "admin" && (
             <div>
               <h3 className="text-xl font-semibold mt-4 mb-2 text-gray-800">Hantera klättrare</h3>
               <ClimberList />
