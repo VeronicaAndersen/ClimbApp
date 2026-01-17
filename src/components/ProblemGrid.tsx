@@ -234,7 +234,7 @@ export default function ProblemGrid({
           <Button
             onClick={handleSaveAll}
             disabled={batchSaving || !gradeLevel || !hasAnyChanges}
-            className={`bg-[--secondary-color] hover:bg-[#7b8579] text-white px-6 py-2 rounded-full
+            className={`bg-[--secondary-color] hover:bg-[--primary-color-hover] text-white px-6 py-2 rounded-full
               shadow font-medium cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed`}
           >
             {batchSaving ? "Sparar alla..." : "Spara alla ändringar"}
@@ -294,7 +294,7 @@ export default function ProblemGrid({
                     title={gradeLabel}
                   />
                 </div>
-                <p className="text-sm text-[#7b8579]">
+                <p className="text-sm text-[--primary-color-hover]">
                   B{problem.score.attempts_to_bonus}T{problem.score.attempts_to_top}
                 </p>
                 <div className="flex gap-1 items-center">
@@ -318,7 +318,7 @@ export default function ProblemGrid({
                     <div key={key} className="flex flex-row justify-between m-2">
                       <label
                         htmlFor={`problem-${problem.problem_no}-${key}`}
-                        className="block text-sm text-[#7b8579] font-medium capitalize mb-1"
+                        className="block text-sm text-[--primary-color-hover] font-medium capitalize mb-1"
                       >
                         {SCORE_FIELD_LABELS[key]}
                       </label>
@@ -327,7 +327,7 @@ export default function ProblemGrid({
                         <Button
                           onClick={() => dec(problem, key)}
                           disabled={saving || !canEdit}
-                          className={`w-8 h-8 rounded-full bg-[--secondary-color] hover:bg-[#7b8579]
+                          className={`w-8 h-8 rounded-full bg-[--secondary-color] hover:bg-[--primary-color-hover]
                                     text-white font-bold text-lg cursor-pointer`}
                           aria-label={`Minska ${SCORE_FIELD_LABELS[key]}`}
                         >
@@ -348,7 +348,7 @@ export default function ProblemGrid({
                         <Button
                           onClick={() => inc(problem, key)}
                           disabled={saving || !canEdit}
-                          className={`w-8 h-8 rounded-full bg-[--secondary-color] hover:bg-[#7b8579]
+                          className={`w-8 h-8 rounded-full bg-[--secondary-color] hover:bg-[--primary-color-hover]
                                     text-white font-bold text-lg cursor-pointer`}
                           aria-label={`Öka ${SCORE_FIELD_LABELS[key]}`}
                         >
@@ -402,7 +402,7 @@ export default function ProblemGrid({
                         }
                       }}
                       disabled={saving || !gradeLevel || !canEdit}
-                      className={`bg-[--secondary-color] hover:bg-[#7b8579] text-white px-6 py-2 mt-4 rounded-full
+                      className={`bg-[--secondary-color] hover:bg-[--primary-color-hover] text-white px-6 py-2 mt-4 rounded-full
                         shadow font-medium cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed w-full`}
                     >
                       {saving
