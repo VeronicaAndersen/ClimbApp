@@ -42,51 +42,52 @@ export function useUserCompetitions() {
         }
 
         // Filter competitions the user is registered for and get their scores
-        const userCompetitionsData: CompetitionWithScores[] = [];
-
-        for (const comp of allCompetitions) {
-          try {
+        // Parallelize all competition checks instead of sequential loop
+        const competitionResults = await Promise.allSettled(
+          allCompetitions.map(async (comp) => {
             const isRegistered = await checkRegistration(comp.id);
 
-            if (isRegistered) {
-              const registration = await getCompRegistrationInfo(comp.id);
+            if (!isRegistered) return null;
 
-              if (registration && registration.level) {
-                const scores = await getScoresBatch({
-                  comp_id: comp.id,
-                  level: registration.level,
-                });
+            // First get registration to know the level
+            const registration = await getCompRegistrationInfo(comp.id);
+            if (!registration || !registration.level) return null;
 
-                // Calculate summary statistics
-                const totalProblems = scores.length;
-                const problemsWithTop = scores.filter((s) => s.score.attempts_to_top > 0).length;
-                const problemsWithBonus = scores.filter(
-                  (s) => s.score.attempts_to_bonus > 0
-                ).length;
-                const totalAttempts = scores.reduce((sum, s) => sum + s.score.attempts_total, 0);
-                const attemptedProblems = scores.filter((s) => s.score.attempts_total > 0).length;
-                const averageAttempts =
-                  attemptedProblems > 0 ? (totalAttempts / attemptedProblems).toFixed(1) : "0";
+            // Then fetch scores for that level
+            const scores = await getScoresBatch({
+              comp_id: comp.id,
+              level: registration.level,
+            });
 
-                userCompetitionsData.push({
-                  competition: comp,
-                  level: registration.level,
-                  scores,
-                  summary: {
-                    totalProblems,
-                    problemsWithTop,
-                    problemsWithBonus,
-                    totalAttempts,
-                    averageAttempts,
-                  },
-                });
-              }
-            }
-          } catch (err) {
-            console.error(`Error fetching data for competition ${comp.id}:`, err);
-            // Continue with other competitions even if one fails
-          }
-        }
+            if (scores.length === 0) return null;
+
+            // Calculate summary statistics
+            const totalProblems = scores.length;
+            const problemsWithTop = scores.filter((s) => s.score.attempts_to_top > 0).length;
+            const problemsWithBonus = scores.filter((s) => s.score.attempts_to_bonus > 0).length;
+            const totalAttempts = scores.reduce((sum, s) => sum + s.score.attempts_total, 0);
+            const attemptedProblems = scores.filter((s) => s.score.attempts_total > 0).length;
+            const averageAttempts =
+              attemptedProblems > 0 ? (totalAttempts / attemptedProblems).toFixed(1) : "0";
+
+            return {
+              competition: comp,
+              level: registration.level,
+              scores,
+              summary: {
+                totalProblems,
+                problemsWithTop,
+                problemsWithBonus,
+                totalAttempts,
+                averageAttempts,
+              },
+            };
+          })
+        );
+
+        const userCompetitionsData: CompetitionWithScores[] = competitionResults
+          .filter((result) => result.status === "fulfilled" && result.value !== null)
+          .map((result) => (result as PromiseFulfilledResult<CompetitionWithScores>).value);
 
         if (!active) return;
 

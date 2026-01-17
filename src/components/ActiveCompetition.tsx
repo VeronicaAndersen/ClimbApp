@@ -22,14 +22,13 @@ export function ActiveCompetition() {
     setMessageInfo(null);
 
     try {
-      // Fetch user info to get user scope
-      const userInfo = await getMyInfo();
+      // Fetch user info and competitions in parallel
+      const [userInfo, competitions] = await Promise.all([getMyInfo(), getCompetitions()]);
+
       if (userInfo) {
         setUserScope(userInfo.user_scope);
         setCurrentUserName(userInfo.name);
       }
-
-      const competitions = await getCompetitions();
 
       if (!Array.isArray(competitions) || competitions.length === 0) {
         setActiveCompetition(null);
@@ -37,39 +36,47 @@ export function ActiveCompetition() {
         return;
       }
 
+      // Check all registrations in parallel
+      const registrationChecks = await Promise.allSettled(
+        competitions.map(async (comp) => {
+          const isRegistered = await checkRegistration(comp.id);
+          if (!isRegistered) return null;
+
+          const regInfo = await getCompRegistrationInfo(comp.id);
+          return regInfo ? { competition: comp, registrationInfo: regInfo } : null;
+        })
+      );
+
       let best: {
         competition: CompetitionResponse;
         registrationInfo: RegisterToCompResponse;
       } | null = null;
+      let hasPendingRegistration = false;
 
-      for (const comp of competitions) {
-        try {
-          const isRegistered = await checkRegistration(comp.id);
-          if (isRegistered) {
-            const regInfo = await getCompRegistrationInfo(comp.id);
-            if (regInfo) {
-              // Only include competitions where registration is approved
-              if (regInfo.approved) {
-                if (
-                  !best ||
-                  new Date(comp.comp_date).getTime() >
-                    new Date(best.competition.comp_date).getTime()
-                ) {
-                  best = { competition: comp, registrationInfo: regInfo };
-                }
-              } else if (!best) {
-                // Show pending message if no approved competitions found
-                setMessageInfo({
-                  message:
-                    "Din registrering väntar på godkännande. Du får tillgång till tävlingen när en admin har godkänt din registrering och betalning.",
-                  color: "amber",
-                });
-              }
+      for (const result of registrationChecks) {
+        if (result.status === "fulfilled" && result.value) {
+          const { competition, registrationInfo } = result.value;
+
+          if (registrationInfo.approved) {
+            if (
+              !best ||
+              new Date(competition.comp_date).getTime() >
+                new Date(best.competition.comp_date).getTime()
+            ) {
+              best = { competition, registrationInfo };
             }
+          } else {
+            hasPendingRegistration = true;
           }
-        } catch (e) {
-          console.error("Registration error on comp:", comp.id, e);
         }
+      }
+
+      if (!best && hasPendingRegistration) {
+        setMessageInfo({
+          message:
+            "Din registrering väntar på godkännande. Du får tillgång till tävlingen när en admin har godkänt din registrering och betalning.",
+          color: "amber",
+        });
       }
 
       setActiveCompetition(best ? best.competition : null);

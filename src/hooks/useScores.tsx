@@ -38,7 +38,7 @@ export function useScores(competitionId: number) {
         });
 
         setProblems(scores);
-        setInitialProblems(JSON.parse(JSON.stringify(scores)));
+        setInitialProblems(structuredClone(scores));
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Något gick fel vid inläsning.";
         setError(msg);

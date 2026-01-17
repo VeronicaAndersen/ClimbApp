@@ -23,20 +23,31 @@ export function AssignToCompetitionsList() {
   const isRegistered = (id: number) => registrationStatus[id] === true;
   const isChecking = (id: number) => checkingRegistration[id] === true;
 
-  // Fetch registration details for registered competitions
+  // Fetch registration details for registered competitions in parallel
   useEffect(() => {
     const fetchRegistrationDetails = async () => {
-      for (const comp of competitionList) {
-        if (isRegistered(comp.id) && !registrationDetails[comp.id]) {
-          try {
-            const regInfo = await getCompRegistrationInfo(comp.id);
-            if (regInfo) {
-              setRegistrationDetails((prev) => ({ ...prev, [comp.id]: regInfo }));
-            }
-          } catch {
-            console.error("Failed to fetch registration details for comp:", comp.id);
-          }
+      const registeredComps = competitionList.filter(
+        (comp) => isRegistered(comp.id) && !registrationDetails[comp.id]
+      );
+
+      if (registeredComps.length === 0) return;
+
+      const results = await Promise.allSettled(
+        registeredComps.map(async (comp) => {
+          const regInfo = await getCompRegistrationInfo(comp.id);
+          return { id: comp.id, regInfo };
+        })
+      );
+
+      const newDetails: Record<number, RegisterToCompResponse> = {};
+      for (const result of results) {
+        if (result.status === "fulfilled" && result.value.regInfo) {
+          newDetails[result.value.id] = result.value.regInfo;
         }
+      }
+
+      if (Object.keys(newDetails).length > 0) {
+        setRegistrationDetails((prev) => ({ ...prev, ...newDetails }));
       }
     };
 

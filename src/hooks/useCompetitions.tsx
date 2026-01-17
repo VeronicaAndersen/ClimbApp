@@ -41,19 +41,26 @@ export function useCompetitions(refreshKey?: number): UseCompetitionsResult {
       if (data.length > 0) {
         setCompetitions(data);
 
+        // Check all registrations in parallel instead of sequentially
+        const registrationChecks = await Promise.allSettled(
+          data.map(async (comp) => {
+            try {
+              const isRegistered = await checkRegistration(comp.id);
+              return { id: comp.id, isRegistered: isRegistered === true };
+            } catch (err) {
+              console.error(`Error checking registration for competition ${comp.id}:`, err);
+              return { id: comp.id, isRegistered: false };
+            }
+          })
+        );
+
         const statusMap: Record<number, boolean> = {};
         const checkingMap: Record<number, boolean> = {};
 
-        for (const comp of data) {
-          checkingMap[comp.id] = true;
-          try {
-            const isRegistered = await checkRegistration(comp.id);
-            statusMap[comp.id] = isRegistered === true;
-          } catch (err) {
-            console.error(`Error checking registration for competition ${comp.id}:`, err);
-            statusMap[comp.id] = false;
-          } finally {
-            checkingMap[comp.id] = false;
+        for (const result of registrationChecks) {
+          if (result.status === "fulfilled") {
+            statusMap[result.value.id] = result.value.isRegistered;
+            checkingMap[result.value.id] = false;
           }
         }
 
