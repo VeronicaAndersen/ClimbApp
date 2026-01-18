@@ -6,7 +6,7 @@ import {
   getCompRegistrationInfo,
   getMyInfo,
 } from "@/services/api";
-import { CompetitionResponse, MessageProps, RegisterToCompResponse } from "@/types";
+import { CompetitionResponse, MessageProps } from "@/types";
 import CalloutMessage from "./user_feedback/CalloutMessage";
 import CompetitionScores from "./CompetitionScores";
 
@@ -43,43 +43,57 @@ export function ActiveCompetition() {
           if (!isRegistered) return null;
 
           const regInfo = await getCompRegistrationInfo(comp.id);
-          return regInfo ? { competition: comp, registrationInfo: regInfo } : null;
+          return regInfo?.approved ? { competition: comp, registrationInfo: regInfo } : null;
         })
       );
 
-      let best: {
-        competition: CompetitionResponse;
-        registrationInfo: RegisterToCompResponse;
-      } | null = null;
-      let hasPendingRegistration = false;
+      // Filter approved competitions and find the nearest future competition
+      // Keep only approved competitions
+      const approvedCompetitions = registrationChecks
+        .filter((result) => result.status === "fulfilled" && result.value)
+        .map(
+          (result) =>
+            (
+              result as PromiseFulfilledResult<{
+                competition: CompetitionResponse;
+                registrationInfo: { approved: boolean };
+              }>
+            ).value.competition
+        );
 
-      for (const result of registrationChecks) {
-        if (result.status === "fulfilled" && result.value) {
-          const { competition, registrationInfo } = result.value;
+      // Normalize today
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-          if (registrationInfo.approved) {
-            if (
-              !best ||
-              new Date(competition.comp_date).getTime() >
-                new Date(best.competition.comp_date).getTime()
-            ) {
-              best = { competition, registrationInfo };
-            }
-          } else {
-            hasPendingRegistration = true;
-          }
-        }
-      }
+      // Split into today and future
+      const todayComps = approvedCompetitions.filter((comp) => {
+        const d = new Date(comp.comp_date);
+        d.setHours(0, 0, 0, 0);
+        return d.getTime() === today.getTime();
+      });
 
-      if (!best && hasPendingRegistration) {
+      const futureComps = approvedCompetitions.filter((comp) => {
+        const d = new Date(comp.comp_date);
+        d.setHours(0, 0, 0, 0);
+        return d.getTime() > today.getTime();
+      });
+
+      // Sort by date ascending
+      todayComps.sort((a, b) => new Date(a.comp_date).getTime() - new Date(b.comp_date).getTime());
+      futureComps.sort((a, b) => new Date(a.comp_date).getTime() - new Date(b.comp_date).getTime());
+
+      // Pick competition: today first, otherwise nearest future
+      const selectedCompetition = todayComps[0] ?? futureComps[0] ?? null;
+
+      if (!selectedCompetition) {
         setMessageInfo({
           message:
-            "Din registrering väntar på godkännande. Du får tillgång till tävlingen när en admin har godkänt din registrering och betalning.",
+            "Du har inga godkända tävlingar i framtiden. Kontakta receptionen för mer information.",
           color: "amber",
         });
       }
 
-      setActiveCompetition(best ? best.competition : null);
+      setActiveCompetition(selectedCompetition);
     } catch (error) {
       console.error("Error fetching active competition:", error);
       setMessageInfo({
