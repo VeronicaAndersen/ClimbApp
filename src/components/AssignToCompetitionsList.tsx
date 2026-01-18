@@ -112,9 +112,7 @@ export function AssignToCompetitionsList() {
           const today = new Date();
           today.setHours(0, 0, 0, 0);
 
-          const upcomingComps = competitionList.filter(
-            (comp) => new Date(comp.comp_date) >= today
-          );
+          const upcomingComps = competitionList.filter((comp) => new Date(comp.comp_date) >= today);
           const pastComps = competitionList.filter((comp) => new Date(comp.comp_date) < today);
 
           const sortedUpcoming = [...upcomingComps].sort(
