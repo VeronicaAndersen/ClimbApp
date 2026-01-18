@@ -9,7 +9,10 @@ interface CompetitionRegistrationsProps {
   refreshKey?: number;
 }
 
-export function CompetitionRegistrations({ competition, refreshKey }: CompetitionRegistrationsProps) {
+export function CompetitionRegistrations({
+  competition,
+  refreshKey,
+}: CompetitionRegistrationsProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (

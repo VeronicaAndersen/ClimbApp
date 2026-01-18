@@ -1,5 +1,5 @@
 import { useState } from "react";
-import CalloutMessage from "./user_feedback/CalloutMessage";
+import CalloutMessage from "../user_feedback/CalloutMessage";
 import { Spinner, Button } from "@radix-ui/themes";
 import { useClimbers } from "@/hooks/useClimbers";
 import { updateClimberById, deleteClimberById } from "@/services/api";

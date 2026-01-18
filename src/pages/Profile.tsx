@@ -1,9 +1,9 @@
 import { useAuthStore } from "@/store/auth";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { SeasonForm } from "@/components/forms/SeasonForm";
-import { SeasonList } from "@/components/SeasonList";
-import { CompetitionForm } from "@/components/forms/CompetitionForm";
+import { SeasonForm } from "@/components/forms/admins/SeasonForm";
+import { CompetitionList } from "@/components/admins/CompetitionList";
+import { CompetitionForm } from "@/components/forms/admins/CompetitionForm";
 import { ActiveCompetition } from "@/components/ActiveCompetition";
 import { Button } from "@radix-ui/themes/components/index";
 import * as Menubar from "@radix-ui/react-menubar";
@@ -11,10 +11,10 @@ import useGetUserInfo from "@/hooks/useGetUserInfo";
 import CalloutMessage from "@/components/user_feedback/CalloutMessage";
 import ProfilInfo from "@/components/ProfilInfo";
 import { AssignToCompetitionsList } from "@/components/AssignToCompetitionsList";
-import { CompetitionList } from "@/components/CompetitionList";
-import { ClimberList } from "@/components/ClimberList";
-import { CompetitionRegistrations } from "@/components/CompetitionRegistrations";
+import { ClimberList } from "@/components/admins/ClimberList";
+import { CompetitionRegistrations } from "@/components/admins/CompetitionRegistrations";
 import { useCompetitions } from "@/hooks/useCompetitions";
+import { SeasonList } from "@/components/admins/SeasonList";
 
 type NavigationView = "competition" | "active_competition" | "profile" | "users" | "admin";
 
@@ -159,9 +159,7 @@ export default function Profile() {
                   const upcomingComps = competitions.filter(
                     (comp) => new Date(comp.comp_date) >= today
                   );
-                  const pastComps = competitions.filter(
-                    (comp) => new Date(comp.comp_date) < today
-                  );
+                  const pastComps = competitions.filter((comp) => new Date(comp.comp_date) < today);
 
                   const sortedUpcoming = [...upcomingComps].sort(
                     (a, b) => new Date(a.comp_date).getTime() - new Date(b.comp_date).getTime()

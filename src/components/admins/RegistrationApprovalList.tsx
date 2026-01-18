@@ -3,14 +3,17 @@ import { RegistrationWithClimber } from "@/types";
 import { getAllRegistrations, updateRegistrationApproval } from "@/services/api";
 import { Spinner, Button } from "@radix-ui/themes";
 import { Check, X } from "lucide-react";
-import CalloutMessage from "./user_feedback/CalloutMessage";
+import CalloutMessage from "../user_feedback/CalloutMessage";
 
 interface RegistrationApprovalListProps {
   competitionId: number;
   refreshKey?: number;
 }
 
-export function RegistrationApprovalList({ competitionId, refreshKey }: RegistrationApprovalListProps) {
+export function RegistrationApprovalList({
+  competitionId,
+  refreshKey,
+}: RegistrationApprovalListProps) {
   const [registrations, setRegistrations] = useState<RegistrationWithClimber[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);

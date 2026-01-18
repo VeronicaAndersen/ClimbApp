@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import CalloutMessage from "./user_feedback/CalloutMessage";
+import CalloutMessage from "../user_feedback/CalloutMessage";
 import { Spinner, Button } from "@radix-ui/themes";
 import { useCompetitions } from "@/hooks/useCompetitions";
 import { updateCompetitionById, deleteCompetitionById } from "@/services/api";
