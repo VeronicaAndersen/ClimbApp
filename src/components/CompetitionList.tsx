@@ -19,7 +19,7 @@ export function CompetitionList({ refreshKey }: CompetitionListProps = {}) {
     comp_type: "",
     comp_date: "",
     season_id: 0,
-    round_no: 0,
+    round_no: null,
   };
 
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -65,7 +65,7 @@ export function CompetitionList({ refreshKey }: CompetitionListProps = {}) {
         comp_type: editValues.comp_type.trim(),
         comp_date: editValues.comp_date.trim(),
         season_id: editValues.season_id,
-        round_no: editValues.round_no,
+        round_no: editValues.comp_type.trim() === "FINAL" ? null : editValues.round_no,
       };
 
       await updateCompetitionById(competitionId, payload);
@@ -133,17 +133,53 @@ export function CompetitionList({ refreshKey }: CompetitionListProps = {}) {
                     {fields.map((field) => (
                       <td key={field} className="p-2">
                         {isEditing ? (
-                          <input
-                            type="text"
-                            value={editValues[field]}
-                            onChange={(e) =>
-                              setEditValues({ ...editValues, [field]: e.target.value })
-                            }
-                            className="w-full px-2 py-1 border border-gray-300 rounded"
-                            disabled={isSavingRow}
-                          />
+                          field === "comp_type" ? (
+                            <select
+                              value={editValues[field]}
+                              onChange={(e) =>
+                                setEditValues({ ...editValues, [field]: e.target.value })
+                              }
+                              className="w-full px-2 py-1 border border-gray-300 rounded"
+                              disabled={isSavingRow}
+                            >
+                              <option value="">Välj typ</option>
+                              <option value="QUALIFIER">Qualifier</option>
+                              <option value="FINAL">Final</option>
+                            </select>
+                          ) : field === "round_no" ? (
+                            editValues.comp_type === "FINAL" ? (
+                              <span className="text-gray-500 italic">-</span>
+                            ) : (
+                              <input
+                                type="number"
+                                min="1"
+                                max="3"
+                                value={editValues[field] || ""}
+                                onChange={(e) =>
+                                  setEditValues({
+                                    ...editValues,
+                                    [field]: parseInt(e.target.value) || 0,
+                                  })
+                                }
+                                className="w-full px-2 py-1 border border-gray-300 rounded"
+                                disabled={isSavingRow}
+                              />
+                            )
+                          ) : (
+                            <input
+                              type="text"
+                              value={editValues[field]}
+                              onChange={(e) =>
+                                setEditValues({ ...editValues, [field]: e.target.value })
+                              }
+                              className="w-full px-2 py-1 border border-gray-300 rounded"
+                              disabled={isSavingRow}
+                            />
+                          )
                         ) : (
-                          <span className="text-gray-800">{competition[field]}</span>
+                          <span className="text-gray-800">
+                            {field === "round_no" && !competition[field] ? "-" : competition[field]}
+                          </span>
                         )}
                       </td>
                     ))}

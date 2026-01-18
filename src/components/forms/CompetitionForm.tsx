@@ -10,7 +10,7 @@ const initialCompetitionData: CompetitionRequest = {
   comp_type: "",
   comp_date: "",
   season_id: 0,
-  round_no: 0,
+  round_no: null,
 };
 
 interface CompetitionFormProps {
@@ -34,7 +34,14 @@ export function CompetitionForm({ onCompetitionCreated }: CompetitionFormProps =
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const success = await createCompetition(competitionData);
+
+    // Ensure round_no is null for FINAL, and has a value for QUALIFIER
+    const payload = {
+      ...competitionData,
+      round_no: competitionData.comp_type === "FINAL" ? null : competitionData.round_no,
+    };
+
+    const success = await createCompetition(payload);
     if (success) {
       resetForm();
       resetMutation();
@@ -80,15 +87,17 @@ export function CompetitionForm({ onCompetitionCreated }: CompetitionFormProps =
         <label htmlFor="competition_type" className="block mb-1">
           Typ
         </label>
-        <input
+        <select
           id="competition_type"
-          type="text"
-          placeholder="Typ"
           value={competitionData.comp_type}
           onChange={handleChange("comp_type")}
           className="w-full p-2 rounded-lg border text-base"
           disabled={loading}
-        />
+        >
+          <option value="">Välj typ</option>
+          <option value="QUALIFIER">Qualifier</option>
+          <option value="FINAL">Final</option>
+        </select>
 
         <label htmlFor="competition_date" className="block mb-1">
           Datum
@@ -116,18 +125,25 @@ export function CompetitionForm({ onCompetitionCreated }: CompetitionFormProps =
           disabled={loading}
         />
 
-        <label htmlFor="round_no" className="block mb-1">
-          Omgångsnummer
-        </label>
-        <input
-          id="round_no"
-          type="number"
-          placeholder="Omgångsnummer"
-          value={competitionData.round_no}
-          onChange={handleChange("round_no")}
-          className="w-full p-2 rounded-lg border text-base"
-          disabled={loading}
-        />
+        {competitionData.comp_type === "QUALIFIER" && (
+          <>
+            <label htmlFor="round_no" className="block mb-1">
+              Omgångsnummer (1-3)
+            </label>
+            <input
+              id="round_no"
+              type="number"
+              placeholder="Omgångsnummer"
+              min="1"
+              max="3"
+              value={competitionData.round_no || ""}
+              onChange={handleChange("round_no")}
+              className="w-full p-2 rounded-lg border text-base"
+              disabled={loading}
+              required
+            />
+          </>
+        )}
 
         <Button
           className="mt-4 w-full cursor-pointer rounded-full bg-[--secondary-color] hover:bg-[--secondary-color-hover] disabled:bg-[--secondary-color]/50 disabled:cursor-not-allowed flex items-center justify-center"

@@ -152,13 +152,57 @@ export default function Profile() {
             <div className="grid grid-cols-1 gap-2">
               <h3 className="text-xl font-semibold mb-2 text-gray-800">Godkänn anmälda</h3>
               {competitions && competitions.length > 0 ? (
-                competitions.map((comp) => (
-                  <CompetitionRegistrations
-                    key={comp.id}
-                    competition={comp}
-                    refreshKey={competitionRefreshKey}
-                  />
-                ))
+                (() => {
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+
+                  const upcomingComps = competitions.filter(
+                    (comp) => new Date(comp.comp_date) >= today
+                  );
+                  const pastComps = competitions.filter(
+                    (comp) => new Date(comp.comp_date) < today
+                  );
+
+                  const sortedUpcoming = [...upcomingComps].sort(
+                    (a, b) => new Date(a.comp_date).getTime() - new Date(b.comp_date).getTime()
+                  );
+                  const sortedPast = [...pastComps].sort(
+                    (a, b) => new Date(b.comp_date).getTime() - new Date(a.comp_date).getTime()
+                  );
+
+                  return (
+                    <>
+                      {sortedUpcoming.length > 0 ? (
+                        sortedUpcoming.map((comp) => (
+                          <CompetitionRegistrations
+                            key={comp.id}
+                            competition={comp}
+                            refreshKey={competitionRefreshKey}
+                          />
+                        ))
+                      ) : (
+                        <p className="text-gray-600 mb-4">Inga kommande tävlingar.</p>
+                      )}
+
+                      {sortedPast.length > 0 && (
+                        <details className="mt-4">
+                          <summary className="cursor-pointer text-lg font-semibold text-gray-700 hover:text-gray-900 p-2 bg-gray-100 rounded">
+                            Visa tidigare tävlingar ({sortedPast.length})
+                          </summary>
+                          <div className="mt-2">
+                            {sortedPast.map((comp) => (
+                              <CompetitionRegistrations
+                                key={comp.id}
+                                competition={comp}
+                                refreshKey={competitionRefreshKey}
+                              />
+                            ))}
+                          </div>
+                        </details>
+                      )}
+                    </>
+                  );
+                })()
               ) : (
                 <p className="text-gray-600 mb-4">Inga tävlingar tillgängliga.</p>
               )}

@@ -59,7 +59,7 @@ export type CompetitionRequest = {
   comp_type: string;
   comp_date: string;
   season_id: number;
-  round_no: number;
+  round_no: number | null;
 };
 
 export type CompetitionResponse = {
@@ -69,7 +69,7 @@ export type CompetitionResponse = {
   comp_type: string;
   comp_date: string;
   season_id: number;
-  round_no: number;
+  round_no: number | null;
 };
 
 // Season
