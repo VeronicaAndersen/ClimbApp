@@ -108,7 +108,41 @@ export function AssignToCompetitionsList() {
           <span className="ml-2">Hämtar tävlingar...</span>
         </div>
       ) : competitionList.length > 0 ? (
-        <ul className="space-y-4">{competitionList.map(renderCompetition)}</ul>
+        (() => {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+
+          const upcomingComps = competitionList.filter(
+            (comp) => new Date(comp.comp_date) >= today
+          );
+          const pastComps = competitionList.filter((comp) => new Date(comp.comp_date) < today);
+
+          const sortedUpcoming = [...upcomingComps].sort(
+            (a, b) => new Date(a.comp_date).getTime() - new Date(b.comp_date).getTime()
+          );
+          const sortedPast = [...pastComps].sort(
+            (a, b) => new Date(b.comp_date).getTime() - new Date(a.comp_date).getTime()
+          );
+
+          return (
+            <>
+              {sortedUpcoming.length > 0 ? (
+                <ul className="space-y-4">{sortedUpcoming.map(renderCompetition)}</ul>
+              ) : (
+                <p className="text-gray-600 mb-4">Inga kommande tävlingar.</p>
+              )}
+
+              {sortedPast.length > 0 && (
+                <details className="mt-4">
+                  <summary className="cursor-pointer text-lg font-semibold text-gray-700 hover:text-gray-900 p-2 bg-gray-100 rounded">
+                    Visa tidigare tävlingar ({sortedPast.length})
+                  </summary>
+                  <ul className="space-y-4 mt-2">{sortedPast.map(renderCompetition)}</ul>
+                </details>
+              )}
+            </>
+          );
+        })()
       ) : (
         <p>Inga tävlingar tillgängliga.</p>
       )}
