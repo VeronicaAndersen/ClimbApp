@@ -6,9 +6,10 @@ import { RegistrationApprovalList } from "./RegistrationApprovalList";
 
 interface CompetitionRegistrationsProps {
   competition: CompetitionResponse;
+  refreshKey?: number;
 }
 
-export function CompetitionRegistrations({ competition }: CompetitionRegistrationsProps) {
+export function CompetitionRegistrations({ competition, refreshKey }: CompetitionRegistrationsProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -41,7 +42,7 @@ export function CompetitionRegistrations({ competition }: CompetitionRegistratio
 
       {isOpen && (
         <div className="mt-4">
-          <RegistrationApprovalList competitionId={competition.id} />
+          <RegistrationApprovalList competitionId={competition.id} refreshKey={refreshKey} />
         </div>
       )}
     </div>

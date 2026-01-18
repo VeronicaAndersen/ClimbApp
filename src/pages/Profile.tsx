@@ -153,7 +153,11 @@ export default function Profile() {
               <h3 className="text-xl font-semibold mb-2 text-gray-800">Godkänn anmälda</h3>
               {competitions && competitions.length > 0 ? (
                 competitions.map((comp) => (
-                  <CompetitionRegistrations key={comp.id} competition={comp} />
+                  <CompetitionRegistrations
+                    key={comp.id}
+                    competition={comp}
+                    refreshKey={competitionRefreshKey}
+                  />
                 ))
               ) : (
                 <p className="text-gray-600 mb-4">Inga tävlingar tillgängliga.</p>

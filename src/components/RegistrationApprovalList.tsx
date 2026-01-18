@@ -7,9 +7,10 @@ import CalloutMessage from "./user_feedback/CalloutMessage";
 
 interface RegistrationApprovalListProps {
   competitionId: number;
+  refreshKey?: number;
 }
 
-export function RegistrationApprovalList({ competitionId }: RegistrationApprovalListProps) {
+export function RegistrationApprovalList({ competitionId, refreshKey }: RegistrationApprovalListProps) {
   const [registrations, setRegistrations] = useState<RegistrationWithClimber[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +32,7 @@ export function RegistrationApprovalList({ competitionId }: RegistrationApproval
 
   useEffect(() => {
     fetchRegistrations();
-  }, [fetchRegistrations]);
+  }, [fetchRegistrations, refreshKey]);
 
   const handleApprovalChange = async (userId: number, approved: boolean) => {
     setUpdatingId(userId);
@@ -57,6 +58,19 @@ export function RegistrationApprovalList({ competitionId }: RegistrationApproval
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const getLevelColor = (level: number): string => {
+    const levelColors: Record<number, string> = {
+      1: "#C084FC",
+      2: "#F9A8D4",
+      3: "#FDBA74",
+      4: "#FACC15",
+      5: "#4ADE80",
+      6: "#FFFFFF",
+      7: "#000000",
+    };
+    return levelColors[level] ?? "#D1D5DB";
   };
 
   return (
@@ -93,7 +107,13 @@ export function RegistrationApprovalList({ competitionId }: RegistrationApproval
                     className="border-b border-gray-200 hover:bg-gray-50"
                   >
                     <td className="p-2 text-gray-800">{reg.climber_name}</td>
-                    <td className="p-2 text-gray-800">{reg.level}</td>
+                    <td className="p-2">
+                      <span
+                        className="inline-block w-6 h-6 rounded-full border-2 border-gray-300"
+                        style={{ backgroundColor: getLevelColor(reg.level) }}
+                        title={`Nivå ${reg.level}`}
+                      />
+                    </td>
                     <td className="p-2 text-gray-600 text-sm">{formatDate(reg.created_at)}</td>
                     <td className="p-2 text-center">
                       {reg.approved ? (
