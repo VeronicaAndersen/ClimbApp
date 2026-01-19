@@ -8,10 +8,7 @@ interface CompetitionListSectionProps {
   refreshKey: number;
 }
 
-export function CompetitionListSection({
-  competitions,
-  refreshKey,
-}: CompetitionListSectionProps) {
+export function CompetitionListSection({ competitions, refreshKey }: CompetitionListSectionProps) {
   const { upcoming, past } = useMemo(() => sortCompetitions(competitions), [competitions]);
 
   if (!competitions || competitions.length === 0) {
