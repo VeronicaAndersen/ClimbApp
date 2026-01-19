@@ -37,8 +37,14 @@ export function useScores(competitionId: number) {
           level: registration.level,
         });
 
+        // Deep copy scores for initial state tracking
+        const initialScoresCopy = scores.map((problem) => ({
+          ...problem,
+          score: { ...problem.score },
+        }));
+
         setProblems(scores);
-        setInitialProblems(structuredClone(scores));
+        setInitialProblems(initialScoresCopy);
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Något gick fel vid inläsning.";
         setError(msg);

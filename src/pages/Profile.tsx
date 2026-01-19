@@ -1,20 +1,24 @@
 import { useAuthStore } from "@/store/auth";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
-import { SeasonForm } from "@/components/forms/admins/SeasonForm";
-import { CompetitionList } from "@/components/admins/CompetitionList";
-import { CompetitionForm } from "@/components/forms/admins/CompetitionForm";
-import { ActiveCompetition } from "@/components/ActiveCompetition";
-import { Button } from "@radix-ui/themes/components/index";
+import { Button, Spinner } from "@radix-ui/themes/components/index";
 import * as Menubar from "@radix-ui/react-menubar";
 import useGetUserInfo from "@/hooks/useGetUserInfo";
 import CalloutMessage from "@/components/user_feedback/CalloutMessage";
 import ProfilInfo from "@/components/ProfilInfo";
 import { AssignToCompetitionsList } from "@/components/AssignToCompetitionsList";
-import { ClimberList } from "@/components/admins/ClimberList";
 import { useCompetitions } from "@/hooks/useCompetitions";
+import { SeasonForm } from "@/components/forms/admins/SeasonForm";
+import { CompetitionList } from "@/components/admins/CompetitionList";
+import { CompetitionForm } from "@/components/forms/admins/CompetitionForm";
+import { ClimberList } from "@/components/admins/ClimberList";
 import { SeasonList } from "@/components/admins/SeasonList";
 import { CompetitionListSection } from "@/components/CompetitionListSection";
+
+// Lazy load ActiveCompetition component (the heaviest)
+const ActiveCompetition = lazy(() =>
+  import("@/components/ActiveCompetition").then((module) => ({ default: module.ActiveCompetition }))
+);
 
 type NavigationView = "competition" | "active_competition" | "profile" | "users" | "admin";
 
@@ -25,6 +29,13 @@ const MENU_ITEMS = [
   { value: "users" as const, label: "Klättrare", requiresAdmin: true },
   { value: "admin" as const, label: "Admin", requiresAdmin: true },
 ];
+
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center py-8">
+    <Spinner size="3" />
+    <span className="ml-2">Laddar...</span>
+  </div>
+);
 
 export default function Profile() {
   const { setClimber, setToken } = useAuthStore();
@@ -96,7 +107,11 @@ export default function Profile() {
         <div className="w-full">
           {activeView === "competition" && <AssignToCompetitionsList />}
 
-          {activeView === "active_competition" && <ActiveCompetition />}
+          {activeView === "active_competition" && (
+            <Suspense fallback={<LoadingFallback />}>
+              <ActiveCompetition />
+            </Suspense>
+          )}
 
           {activeView === "profile" && <ProfilInfo />}
 

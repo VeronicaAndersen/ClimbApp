@@ -6,7 +6,17 @@ import Login from "./pages/Login";
 import Profile from "./pages/Profile";
 import Registration from "./pages/Registration";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes - data is considered fresh
+      gcTime: 10 * 60 * 1000, // 10 minutes - cache garbage collection time
+      retry: 1, // Retry failed requests once
+      refetchOnWindowFocus: false, // Don't refetch when window regains focus
+      refetchOnReconnect: true, // Refetch when reconnecting to network
+    },
+  },
+});
 
 const App = () => (
   <>

@@ -1,6 +1,42 @@
 const apiUrl = import.meta.env.VITE_REACT_APP_API_URL;
 
 // ----------------------------------------------------------
+// Cache Layer
+// ----------------------------------------------------------
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+}
+
+const cache = new Map<string, CacheEntry<unknown>>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+function getCacheKey(url: string, options: ApiOptions): string {
+  return `${options.method || "GET"}:${url}`;
+}
+
+function getCachedData<T>(key: string): T | null {
+  const entry = cache.get(key);
+  if (!entry) return null;
+
+  const isExpired = Date.now() - entry.timestamp > CACHE_TTL;
+  if (isExpired) {
+    cache.delete(key);
+    return null;
+  }
+
+  return entry.data as T;
+}
+
+function setCachedData<T>(key: string, data: T): void {
+  cache.set(key, { data, timestamp: Date.now() });
+}
+
+export function clearCache(): void {
+  cache.clear();
+}
+
+// ----------------------------------------------------------
 // Token helpers
 // ----------------------------------------------------------
 function saveTokens(tokens: { access_token: string; refresh_token: string }) {
@@ -45,8 +81,9 @@ async function refreshToken() {
 // ----------------------------------------------------------
 interface ApiOptions {
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
-  headers?: Record<string, number>;
+  headers?: Record<string, string>;
   body?: string;
+  skipCache?: boolean;
 }
 
 async function apiRequest<T>(
@@ -54,6 +91,17 @@ async function apiRequest<T>(
   options: ApiOptions = {},
   requiresAuth = false
 ): Promise<T> {
+  const cacheKey = getCacheKey(url, options);
+  const method = options.method || "GET";
+
+  // Check cache for GET requests
+  if (method === "GET" && !options.skipCache) {
+    const cachedData = getCachedData<T>(cacheKey);
+    if (cachedData !== null) {
+      return cachedData;
+    }
+  }
+
   const fetchWithToken = async (token?: string) => {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
@@ -87,15 +135,33 @@ async function apiRequest<T>(
   const raw = await response.text();
   if (!raw) return null as T;
 
-  return JSON.parse(raw) as T;
+  const data = JSON.parse(raw) as T;
+
+  // Cache GET requests
+  if (method === "GET" && !options.skipCache) {
+    setCachedData(cacheKey, data);
+  }
+
+  // Invalidate cache for mutations
+  if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+    // Clear all cached GET requests for this base path
+    const basePath = url.split("?")[0];
+    for (const key of cache.keys()) {
+      if (key.includes(basePath)) {
+        cache.delete(key);
+      }
+    }
+  }
+
+  return data;
 }
 
 // ----------------------------------------------------------
 // Safe helper methods
 // ----------------------------------------------------------
 export const api = {
-  get: <T>(path: string, auth = false) =>
-    apiRequest<T>(`${apiUrl}${path}`, { method: "GET" }, auth),
+  get: <T>(path: string, auth = false, skipCache = false) =>
+    apiRequest<T>(`${apiUrl}${path}`, { method: "GET", skipCache }, auth),
 
   post: <T, B extends object>(path: string, body: B, auth = false) =>
     apiRequest<T>(`${apiUrl}${path}`, { method: "POST", body: JSON.stringify(body) }, auth),
