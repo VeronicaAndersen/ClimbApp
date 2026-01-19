@@ -1,6 +1,6 @@
-import { useState } from "react";
 import { createCompetition } from "@/services/api";
 import { CompetitionRequest } from "@/types";
+import { useMutation } from "./useMutation";
 
 interface UseCreateCompetitionResult {
   loading: boolean;
@@ -11,44 +11,16 @@ interface UseCreateCompetitionResult {
 }
 
 export function useCreateCompetition(): UseCreateCompetitionResult {
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<boolean>(false);
-
-  const handleCreate = async (data: CompetitionRequest): Promise<boolean> => {
-    setLoading(true);
-    setError(null);
-    setSuccess(false);
-
-    try {
-      const result = await createCompetition(data);
-      if (!result) {
-        setError("Ett fel uppstod vid skapandet av tävlingen.");
-        return false;
-      }
-      setSuccess(true);
-      return true;
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Ett fel uppstod vid skapandet av tävlingen.";
-      setError(message);
-      console.error("Error creating competition:", err);
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const reset = () => {
-    setError(null);
-    setSuccess(false);
-  };
+  const { mutate, isLoading, error, success, reset } = useMutation({
+    mutationFn: createCompetition,
+    errorMessage: "Ett fel uppstod vid skapandet av tävlingen.",
+  });
 
   return {
-    loading,
+    loading: isLoading,
     error,
     success,
-    createCompetition: handleCreate,
+    createCompetition: mutate,
     reset,
   };
 }

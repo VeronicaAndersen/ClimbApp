@@ -5,6 +5,7 @@ import RegisterToCompForm from "./forms/RegisterToCompForm";
 import CalloutMessage from "./user_feedback/CalloutMessage";
 import { getCompRegistrationInfo } from "@/services/api";
 import { useState, useEffect, useMemo } from "react";
+import { sortCompetitions } from "@/utils/competitionSort";
 
 export function AssignToCompetitionsList() {
   const {
@@ -54,21 +55,10 @@ export function AssignToCompetitionsList() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [competitionList, registrationStatus]);
 
-  // Separate and sort competitions
-  const { upcomingCompetitions, pastCompetitions } = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const upcoming = competitionList
-      .filter((comp) => new Date(comp.comp_date) >= today)
-      .sort((a, b) => new Date(a.comp_date).getTime() - new Date(b.comp_date).getTime());
-
-    const past = competitionList
-      .filter((comp) => new Date(comp.comp_date) < today)
-      .sort((a, b) => new Date(b.comp_date).getTime() - new Date(a.comp_date).getTime());
-
-    return { upcomingCompetitions: upcoming, pastCompetitions: past };
-  }, [competitionList]);
+  const { upcoming: upcomingCompetitions, past: pastCompetitions } = useMemo(
+    () => sortCompetitions(competitionList),
+    [competitionList]
+  );
 
   const renderRegistrationStatus = (comp: CompetitionResponse) => {
     const isChecking = checkingRegistration[comp.id];

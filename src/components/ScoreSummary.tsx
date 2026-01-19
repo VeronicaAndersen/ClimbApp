@@ -1,17 +1,7 @@
 import { useMemo } from "react";
 import { ScoreBatchResponse } from "@/types";
 import { Trophy, Star, Medal, Target, LucideIcon } from "lucide-react";
-
-const DEFAULT_GRADE_COLOR = "#D1D5DB";
-const gradeColors: Record<number, string> = {
-  1: "#C084FC",
-  2: "#F9A8D4",
-  3: "#FDBA74",
-  4: "#FACC15",
-  5: "#4ADE80",
-  6: "#FFFFFF",
-  7: "#000000",
-};
+import { getGradeColor } from "@/constants/gradeColors";
 
 interface ScoreSummaryProps {
   problems: ScoreBatchResponse[];
@@ -114,9 +104,7 @@ export default function ScoreSummary({ problems, gradeLevel }: ScoreSummaryProps
   const summary = useMemo(() => calculateSummaryStats(problems), [problems]);
   const statCards = useMemo(() => createStatCards(summary), [summary]);
 
-  const gradeColor = gradeLevel
-    ? (gradeColors[gradeLevel] ?? DEFAULT_GRADE_COLOR)
-    : DEFAULT_GRADE_COLOR;
+  const gradeColor = getGradeColor(gradeLevel);
   const gradeLabel = gradeLevel ? `Gradnivå: ${gradeLevel}` : "Gradnivå: ej tilldelad";
 
   return (

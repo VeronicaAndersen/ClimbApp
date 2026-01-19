@@ -6,6 +6,7 @@ import { Button } from "@radix-ui/themes";
 import { useUpdateScore } from "@/hooks/useUpdateScore";
 import { useUpdateScoreBatch } from "@/hooks/useUpdateScoreBatchResult";
 import { canEditCompetition, isAdmin, isToday } from "@/utils/competitionUtils";
+import { getGradeColor } from "@/constants/gradeColors";
 
 interface ProblemGridProps {
   competitionId: number;
@@ -18,17 +19,6 @@ interface ProblemGridProps {
   setInitialProblems: React.Dispatch<React.SetStateAction<ScoreBatchResponse[]>>;
   gradeLevel: number | null;
 }
-//change gradeLevel to hex color codes for different levels
-const DEFAULT_GRADE_COLOR = "#D1D5DB";
-const gradeColors: Record<number, string> = {
-  1: "#C084FC",
-  2: "#F9A8D4",
-  3: "#FDBA74",
-  4: "#FACC15",
-  5: "#4ADE80",
-  6: "#FFFFFF",
-  7: "#000000",
-};
 
 const SCORE_FIELDS = ["attempts_total", "attempts_to_bonus", "attempts_to_top"] as const;
 const SCORE_FIELD_LABELS: Record<(typeof SCORE_FIELDS)[number], string> = {
@@ -91,12 +81,7 @@ export default function ProblemGrid({
     }
   }, [errorProblemNo]);
 
-  const gradeColor = useMemo(() => {
-    if (!gradeLevel) {
-      return DEFAULT_GRADE_COLOR;
-    }
-    return gradeColors[gradeLevel] ?? DEFAULT_GRADE_COLOR;
-  }, [gradeLevel]);
+  const gradeColor = useMemo(() => getGradeColor(gradeLevel), [gradeLevel]);
 
   const gradeLabel = gradeLevel ? `Gradnivå: ${gradeLevel}` : "Gradnivå: ej tilldelad";
 

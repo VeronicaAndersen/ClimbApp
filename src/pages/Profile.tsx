@@ -1,5 +1,5 @@
 import { useAuthStore } from "@/store/auth";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { SeasonForm } from "@/components/forms/admins/SeasonForm";
 import { CompetitionList } from "@/components/admins/CompetitionList";
@@ -12,11 +12,19 @@ import CalloutMessage from "@/components/user_feedback/CalloutMessage";
 import ProfilInfo from "@/components/ProfilInfo";
 import { AssignToCompetitionsList } from "@/components/AssignToCompetitionsList";
 import { ClimberList } from "@/components/admins/ClimberList";
-import { CompetitionRegistrations } from "@/components/admins/CompetitionRegistrations";
 import { useCompetitions } from "@/hooks/useCompetitions";
 import { SeasonList } from "@/components/admins/SeasonList";
+import { CompetitionListSection } from "@/components/CompetitionListSection";
 
 type NavigationView = "competition" | "active_competition" | "profile" | "users" | "admin";
+
+const MENU_ITEMS = [
+  { value: "competition" as const, label: "Tävlingar", requiresAdmin: false },
+  { value: "active_competition" as const, label: "Aktiv Tävling", requiresAdmin: false },
+  { value: "profile" as const, label: "Profil", requiresAdmin: false },
+  { value: "users" as const, label: "Klättrare", requiresAdmin: true },
+  { value: "admin" as const, label: "Admin", requiresAdmin: true },
+];
 
 export default function Profile() {
   const { setClimber, setToken } = useAuthStore();
@@ -27,6 +35,8 @@ export default function Profile() {
 
   const { userInfo, messageInfo } = useGetUserInfo();
   const { competitions } = useCompetitions();
+
+  const isAdmin = useMemo(() => userInfo?.user_scope === "admin", [userInfo?.user_scope]);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("tokens");
@@ -55,6 +65,13 @@ export default function Profile() {
     navigate("/");
   };
 
+  const getMenuItemClass = (itemValue: NavigationView) =>
+    `px-4 py-2 rounded cursor-pointer select-none outline-none transition-colors ${
+      activeView === itemValue
+        ? "bg-[--secondary-color] text-white"
+        : "text-gray-700 hover:bg-gray-100"
+    }`;
+
   return (
     <div className="h-fit flex flex-col items-center justify-center">
       <img src="./grepp.svg" alt="grepp logo" className="w-28 absolute top-8 left-5" />
@@ -63,74 +80,16 @@ export default function Profile() {
 
         {/* Navigation Menubar */}
         <Menubar.Root className="w-full mb-6 flex justify-center bg-white rounded-md shadow-sm text-sm">
-          <Menubar.Menu value="competition">
-            <Menubar.Trigger
-              onClick={() => setActiveView("competition")}
-              className={`px-4 py-2 rounded cursor-pointer select-none outline-none transition-colors ${
-                activeView === "competition"
-                  ? "bg-[--secondary-color] text-white"
-                  : "text-gray-700 hover:bg-gray-100"
-              }`}
-            >
-              Tävlingar
-            </Menubar.Trigger>
-          </Menubar.Menu>
-
-          <Menubar.Menu value="active_competition">
-            <Menubar.Trigger
-              onClick={() => setActiveView("active_competition")}
-              className={`px-4 py-2 rounded cursor-pointer select-none outline-none transition-colors ${
-                activeView === "active_competition"
-                  ? "bg-[--secondary-color] text-white"
-                  : "text-gray-700 hover:bg-gray-100"
-              }`}
-            >
-              Aktiv Tävling
-            </Menubar.Trigger>
-          </Menubar.Menu>
-
-          <Menubar.Menu value="profile">
-            <Menubar.Trigger
-              onClick={() => setActiveView("profile")}
-              className={`px-4 py-2 rounded cursor-pointer select-none outline-none transition-colors ${
-                activeView === "profile"
-                  ? "bg-[--secondary-color] text-white"
-                  : "text-gray-700 hover:bg-gray-100"
-              }`}
-            >
-              Profil
-            </Menubar.Trigger>
-          </Menubar.Menu>
-
-          {userInfo?.user_scope === "admin" && (
-            <Menubar.Menu value="users">
+          {MENU_ITEMS.filter((item) => !item.requiresAdmin || isAdmin).map((item) => (
+            <Menubar.Menu key={item.value} value={item.value}>
               <Menubar.Trigger
-                onClick={() => setActiveView("users")}
-                className={`px-4 py-2 rounded cursor-pointer select-none outline-none transition-colors ${
-                  activeView === "users"
-                    ? "bg-[--secondary-color] text-white"
-                    : "text-gray-700 hover:bg-gray-100"
-                }`}
+                onClick={() => setActiveView(item.value)}
+                className={getMenuItemClass(item.value)}
               >
-                Klättrare
+                {item.label}
               </Menubar.Trigger>
             </Menubar.Menu>
-          )}
-
-          {userInfo?.user_scope === "admin" && (
-            <Menubar.Menu value="admin">
-              <Menubar.Trigger
-                onClick={() => setActiveView("admin")}
-                className={`px-4 py-2 rounded cursor-pointer select-none outline-none transition-colors ${
-                  activeView === "admin"
-                    ? "bg-[--secondary-color] text-white"
-                    : "text-gray-700 hover:bg-gray-100"
-                }`}
-              >
-                Admin
-              </Menubar.Trigger>
-            </Menubar.Menu>
-          )}
+          ))}
         </Menubar.Root>
 
         {/* Content Area */}
@@ -141,69 +100,20 @@ export default function Profile() {
 
           {activeView === "profile" && <ProfilInfo />}
 
-          {activeView === "users" && userInfo?.user_scope === "admin" && (
+          {activeView === "users" && isAdmin && (
             <div>
               <h3 className="text-xl font-semibold mt-4 mb-2 text-gray-800">Hantera klättrare</h3>
               <ClimberList />
             </div>
           )}
 
-          {activeView === "admin" && userInfo?.user_scope === "admin" && (
+          {activeView === "admin" && isAdmin && (
             <div className="grid grid-cols-1 gap-2">
               <h3 className="text-xl font-semibold mb-2 text-gray-800">Godkänn anmälda</h3>
-              {competitions && competitions.length > 0 ? (
-                (() => {
-                  const today = new Date();
-                  today.setHours(0, 0, 0, 0);
-
-                  const upcomingComps = competitions.filter(
-                    (comp) => new Date(comp.comp_date) >= today
-                  );
-                  const pastComps = competitions.filter((comp) => new Date(comp.comp_date) < today);
-
-                  const sortedUpcoming = [...upcomingComps].sort(
-                    (a, b) => new Date(a.comp_date).getTime() - new Date(b.comp_date).getTime()
-                  );
-                  const sortedPast = [...pastComps].sort(
-                    (a, b) => new Date(b.comp_date).getTime() - new Date(a.comp_date).getTime()
-                  );
-
-                  return (
-                    <>
-                      {sortedUpcoming.length > 0 ? (
-                        sortedUpcoming.map((comp) => (
-                          <CompetitionRegistrations
-                            key={comp.id}
-                            competition={comp}
-                            refreshKey={competitionRefreshKey}
-                          />
-                        ))
-                      ) : (
-                        <p className="text-gray-600 mb-4">Inga kommande tävlingar.</p>
-                      )}
-
-                      {sortedPast.length > 0 && (
-                        <details className="mt-4">
-                          <summary className="cursor-pointer text-lg font-semibold text-gray-700 hover:text-gray-900 p-2 bg-gray-100 rounded">
-                            Visa tidigare tävlingar ({sortedPast.length})
-                          </summary>
-                          <div className="mt-2">
-                            {sortedPast.map((comp) => (
-                              <CompetitionRegistrations
-                                key={comp.id}
-                                competition={comp}
-                                refreshKey={competitionRefreshKey}
-                              />
-                            ))}
-                          </div>
-                        </details>
-                      )}
-                    </>
-                  );
-                })()
-              ) : (
-                <p className="text-gray-600 mb-4">Inga tävlingar tillgängliga.</p>
-              )}
+              <CompetitionListSection
+                competitions={competitions || []}
+                refreshKey={competitionRefreshKey}
+              />
 
               <h3 className="text-xl font-semibold mt-4 mb-2 text-gray-800">
                 Hantera säsonger och tävlingar
