@@ -29,14 +29,19 @@ export function useUpdateScoreBatch(): UseUpdateScoreBatchResult {
 
     try {
       const payload: ScoreBatch = {
-        items: problems.map((p) => ({
-          problem_no: p.problem_no,
-          attempts_total: p.score.attempts_total,
-          got_bonus: p.score.attempts_to_bonus > 0,
-          got_top: p.score.attempts_to_top > 0,
-          attempts_to_bonus: p.score.attempts_to_bonus,
-          attempts_to_top: p.score.attempts_to_top,
-        })),
+        items: problems.map((p) => {
+          const hasTop = p.score.attempts_to_top > 0;
+          const hasBonus = p.score.attempts_to_bonus > 0;
+
+          return {
+            problem_no: p.problem_no,
+            attempts_total: p.score.attempts_total,
+            got_bonus: hasBonus || hasTop, // Auto-set bonus if top is achieved
+            got_top: hasTop,
+            attempts_to_bonus: hasBonus ? p.score.attempts_to_bonus : (hasTop ? p.score.attempts_to_top : 0),
+            attempts_to_top: p.score.attempts_to_top,
+          };
+        }),
       };
 
       const result = await updateScoreBatch({ comp_id: competitionId, level }, payload);
