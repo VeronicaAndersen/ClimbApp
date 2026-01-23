@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { updateScoreBatch } from "@/services/api";
 import { ScoreBatchResponse, ScoreBatch } from "@/types";
+import { getUserFriendlyError } from "@/utils/errorMessages";
 
 type UseUpdateScoreBatchResult = {
   saving: boolean;
@@ -51,11 +52,10 @@ export function useUpdateScoreBatch(): UseUpdateScoreBatchResult {
         return false;
       }
 
-      setSaveMessage("Poäng sparades.");
+      setSaveMessage("Alla poäng sparades.");
       return true;
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Unknown error";
-      setError(message);
+      setError(getUserFriendlyError(err));
       return false;
     } finally {
       setSaving(false);

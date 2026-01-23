@@ -5,6 +5,7 @@ import { loginClimber } from "@/services/api";
 import { Button, Card, TextField, Spinner } from "@radix-ui/themes";
 import { Label } from "@radix-ui/react-context-menu";
 import CalloutMessage from "../user_feedback/CalloutMessage";
+import { getUserFriendlyError } from "@/utils/errorMessages";
 
 export function LoginForm() {
   const navigate = useNavigate();
@@ -24,9 +25,7 @@ export function LoginForm() {
         navigate("/profile");
       }
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Misslyckades att loggan in. Försök igen.";
-      setErrorMessage(message);
+      setErrorMessage(getUserFriendlyError(error));
     } finally {
       setLoading(false);
     }

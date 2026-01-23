@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import * as Label from "@radix-ui/react-label";
 import { Card, Button, TextField, Spinner } from "@radix-ui/themes";
 import CalloutMessage from "../user_feedback/CalloutMessage";
+import { getUserFriendlyError } from "@/utils/errorMessages";
 
 export function RegistrationForm() {
   const navigate = useNavigate();
@@ -29,9 +30,7 @@ export function RegistrationForm() {
         navigate("/profile");
       }
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Misslyckades att registrera. Försök igen.";
-      setErrorMessage(message);
+      setErrorMessage(getUserFriendlyError(error));
     } finally {
       setLoading(false);
     }

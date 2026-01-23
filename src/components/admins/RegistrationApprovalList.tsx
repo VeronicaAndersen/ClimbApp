@@ -4,6 +4,7 @@ import { getAllRegistrations, updateRegistrationApproval } from "@/services/api"
 import { Spinner, Button } from "@radix-ui/themes";
 import { Check, X } from "lucide-react";
 import CalloutMessage from "../user_feedback/CalloutMessage";
+import { getUserFriendlyError } from "@/utils/errorMessages";
 
 interface RegistrationApprovalListProps {
   competitionId: number;
@@ -27,8 +28,7 @@ export function RegistrationApprovalList({
       const data = await getAllRegistrations(competitionId);
       setRegistrations(data || []);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Kunde inte hämta anmälda.";
-      setError(message);
+      setError(getUserFriendlyError(err));
     } finally {
       setLoading(false);
     }
@@ -50,9 +50,7 @@ export function RegistrationApprovalList({
         prev.map((reg) => (reg.user_id === userId ? { ...reg, approved } : reg))
       );
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Misslyckades att uppdatera godkännande.";
-      setError(message);
+      setError(getUserFriendlyError(err));
       // Refetch on error to restore correct state
       setLocalRefreshKey((prev) => prev + 1);
     } finally {

@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { updateScore } from "@/services/api";
 import { ScoreRequest } from "@/types";
+import { getUserFriendlyError } from "@/utils/errorMessages";
 
 type UseUpdateScore = {
   saving: boolean;
@@ -57,8 +58,7 @@ export function useUpdateScore(): UseUpdateScore {
       setSaveMessage("Poäng sparades.");
       return true;
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Unknown error";
-      setError(message);
+      setError(getUserFriendlyError(err));
       return false;
     } finally {
       setSaving(false);
