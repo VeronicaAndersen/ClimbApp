@@ -18,6 +18,7 @@ export function RegistrationApprovalList({
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [localRefreshKey, setLocalRefreshKey] = useState<number>(0);
 
   const fetchRegistrations = useCallback(async () => {
     setLoading(true);
@@ -35,7 +36,7 @@ export function RegistrationApprovalList({
 
   useEffect(() => {
     fetchRegistrations();
-  }, [fetchRegistrations, refreshKey]);
+  }, [fetchRegistrations, refreshKey, localRefreshKey]);
 
   const handleApprovalChange = async (userId: number, approved: boolean) => {
     setUpdatingId(userId);
@@ -43,11 +44,17 @@ export function RegistrationApprovalList({
 
     try {
       await updateRegistrationApproval(competitionId, userId, approved);
-      await fetchRegistrations();
+
+      // Optimistically update the local state
+      setRegistrations((prev) =>
+        prev.map((reg) => (reg.user_id === userId ? { ...reg, approved } : reg))
+      );
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Misslyckades att uppdatera godkännande.";
       setError(message);
+      // Refetch on error to restore correct state
+      setLocalRefreshKey((prev) => prev + 1);
     } finally {
       setUpdatingId(null);
     }
