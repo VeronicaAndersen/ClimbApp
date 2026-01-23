@@ -140,6 +140,20 @@ export default function Profile() {
               <CompetitionForm
                 onCompetitionCreated={() => setCompetitionRefreshKey((prev) => prev + 1)}
               />
+
+              <h3 className="text-xl font-semibold mt-4 mb-2 text-gray-800">Tombola</h3>
+              <div className="bg-white/90 backdrop-blur p-6 rounded-lg shadow-md">
+                <p className="text-gray-600 mb-4">
+                  Dra slumpmässiga vinnare från godkända klättrare. Tryck på knappen nedan för att
+                  öppna tombolan i helskärm.
+                </p>
+                <Button
+                  onClick={() => navigate("/tombola")}
+                  className="bg-[--secondary-color] hover:bg-[--secondary-color-hover] text-white px-6 py-3 rounded-lg cursor-pointer"
+                >
+                  🎲 Öppna Tombola
+                </Button>
+              </div>
             </div>
           )}
         </div>

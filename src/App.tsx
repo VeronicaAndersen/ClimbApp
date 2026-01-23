@@ -5,6 +5,7 @@ import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Profile from "./pages/Profile";
 import Registration from "./pages/Registration";
+import Tombola from "./pages/Tombola";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/" element={<Login />} />
           <Route path="/register" element={<Registration />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/tombola" element={<Tombola />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
