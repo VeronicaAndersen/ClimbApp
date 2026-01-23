@@ -144,10 +144,14 @@ async function apiRequest<T>(
 
   // Invalidate cache for mutations
   if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
-    // Clear all cached GET requests for this base path
+    // Clear all cached GET requests for this resource type
     const basePath = url.split("?")[0];
+    // Extract the resource type (e.g., "/season" from "/season/1")
+    const resourceType = basePath.split("/").slice(0, -1).join("/") || basePath;
+
     for (const key of cache.keys()) {
-      if (key.includes(basePath)) {
+      // Clear exact matches and parent resource paths
+      if (key.includes(basePath) || key.includes(resourceType)) {
         cache.delete(key);
       }
     }

@@ -12,8 +12,8 @@ interface ClimberListProps {
 
 const USER_SCOPES = [
   { value: "climber", label: "Climber" },
-  { value: "setter", label: "Setter" },
-  { value: "analyst", label: "Analyst" },
+  // { value: "setter", label: "Setter" },
+  // { value: "analyst", label: "Analyst" },
   { value: "admin", label: "Admin" },
 ];
 
