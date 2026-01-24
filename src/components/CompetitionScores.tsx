@@ -9,6 +9,7 @@ interface CompetitionScoresProps {
   competitionDate: string;
   userScope: string;
   viewingClimberName?: string;
+  refreshTrigger?: number;
 }
 
 export default function CompetitionScores({
@@ -16,6 +17,7 @@ export default function CompetitionScores({
   competitionDate,
   userScope,
   viewingClimberName,
+  refreshTrigger,
 }: CompetitionScoresProps) {
   const {
     problems,
@@ -25,7 +27,7 @@ export default function CompetitionScores({
     gradeLevel,
     isLoading,
     error,
-  } = useScores(competitionId);
+  } = useScores(competitionId, refreshTrigger);
 
   if (isLoading) {
     return (

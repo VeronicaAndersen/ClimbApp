@@ -111,6 +111,10 @@ export type RegistrationApprovalUpdate = {
   approved: boolean;
 };
 
+export type RegistrationLevelUpdate = {
+  level: number;
+};
+
 //Score
 export type ScoreRequest = {
   attempts_total: number;

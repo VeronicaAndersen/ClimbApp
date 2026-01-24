@@ -41,7 +41,11 @@ export function useUpdateScore(): UseUpdateScore {
         attempts_total: problem.attempts_total,
         got_bonus: hasBonus || hasTop, // Auto-set bonus if top is achieved
         got_top: hasTop,
-        attempts_to_bonus: hasBonus ? problem.attempts_to_bonus : (hasTop ? problem.attempts_to_top : 0),
+        attempts_to_bonus: hasBonus
+          ? problem.attempts_to_bonus
+          : hasTop
+            ? problem.attempts_to_top
+            : 0,
         attempts_to_top: problem.attempts_to_top,
       };
 

@@ -111,6 +111,7 @@ export function CompetitionList({ refreshKey }: CompetitionListProps = {}) {
           <table className="w-full border-collapse">
             <thead>
               <tr className="border-b border-gray-300">
+                <th className="p-2 font-semibold text-gray-700 text-left">ID</th>
                 {fields.map((f) => (
                   <th key={f} className="p-2 font-semibold text-gray-700 text-left capitalize">
                     {f.replace("_", " ")}
@@ -130,6 +131,9 @@ export function CompetitionList({ refreshKey }: CompetitionListProps = {}) {
 
                 return (
                   <tr key={competition.id} className="border-b border-gray-200 hover:bg-gray-50">
+                    <td className="p-2">
+                      <span className="text-gray-600 font-mono text-sm">{competition.id}</span>
+                    </td>
                     {fields.map((field) => (
                       <td key={field} className="p-2">
                         {isEditing ? (

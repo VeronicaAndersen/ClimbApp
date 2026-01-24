@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { getMyInfo, getCompRegistrationInfo, getScoresBatch } from "@/services/api";
 import { ScoreBatchResponse } from "@/types";
 
-export function useScores(competitionId: number) {
+export function useScores(competitionId: number, refreshTrigger?: number) {
   const [climberId, setClimberId] = useState<number | null>(null);
   const [gradeLevel, setGradeLevel] = useState<number | null>(null);
   const [problems, setProblems] = useState<ScoreBatchResponse[]>([]);
@@ -58,7 +58,7 @@ export function useScores(competitionId: number) {
     return () => {
       active = false;
     };
-  }, [competitionId]);
+  }, [competitionId, refreshTrigger]);
 
   return {
     climberId,

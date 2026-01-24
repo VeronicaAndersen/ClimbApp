@@ -5,10 +5,22 @@ import {
   getCompetitions,
   getCompRegistrationInfo,
   getMyInfo,
+  updateRegistrationLevel,
 } from "@/services/api";
 import { CompetitionResponse, MessageProps } from "@/types";
 import CalloutMessage from "./user_feedback/CalloutMessage";
 import CompetitionScores from "./CompetitionScores";
+import { GRADE_COLORS } from "@/constants/gradeColors";
+
+const LEVEL_NAMES: Record<number, string> = {
+  1: "Lila",
+  2: "Rosa",
+  3: "Orange",
+  4: "Gul",
+  5: "Grön",
+  6: "Vit",
+  7: "Svart",
+};
 
 export function ActiveCompetition() {
   const [activeCompetition, setActiveCompetition] = useState<CompetitionResponse | null>(null);
@@ -16,6 +28,10 @@ export function ActiveCompetition() {
   const [loading, setLoading] = useState<boolean>(true);
   const [userScope, setUserScope] = useState<string>("");
   const [currentUserName, setCurrentUserName] = useState<string>("");
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [currentLevel, setCurrentLevel] = useState<number | null>(null);
+  const [isChangingLevel, setIsChangingLevel] = useState<boolean>(false);
+  const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
 
   const fetchActiveCompetition = useCallback(async () => {
     setLoading(true);
@@ -28,6 +44,7 @@ export function ActiveCompetition() {
       if (userInfo) {
         setUserScope(userInfo.user_scope);
         setCurrentUserName(userInfo.name);
+        setCurrentUserId(userInfo.id);
       }
 
       if (!Array.isArray(competitions) || competitions.length === 0) {
@@ -94,6 +111,14 @@ export function ActiveCompetition() {
       }
 
       setActiveCompetition(selectedCompetition);
+
+      // Get registration info to set current level
+      if (selectedCompetition) {
+        const regInfo = await getCompRegistrationInfo(selectedCompetition.id);
+        if (regInfo) {
+          setCurrentLevel(regInfo.level);
+        }
+      }
     } catch (error) {
       console.error("Error fetching active competition:", error);
       setMessageInfo({
@@ -109,6 +134,33 @@ export function ActiveCompetition() {
   useEffect(() => {
     fetchActiveCompetition();
   }, [fetchActiveCompetition]);
+
+  const handleLevelChange = async (newLevel: number) => {
+    if (!activeCompetition || !currentUserId || currentLevel === newLevel) {
+      return;
+    }
+
+    setIsChangingLevel(true);
+    setMessageInfo(null);
+
+    try {
+      await updateRegistrationLevel(activeCompetition.id, currentUserId, newLevel);
+      setCurrentLevel(newLevel);
+      setRefreshTrigger((prev) => prev + 1);
+      setMessageInfo({
+        message: `Nivån har uppdaterats till ${LEVEL_NAMES[newLevel]}. Dina poäng följer med till den nya nivån.`,
+        color: "green",
+      });
+    } catch (error) {
+      console.error("Error updating level:", error);
+      setMessageInfo({
+        message: "Ett fel uppstod vid ändring av nivå. Försök igen senare.",
+        color: "red",
+      });
+    } finally {
+      setIsChangingLevel(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -146,6 +198,40 @@ export function ActiveCompetition() {
                 <strong>Beskrivning:</strong> {activeCompetition.description}
               </p>
             )}
+
+            {currentLevel !== null && (
+              <div className="mt-3 pt-3 border-t border-gray-200">
+                <h3 className="text-xl font-semibold mb-2">Byte av nivå</h3>
+                <div className="flex items-center gap-3">
+                  <label htmlFor="level-select" className="text-gray-700 font-medium">
+                    Din nivå:
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-6 h-6 rounded-full border border-gray-400"
+                      style={{ backgroundColor: GRADE_COLORS[currentLevel] }}
+                    />
+                    <select
+                      id="level-select"
+                      value={currentLevel}
+                      onChange={(e) => handleLevelChange(Number(e.target.value))}
+                      disabled={isChangingLevel}
+                      className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {[1, 2, 3, 4, 5, 6, 7].map((level) => (
+                        <option key={level} value={level}>
+                          {LEVEL_NAMES[level]}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {isChangingLevel && <Spinner size="2" />}
+                </div>
+                <p className="text-sm text-gray-500 mt-1">
+                  Obs: Dina poäng följer med när du byter nivå.
+                </p>
+              </div>
+            )}
           </div>
 
           <CompetitionScores
@@ -153,6 +239,7 @@ export function ActiveCompetition() {
             competitionDate={activeCompetition.comp_date}
             userScope={userScope}
             viewingClimberName={currentUserName}
+            refreshTrigger={refreshTrigger}
           />
         </>
       )}
