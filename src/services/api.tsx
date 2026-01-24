@@ -1,4 +1,4 @@
-import { api, tokens } from "@/lib/apiClient";
+import { api, tokens, clearCache } from "@/lib/apiClient";
 import {
   LoginRequest,
   LoginResponse,
@@ -22,6 +22,8 @@ import {
 
 // Auth
 export async function loginClimber(payload: LoginRequest): Promise<LoginResponse | null> {
+  // Clear cache when logging in to ensure fresh data for the new user
+  clearCache();
   const data = await api.post<LoginResponse, LoginRequest>("/auth/login", payload);
   tokens.saveTokens(data);
   return data;
