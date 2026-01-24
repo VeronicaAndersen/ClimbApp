@@ -90,11 +90,7 @@ export const updateRegistrationApproval = (
     true
   );
 
-export const updateRegistrationLevel = (
-  competitionId: number,
-  userId: number,
-  level: number
-) =>
+export const updateRegistrationLevel = (competitionId: number, userId: number, level: number) =>
   api.patch<import("@/types").RegisterToCompResponse, import("@/types").RegistrationLevelUpdate>(
     `/competition/${competitionId}/registration/${userId}/level`,
     { level },
