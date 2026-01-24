@@ -234,13 +234,21 @@ export function ActiveCompetition() {
             )}
           </div>
 
-          <CompetitionScores
-            competitionId={activeCompetition.id}
-            competitionDate={activeCompetition.comp_date}
-            userScope={userScope}
-            viewingClimberName={currentUserName}
-            refreshTrigger={refreshTrigger}
-          />
+          {isChangingLevel ? (
+            <div className="flex items-center justify-center py-8">
+              <Spinner size="3" />
+              <span className="ml-2">Uppdaterar nivå...</span>
+            </div>
+          ) : (
+            <CompetitionScores
+              competitionId={activeCompetition.id}
+              competitionDate={activeCompetition.comp_date}
+              userScope={userScope}
+              viewingClimberName={currentUserName}
+              refreshTrigger={refreshTrigger}
+              overrideLevel={currentLevel}
+            />
+          )}
         </>
       )}
     </div>

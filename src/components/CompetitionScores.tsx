@@ -10,6 +10,7 @@ interface CompetitionScoresProps {
   userScope: string;
   viewingClimberName?: string;
   refreshTrigger?: number;
+  overrideLevel?: number | null;
 }
 
 export default function CompetitionScores({
@@ -18,6 +19,7 @@ export default function CompetitionScores({
   userScope,
   viewingClimberName,
   refreshTrigger,
+  overrideLevel,
 }: CompetitionScoresProps) {
   const {
     problems,
@@ -28,6 +30,9 @@ export default function CompetitionScores({
     isLoading,
     error,
   } = useScores(competitionId, refreshTrigger);
+
+  // Use overrideLevel if provided, otherwise use gradeLevel from hook
+  const displayLevel = overrideLevel ?? gradeLevel;
 
   if (isLoading) {
     return (
@@ -44,7 +49,7 @@ export default function CompetitionScores({
 
   return (
     <div className="space-y-6">
-      <ScoreSummary problems={problems} gradeLevel={gradeLevel} />
+      <ScoreSummary problems={problems} gradeLevel={displayLevel} />
       <ProblemGrid
         competitionId={competitionId}
         competitionDate={competitionDate}
@@ -54,7 +59,7 @@ export default function CompetitionScores({
         initialProblems={initialProblems}
         setProblems={setProblems}
         setInitialProblems={setInitialProblems}
-        gradeLevel={gradeLevel}
+        gradeLevel={displayLevel}
       />
     </div>
   );
