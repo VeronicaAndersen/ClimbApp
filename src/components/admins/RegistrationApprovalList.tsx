@@ -6,7 +6,7 @@ import {
   updateRegistrationLevel,
 } from "@/services/api";
 import { Spinner, Button } from "@radix-ui/themes";
-import { Check, X, RefreshCw } from "lucide-react";
+import { Check, X } from "lucide-react";
 import CalloutMessage from "../user_feedback/CalloutMessage";
 import { getUserFriendlyError } from "@/utils/errorMessages";
 
@@ -24,7 +24,6 @@ export function RegistrationApprovalList({
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [localRefreshKey, setLocalRefreshKey] = useState<number>(0);
-  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [changingLevelId, setChangingLevelId] = useState<number | null>(null);
 
   const fetchRegistrations = useCallback(async () => {
@@ -61,19 +60,6 @@ export function RegistrationApprovalList({
       setLocalRefreshKey((prev) => prev + 1);
     } finally {
       setUpdatingId(null);
-    }
-  };
-
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    setError(null);
-    try {
-      const data = await getAllRegistrations(competitionId);
-      setRegistrations(data || []);
-    } catch (err) {
-      setError(getUserFriendlyError(err));
-    } finally {
-      setIsRefreshing(false);
     }
   };
 
@@ -134,14 +120,6 @@ export function RegistrationApprovalList({
     <div className="mb-6 h-fit flex flex-col bg-white/90 backdrop-blur p-4 rounded-lg shadow-md">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-semibold">Anmälda</h2>
-        <Button
-          onClick={handleRefresh}
-          disabled={loading || isRefreshing}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-          size="2"
-        >
-          <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
-        </Button>
       </div>
 
       {error && <CalloutMessage message={error} color="red" />}
