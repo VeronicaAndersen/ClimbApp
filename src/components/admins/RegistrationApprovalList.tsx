@@ -97,6 +97,7 @@ export function RegistrationApprovalList({
           <table className="w-full border-collapse">
             <thead>
               <tr className="border-b border-gray-300">
+                <th className="text-left p-2 font-semibold text-gray-700">Id</th>
                 <th className="text-left p-2 font-semibold text-gray-700">Klättrare</th>
                 <th className="text-left p-2 font-semibold text-gray-700">Nivå</th>
                 <th className="text-left p-2 font-semibold text-gray-700">Registrerad</th>
@@ -114,6 +115,7 @@ export function RegistrationApprovalList({
                     key={`${reg.comp_id}-${reg.user_id}`}
                     className="border-b border-gray-200 hover:bg-gray-50"
                   >
+                    <td className="p-2 text-gray-800">{reg.user_id}</td>
                     <td className="p-2 text-gray-800">{reg.climber_name}</td>
                     <td className="p-2">
                       <span
