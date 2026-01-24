@@ -1,6 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { RegistrationWithClimber } from "@/types";
-import { getAllRegistrations, updateRegistrationApproval, updateRegistrationLevel } from "@/services/api";
+import {
+  getAllRegistrations,
+  updateRegistrationApproval,
+  updateRegistrationLevel,
+} from "@/services/api";
 import { Spinner, Button } from "@radix-ui/themes";
 import { Check, X, RefreshCw } from "lucide-react";
 import CalloutMessage from "../user_feedback/CalloutMessage";

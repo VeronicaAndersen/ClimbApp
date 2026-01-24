@@ -146,7 +146,6 @@ export function ActiveCompetition() {
                 <strong>Beskrivning:</strong> {activeCompetition.description}
               </p>
             )}
-
           </div>
 
           <CompetitionScores
