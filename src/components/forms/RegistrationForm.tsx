@@ -13,7 +13,7 @@ export function RegistrationForm() {
   const [loading, setLoading] = useState<boolean>(false);
 
   const [registerClimberData, setRegisterClimberData] = useState<RegistrationRequest>({
-    name: "",
+    username: "",
     password: "",
   });
   const [gdprConsent, setGdprConsent] = useState<boolean>(false);
@@ -37,7 +37,7 @@ export function RegistrationForm() {
   };
 
   const isSubmitDisabled =
-    !registerClimberData.name ||
+    !registerClimberData.username ||
     !registerClimberData.password ||
     registerClimberData.password.length < 6 ||
     !gdprConsent ||
@@ -50,15 +50,15 @@ export function RegistrationForm() {
         <form onSubmit={handleRegister} className="space-y-6">
           <h2 className="text-2xl font-semibold text-center mb-4">Registrera dig</h2>
           <div className="space-y-2">
-            <Label.Root htmlFor="username">Namn</Label.Root>
+            <Label.Root htmlFor="username">Användarnamn</Label.Root>
             <TextField.Root
               id="username"
               type="text"
               autoComplete="username"
               placeholder="Namn"
-              value={registerClimberData.name}
+              value={registerClimberData.username}
               onChange={(e) =>
-                setRegisterClimberData({ ...registerClimberData, name: e.target.value })
+                setRegisterClimberData({ ...registerClimberData, username: e.target.value })
               }
               required
               className="w-full text-base"

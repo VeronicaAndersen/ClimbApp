@@ -23,32 +23,32 @@ export type SignupResponse = {
 };
 
 export type SignupRequest = {
-  name: string;
+  username: string;
   password: string;
 };
 
 //Climber
 export type RegistrationRequest = {
-  name: string;
+  username: string;
   password: string;
 };
 
 export type MyInfoResponse = {
   id: number;
-  name: string;
+  username: string;
   user_scope: string;
   created_at: string;
 };
 
 export type ClimberResponse = {
   id: number;
-  name: string;
+  username: string;
   user_scope: string;
   created_at: string;
 };
 
 export type ClimberUpdateRequest = {
-  name?: string;
+  username?: string;
   password?: string;
   user_scope?: string;
 };

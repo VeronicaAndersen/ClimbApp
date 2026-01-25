@@ -162,7 +162,7 @@ export default function Profile() {
         className="absolute cursor-pointer bg-[--secondary-color] hover:bg-[--secondary-color-hover] rounded-full px-4 py-2 mt-4 text-white top-4 right-4"
         onClick={handleLogout}
       >
-        Logga ut {userInfo?.name}
+        Logga ut {userInfo?.username}
       </Button>
     </div>
   );

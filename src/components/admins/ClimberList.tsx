@@ -20,7 +20,7 @@ const USER_SCOPES = [
 export function ClimberList({ refreshKey }: ClimberListProps = {}) {
   const { climbers: climberList, loading, error, refetch } = useClimbers(refreshKey);
 
-  const emptyEditValues: ClimberUpdateRequest = { name: "", password: "", user_scope: "" };
+  const emptyEditValues: ClimberUpdateRequest = { username: "", password: "", user_scope: "" };
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editValues, setEditValues] = useState<ClimberUpdateRequest>(emptyEditValues);
@@ -37,7 +37,7 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
 
   const startEdit = (climber: ClimberResponse) => {
     setEditingId(climber.id);
-    setEditValues({ name: climber.name, password: "", user_scope: climber.user_scope });
+    setEditValues({ username: climber.username, password: "", user_scope: climber.user_scope });
     setRowError(null);
     setDeleteConfirm(null);
   };
@@ -50,8 +50,8 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
       const payload: ClimberUpdateRequest = {};
 
       // Only include fields that have been changed
-      if (editValues.name && editValues.name.trim()) {
-        payload.name = editValues.name.trim();
+      if (editValues.username && editValues.username.trim()) {
+        payload.username = editValues.username.trim();
       }
       if (editValues.password && editValues.password.trim()) {
         payload.password = editValues.password.trim();
@@ -139,14 +139,14 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
                       {isEditing ? (
                         <input
                           type="text"
-                          value={editValues.name}
-                          onChange={(e) => setEditValues({ ...editValues, name: e.target.value })}
+                          value={editValues.username}
+                          onChange={(e) => setEditValues({ ...editValues, username: e.target.value })}
                           className="w-full px-2 py-1 border border-gray-300 rounded"
                           disabled={isSavingRow}
                           placeholder="Nytt namn"
                         />
                       ) : (
-                        <span className="text-gray-800">{climber.name}</span>
+                        <span className="text-gray-800">{climber.username}</span>
                       )}
                     </td>
 

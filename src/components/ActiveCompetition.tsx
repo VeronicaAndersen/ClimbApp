@@ -27,7 +27,7 @@ export function ActiveCompetition() {
 
       if (userInfo) {
         setUserScope(userInfo.user_scope);
-        setCurrentUserName(userInfo.name);
+        setCurrentUserName(userInfo.username);
       }
 
       if (!Array.isArray(competitions) || competitions.length === 0) {

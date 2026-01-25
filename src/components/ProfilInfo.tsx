@@ -26,7 +26,7 @@ export default function ProfilInfo() {
         ) : userInfo ? (
           <div>
             <p className="text-lg">
-              <strong>Namn:</strong> {userInfo.name}
+              <strong>Användarnamn:</strong> {userInfo.username}
             </p>
             <p className="text-sm text-gray-600 mt-1">
               <strong>Klättrar-ID:</strong> {userInfo.id}
