@@ -172,7 +172,9 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
                         <input
                           type="text"
                           value={editValues.username}
-                          onChange={(e) => setEditValues({ ...editValues, username: e.target.value })}
+                          onChange={(e) =>
+                            setEditValues({ ...editValues, username: e.target.value })
+                          }
                           className="w-full px-2 py-1 border border-gray-300 rounded"
                           disabled={isSavingRow}
                           placeholder="Användarnamn"
@@ -202,7 +204,9 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
                         <input
                           type="text"
                           value={editValues.firstname}
-                          onChange={(e) => setEditValues({ ...editValues, firstname: e.target.value })}
+                          onChange={(e) =>
+                            setEditValues({ ...editValues, firstname: e.target.value })
+                          }
                           className="w-full px-2 py-1 border border-gray-300 rounded"
                           disabled={isSavingRow}
                           placeholder="Förnamn"
@@ -217,7 +221,9 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
                         <input
                           type="text"
                           value={editValues.lastname}
-                          onChange={(e) => setEditValues({ ...editValues, lastname: e.target.value })}
+                          onChange={(e) =>
+                            setEditValues({ ...editValues, lastname: e.target.value })
+                          }
                           className="w-full px-2 py-1 border border-gray-300 rounded"
                           disabled={isSavingRow}
                           placeholder="Efternamn"

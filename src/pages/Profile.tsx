@@ -107,7 +107,9 @@ export default function Profile() {
       <div className="h-fit flex flex-col items-center justify-center">
         <img src="./grepp.svg" alt="grepp logo" className="w-28 absolute top-8 left-5" />
         <div className="flex flex-col items-center my-24 mx-4 p-4 shadow-md rounded-lg bg-[--primary-color] backdrop-blur max-w-md w-full">
-          <h1 className="text-2xl font-semibold mb-2 text-center">Välkommen, {userInfo.username}!</h1>
+          <h1 className="text-2xl font-semibold mb-2 text-center">
+            Välkommen, {userInfo.username}!
+          </h1>
           <CompleteProfileForm userInfo={userInfo} onComplete={refetch} />
         </div>
         <Button
