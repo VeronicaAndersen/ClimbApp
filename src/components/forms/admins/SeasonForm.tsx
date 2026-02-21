@@ -8,7 +8,7 @@ interface SeasonFormProps {
   onSeasonCreated?: () => void;
 }
 
-const initialSeasonData: SeasonRequest = { name: "", year: null };
+const initialSeasonData: SeasonRequest = { name: "", year: undefined };
 
 export function SeasonForm({ onSeasonCreated }: SeasonFormProps = {}) {
   const { values: seasonData, handleChange, reset: resetForm } = useForm(initialSeasonData);
@@ -52,7 +52,7 @@ export function SeasonForm({ onSeasonCreated }: SeasonFormProps = {}) {
         id="season_year"
         type="number"
         placeholder="År"
-        value={seasonData.year}
+        value={seasonData.year ?? ""}
         onChange={handleChange("year")}
         className="w-full p-2 rounded-lg border text-base"
         disabled={loading}

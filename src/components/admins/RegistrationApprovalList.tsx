@@ -6,7 +6,7 @@ import {
   updateRegistrationLevel,
 } from "@/services/api";
 import { Spinner, Button } from "@radix-ui/themes";
-import { Check, X } from "lucide-react";
+import { Check, X, RefreshCw } from "lucide-react";
 import CalloutMessage from "../user_feedback/CalloutMessage";
 import { getUserFriendlyError } from "@/utils/errorMessages";
 
@@ -120,6 +120,14 @@ export function RegistrationApprovalList({
     <div className="mb-6 h-fit flex flex-col bg-white/90 backdrop-blur p-4 rounded-lg shadow-md">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-semibold">Anmälda</h2>
+        <Button
+          onClick={() => fetchRegistrations()}
+          disabled={loading}
+          className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded disabled:opacity-50 cursor-pointer"
+          size="1"
+        >
+          {loading ? <Spinner size="1" /> : <RefreshCw className="w-4 h-4" />}
+        </Button>
       </div>
 
       {error && <CalloutMessage message={error} color="red" />}

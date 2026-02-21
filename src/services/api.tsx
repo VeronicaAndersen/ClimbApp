@@ -81,7 +81,8 @@ export const registerClimberToCompetition = (competitionId: number, level: numbe
 export const getAllRegistrations = (competitionId: number) =>
   api.get<import("@/types").RegistrationWithClimber[]>(
     `/competition/${competitionId}/registrations`,
-    true
+    true,
+    true // skipCache - always fetch fresh data
   );
 
 export const updateRegistrationApproval = (
