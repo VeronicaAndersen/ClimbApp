@@ -38,9 +38,9 @@ export function LoginForm() {
         <form onSubmit={handleLogin} className="space-y-6">
           <h1 className="text-2xl font-semibold text-center mb-4">Logga in</h1>
           <div className="space-y-2">
-            <Label>Namn</Label>
+            <Label>Användarnamn</Label>
             <TextField.Root
-              id="name"
+              id="username"
               type="text"
               autoComplete="username"
               placeholder="Användarnamn"

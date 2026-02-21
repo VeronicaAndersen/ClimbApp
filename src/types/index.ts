@@ -31,6 +31,10 @@ export type SignupRequest = {
 export type RegistrationRequest = {
   username: string;
   password: string;
+  email: string;
+  firstname: string;
+  lastname: string;
+  club?: string;
 };
 
 export type MyInfoResponse = {
@@ -38,6 +42,10 @@ export type MyInfoResponse = {
   username: string;
   user_scope: string;
   created_at: string;
+  email: string;
+  firstname: string;
+  lastname: string;
+  club: string;
 };
 
 export type ClimberResponse = {
@@ -45,12 +53,20 @@ export type ClimberResponse = {
   username: string;
   user_scope: string;
   created_at: string;
+  email: string;
+  firstname: string;
+  lastname: string;
+  club: string;
 };
 
 export type ClimberUpdateRequest = {
   username?: string;
   password?: string;
   user_scope?: string;
+  email?: string;
+  firstname?: string;
+  lastname?: string;
+  club?: string;
 };
 // Competition
 export type CompetitionRequest = {

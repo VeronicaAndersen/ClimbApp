@@ -20,7 +20,15 @@ const USER_SCOPES = [
 export function ClimberList({ refreshKey }: ClimberListProps = {}) {
   const { climbers: climberList, loading, error, refetch } = useClimbers(refreshKey);
 
-  const emptyEditValues: ClimberUpdateRequest = { username: "", password: "", user_scope: "" };
+  const emptyEditValues: ClimberUpdateRequest = {
+    username: "",
+    password: "",
+    user_scope: "",
+    email: "",
+    firstname: "",
+    lastname: "",
+    club: "",
+  };
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editValues, setEditValues] = useState<ClimberUpdateRequest>(emptyEditValues);
@@ -37,7 +45,15 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
 
   const startEdit = (climber: ClimberResponse) => {
     setEditingId(climber.id);
-    setEditValues({ username: climber.username, password: "", user_scope: climber.user_scope });
+    setEditValues({
+      username: climber.username,
+      password: "",
+      user_scope: climber.user_scope,
+      email: climber.email,
+      firstname: climber.firstname,
+      lastname: climber.lastname,
+      club: climber.club,
+    });
     setRowError(null);
     setDeleteConfirm(null);
   };
@@ -58,6 +74,18 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
       }
       if (editValues.user_scope && editValues.user_scope.trim()) {
         payload.user_scope = editValues.user_scope.trim();
+      }
+      if (editValues.email && editValues.email.trim()) {
+        payload.email = editValues.email.trim();
+      }
+      if (editValues.firstname && editValues.firstname.trim()) {
+        payload.firstname = editValues.firstname.trim();
+      }
+      if (editValues.lastname && editValues.lastname.trim()) {
+        payload.lastname = editValues.lastname.trim();
+      }
+      if (editValues.club && editValues.club.trim()) {
+        payload.club = editValues.club.trim();
       }
 
       // Don't send empty payload
@@ -115,7 +143,11 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
             <thead>
               <tr className="border-b border-gray-300">
                 <th className="text-left p-2 font-semibold text-gray-700">ID</th>
-                <th className="text-left p-2 font-semibold text-gray-700">Namn</th>
+                <th className="text-left p-2 font-semibold text-gray-700">Användarnamn</th>
+                <th className="text-left p-2 font-semibold text-gray-700">E-post</th>
+                <th className="text-left p-2 font-semibold text-gray-700">Förnamn</th>
+                <th className="text-left p-2 font-semibold text-gray-700">Efternamn</th>
+                <th className="text-left p-2 font-semibold text-gray-700">Klubb</th>
                 <th className="text-left p-2 font-semibold text-gray-700">Lösenord</th>
                 <th className="text-left p-2 font-semibold text-gray-700">Behörighet</th>
                 <th className="text-left p-2 font-semibold text-gray-700">Skapad</th>
@@ -143,10 +175,70 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
                           onChange={(e) => setEditValues({ ...editValues, username: e.target.value })}
                           className="w-full px-2 py-1 border border-gray-300 rounded"
                           disabled={isSavingRow}
-                          placeholder="Nytt namn"
+                          placeholder="Användarnamn"
                         />
                       ) : (
                         <span className="text-gray-800">{climber.username}</span>
+                      )}
+                    </td>
+
+                    <td className="p-2">
+                      {isEditing ? (
+                        <input
+                          type="email"
+                          value={editValues.email}
+                          onChange={(e) => setEditValues({ ...editValues, email: e.target.value })}
+                          className="w-full px-2 py-1 border border-gray-300 rounded"
+                          disabled={isSavingRow}
+                          placeholder="E-post"
+                        />
+                      ) : (
+                        <span className="text-gray-800">{climber.email}</span>
+                      )}
+                    </td>
+
+                    <td className="p-2">
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={editValues.firstname}
+                          onChange={(e) => setEditValues({ ...editValues, firstname: e.target.value })}
+                          className="w-full px-2 py-1 border border-gray-300 rounded"
+                          disabled={isSavingRow}
+                          placeholder="Förnamn"
+                        />
+                      ) : (
+                        <span className="text-gray-800">{climber.firstname}</span>
+                      )}
+                    </td>
+
+                    <td className="p-2">
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={editValues.lastname}
+                          onChange={(e) => setEditValues({ ...editValues, lastname: e.target.value })}
+                          className="w-full px-2 py-1 border border-gray-300 rounded"
+                          disabled={isSavingRow}
+                          placeholder="Efternamn"
+                        />
+                      ) : (
+                        <span className="text-gray-800">{climber.lastname}</span>
+                      )}
+                    </td>
+
+                    <td className="p-2">
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={editValues.club}
+                          onChange={(e) => setEditValues({ ...editValues, club: e.target.value })}
+                          className="w-full px-2 py-1 border border-gray-300 rounded"
+                          disabled={isSavingRow}
+                          placeholder="Klubb"
+                        />
+                      ) : (
+                        <span className="text-gray-800">{climber.club}</span>
                       )}
                     </td>
 

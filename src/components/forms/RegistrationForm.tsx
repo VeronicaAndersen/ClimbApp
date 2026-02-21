@@ -15,6 +15,10 @@ export function RegistrationForm() {
   const [registerClimberData, setRegisterClimberData] = useState<RegistrationRequest>({
     username: "",
     password: "",
+    email: "",
+    firstname: "",
+    lastname: "",
+    club: "",
   });
   const [gdprConsent, setGdprConsent] = useState<boolean>(false);
 
@@ -40,6 +44,9 @@ export function RegistrationForm() {
     !registerClimberData.username ||
     !registerClimberData.password ||
     registerClimberData.password.length < 6 ||
+    !registerClimberData.email ||
+    !registerClimberData.firstname ||
+    !registerClimberData.lastname ||
     !gdprConsent ||
     loading;
 
@@ -55,7 +62,7 @@ export function RegistrationForm() {
               id="username"
               type="text"
               autoComplete="username"
-              placeholder="Namn"
+              placeholder="Användarnamn"
               value={registerClimberData.username}
               onChange={(e) =>
                 setRegisterClimberData({ ...registerClimberData, username: e.target.value })
@@ -86,6 +93,73 @@ export function RegistrationForm() {
             )}
           </div>
 
+          <div className="space-y-2">
+            <Label.Root htmlFor="email">E-post</Label.Root>
+            <TextField.Root
+              id="email"
+              type="email"
+              autoComplete="email"
+              placeholder="E-post"
+              value={registerClimberData.email}
+              onChange={(e) =>
+                setRegisterClimberData({ ...registerClimberData, email: e.target.value })
+              }
+              required
+              className="w-full text-base"
+              disabled={loading}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label.Root htmlFor="firstname">Förnamn</Label.Root>
+            <TextField.Root
+              id="firstname"
+              type="text"
+              autoComplete="given-name"
+              placeholder="Förnamn"
+              value={registerClimberData.firstname}
+              onChange={(e) =>
+                setRegisterClimberData({ ...registerClimberData, firstname: e.target.value })
+              }
+              required
+              className="w-full text-base"
+              disabled={loading}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label.Root htmlFor="lastname">Efternamn</Label.Root>
+            <TextField.Root
+              id="lastname"
+              type="text"
+              autoComplete="family-name"
+              placeholder="Efternamn"
+              value={registerClimberData.lastname}
+              onChange={(e) =>
+                setRegisterClimberData({ ...registerClimberData, lastname: e.target.value })
+              }
+              required
+              className="w-full text-base"
+              disabled={loading}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label.Root htmlFor="club">Klubb (valfritt)</Label.Root>
+            <TextField.Root
+              id="club"
+              type="text"
+              autoComplete="organization"
+              placeholder="Klubb"
+              value={registerClimberData.club}
+              onChange={(e) =>
+                setRegisterClimberData({ ...registerClimberData, club: e.target.value })
+              }
+              className="w-full text-base"
+              disabled={loading}
+            />
+          </div>
+
           <div className="flex items-start space-x-2">
             <input
               type="checkbox"
@@ -96,8 +170,9 @@ export function RegistrationForm() {
               className="mt-1 h-4 w-4 cursor-pointer disabled:cursor-not-allowed"
             />
             <Label.Root htmlFor="gdpr-consent" className="text-xs text-gray-700 leading-tight">
-              Jag godkänner att mina personuppgifter (namn och lösenord) lagras för att kunna
-              använda tjänsten. Uppgifterna används endast för inloggning och tävlingshantering.
+              Jag godkänner att mina personuppgifter (namn, e-post, klubb och lösenord) lagras för
+              att kunna använda tjänsten. Uppgifterna används endast för inloggning och
+              tävlingshantering.
             </Label.Root>
           </div>
 

@@ -24,14 +24,23 @@ export default function ProfilInfo() {
             <span className="ml-2">Hämtar profilinformation...</span>
           </div>
         ) : userInfo ? (
-          <div>
+          <div className="space-y-2">
             <p className="text-lg">
+              <strong>Namn:</strong> {userInfo.firstname} {userInfo.lastname}
+            </p>
+            <p className="text-sm text-gray-600">
               <strong>Användarnamn:</strong> {userInfo.username}
             </p>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-gray-600">
+              <strong>E-post:</strong> {userInfo.email}
+            </p>
+            <p className="text-sm text-gray-600">
+              <strong>Klubb:</strong> {userInfo.club}
+            </p>
+            <p className="text-sm text-gray-600">
               <strong>Klättrar-ID:</strong> {userInfo.id}
             </p>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-gray-600">
               Medlem sedan: {new Date(userInfo.created_at).toLocaleDateString("sv-SE")}
             </p>
           </div>
