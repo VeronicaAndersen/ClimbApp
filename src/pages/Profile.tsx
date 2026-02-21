@@ -14,6 +14,7 @@ import { CompetitionForm } from "@/components/forms/admins/CompetitionForm";
 import { ClimberList } from "@/components/admins/ClimberList";
 import { SeasonList } from "@/components/admins/SeasonList";
 import { CompetitionListSection } from "@/components/CompetitionListSection";
+import { CompleteProfileForm } from "@/components/forms/CompleteProfileForm";
 
 // Lazy load ActiveCompetition component (the heaviest)
 const ActiveCompetition = lazy(() =>
@@ -44,10 +45,14 @@ export default function Profile() {
   const [competitionRefreshKey, setCompetitionRefreshKey] = useState(0);
   const [activeView, setActiveView] = useState<NavigationView>("active_competition");
 
-  const { userInfo, messageInfo } = useGetUserInfo();
+  const { userInfo, messageInfo, loading: userLoading, refetch } = useGetUserInfo();
   const { competitions } = useCompetitions();
 
   const isAdmin = useMemo(() => userInfo?.user_scope === "admin", [userInfo?.user_scope]);
+  const isProfileIncomplete = useMemo(
+    () => userInfo && (!userInfo.email || !userInfo.firstname || !userInfo.lastname),
+    [userInfo]
+  );
 
   useEffect(() => {
     const storedUser = localStorage.getItem("tokens");
@@ -82,6 +87,38 @@ export default function Profile() {
         ? "bg-[--secondary-color] text-white"
         : "text-gray-700 hover:bg-gray-100"
     }`;
+
+  // Show loading state while fetching user info
+  if (userLoading) {
+    return (
+      <div className="h-screen flex flex-col items-center justify-center">
+        <img src="./grepp.svg" alt="grepp logo" className="w-28 absolute top-8 left-5" />
+        <div className="flex items-center justify-center py-8">
+          <Spinner size="3" />
+          <span className="ml-2">Laddar...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Show profile completion form if required fields are missing
+  if (isProfileIncomplete && userInfo) {
+    return (
+      <div className="h-fit flex flex-col items-center justify-center">
+        <img src="./grepp.svg" alt="grepp logo" className="w-28 absolute top-8 left-5" />
+        <div className="flex flex-col items-center my-24 mx-4 p-4 shadow-md rounded-lg bg-[--primary-color] backdrop-blur max-w-md w-full">
+          <h1 className="text-2xl font-semibold mb-2 text-center">Välkommen, {userInfo.username}!</h1>
+          <CompleteProfileForm userInfo={userInfo} onComplete={refetch} />
+        </div>
+        <Button
+          className="absolute cursor-pointer bg-[--secondary-color] hover:bg-[--secondary-color-hover] rounded-full px-4 py-2 mt-4 text-white top-4 right-4"
+          onClick={handleLogout}
+        >
+          Logga ut
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="h-fit flex flex-col items-center justify-center">

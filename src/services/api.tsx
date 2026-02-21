@@ -38,6 +38,9 @@ export async function signupClimber(payload: RegistrationRequest): Promise<Signu
 // Climber
 export const getMyInfo = () => api.get<MyInfoResponse>("/climber/me", true);
 
+export const updateMyInfo = (payload: ClimberUpdateRequest) =>
+  api.patch<MyInfoResponse, ClimberUpdateRequest>("/climber/me", payload, true);
+
 export const getClimberById = (id: number) => api.get(`/climber/${id}`);
 
 export const getAllClimbers = () => api.get<ClimberResponse[]>("/climber", true);

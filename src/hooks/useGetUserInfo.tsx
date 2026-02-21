@@ -1,5 +1,5 @@
 import { MyInfoResponse, MessageProps } from "@/types";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { getMyInfo } from "../services/api";
 
 export default function useGetUserInfo() {
@@ -7,25 +7,31 @@ export default function useGetUserInfo() {
   const [messageInfo, setMessageInfo] = useState<MessageProps | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  useEffect(() => {
-    const fetchInfo = async () => {
-      setLoading(true);
-      try {
-        const info = await getMyInfo();
-        if (info) {
-          setUserInfo(info);
-        }
-      } catch (error) {
-        console.error("Error fetching user info:", error);
-        setMessageInfo({
-          message: "Ett fel uppstod vid hämtning av användarinformation.",
-          color: "red",
-        });
-      } finally {
-        setLoading(false);
+  const fetchInfo = useCallback(async () => {
+    setLoading(true);
+    try {
+      const info = await getMyInfo();
+      if (info) {
+        setUserInfo(info);
       }
-    };
-    fetchInfo();
+    } catch (error) {
+      console.error("Error fetching user info:", error);
+      setMessageInfo({
+        message: "Ett fel uppstod vid hämtning av användarinformation.",
+        color: "red",
+      });
+    } finally {
+      setLoading(false);
+    }
   }, []);
-  return { userInfo, messageInfo, loading };
+
+  useEffect(() => {
+    fetchInfo();
+  }, [fetchInfo]);
+
+  const refetch = useCallback(() => {
+    fetchInfo();
+  }, [fetchInfo]);
+
+  return { userInfo, messageInfo, loading, refetch };
 }

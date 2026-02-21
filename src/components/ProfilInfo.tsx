@@ -3,17 +3,26 @@ import useGetUserInfo from "@/hooks/useGetUserInfo";
 import { useUserCompetitions } from "@/hooks/useUserCompetitions";
 import { Spinner } from "@radix-ui/themes";
 import CompetitionSummaryCard from "./CompetitionSummaryCard";
+import { CompleteProfileForm } from "./forms/CompleteProfileForm";
 
 export default function ProfilInfo() {
-  const { userInfo, messageInfo, loading } = useGetUserInfo();
+  const { userInfo, messageInfo, loading, refetch } = useGetUserInfo();
   const {
     competitions,
     isLoading: competitionsLoading,
     error: competitionsError,
   } = useUserCompetitions();
 
+  const isProfileIncomplete =
+    userInfo && (!userInfo.email || !userInfo.firstname || !userInfo.lastname);
+
   return (
     <div className="space-y-6">
+      {/* Complete Profile Form - shown if required fields are missing */}
+      {userInfo && isProfileIncomplete && (
+        <CompleteProfileForm userInfo={userInfo} onComplete={refetch} />
+      )}
+
       {/* User Info Section */}
       <div className="flex flex-col bg-white/90 backdrop-blur p-4 rounded-lg shadow-md">
         <h2 className="text-xl font-semibold mb-4">Min Profil</h2>
