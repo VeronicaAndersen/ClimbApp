@@ -143,7 +143,7 @@ export function CompetitionList({ refreshKey }: CompetitionListProps = {}) {
                               onChange={(e) =>
                                 setEditValues({ ...editValues, [field]: e.target.value })
                               }
-                              className="w-full px-2 py-1 border border-gray-300 rounded"
+                              className="w-full p-2 rounded-lg border text-base focus:outline-none focus:ring-2 focus:ring-[--secondary-color]"
                               disabled={isSavingRow}
                             >
                               <option value="">Välj typ</option>

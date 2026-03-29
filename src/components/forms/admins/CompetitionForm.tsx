@@ -91,7 +91,7 @@ export function CompetitionForm({ onCompetitionCreated }: CompetitionFormProps =
           id="competition_type"
           value={competitionData.comp_type}
           onChange={handleChange("comp_type")}
-          className="w-full p-2 rounded-lg border text-base"
+          className="w-full p-2 rounded-lg border text-base focus:outline-none focus:ring-2 focus:ring-[--secondary-color]"
           disabled={loading}
         >
           <option value="">Välj typ</option>

@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Spinner } from "@radix-ui/themes/components/index";
 import * as Menubar from "@radix-ui/react-menubar";
-import { CalendarDays, Zap, User, Users, Settings } from "lucide-react";
+import { CalendarDays, Zap, User, Users, Trophy, Dices, Settings } from "lucide-react";
 import useGetUserInfo from "@/hooks/useGetUserInfo";
 import CalloutMessage from "@/components/user_feedback/CalloutMessage";
 import ProfilInfo from "@/components/ProfilInfo";
@@ -24,7 +24,13 @@ const ActiveCompetition = lazy(() =>
   import("@/components/ActiveCompetition").then((module) => ({ default: module.ActiveCompetition }))
 );
 
-type NavigationView = "competition" | "active_competition" | "profile" | "users" | "admin" | "leaderboard";
+type NavigationView =
+  | "competition"
+  | "active_competition"
+  | "profile"
+  | "users"
+  | "admin"
+  | "leaderboard";
 
 const MENU_ITEMS = [
   {
@@ -54,6 +60,21 @@ const MENU_ITEMS = [
     mobileLabel: "Klättrare",
     requiresAdmin: true,
     icon: Users,
+  },
+  {
+    value: "leaderboard" as const,
+    label: "Resultatlista",
+    mobileLabel: "Resultat",
+    requiresAdmin: true,
+    icon: Trophy,
+  },
+  {
+    value: "tombola" as const,
+    label: "Tombola",
+    mobileLabel: "Tombola",
+    requiresAdmin: true,
+    icon: Dices,
+    to: "/tombola",
   },
   {
     value: "admin" as const,
@@ -151,8 +172,10 @@ export default function Profile() {
           {MENU_ITEMS.filter((item) => !item.requiresAdmin || isAdmin).map((item) => (
             <Menubar.Menu key={item.value} value={item.value}>
               <Menubar.Trigger
-                onClick={() => setActiveView(item.value)}
-                className={getMenuItemClass(item.value)}
+                onClick={() =>
+                  item.to ? navigate(item.to) : setActiveView(item.value as NavigationView)
+                }
+                className={getMenuItemClass(item.value as NavigationView)}
               >
                 {item.label}
               </Menubar.Trigger>
@@ -199,20 +222,6 @@ export default function Profile() {
               <CompetitionForm
                 onCompetitionCreated={() => setCompetitionRefreshKey((prev) => prev + 1)}
               />
-
-              <h3 className="text-xl font-semibold mt-4 mb-2 text-gray-800">Tombola</h3>
-              <div className="bg-white/90 backdrop-blur p-6 rounded-lg shadow-md">
-                <p className="text-gray-600 mb-4">
-                  Dra slumpmässiga vinnare från godkända klättrare. Tryck på knappen nedan för att
-                  öppna tombolan i helskärm.
-                </p>
-                <Button
-                  onClick={() => navigate("/tombola")}
-                  className="bg-[--secondary-color] hover:bg-[--secondary-color-hover] text-white px-6 py-3 rounded-lg cursor-pointer"
-                >
-                  🎲 Öppna Tombola
-                </Button>
-              </div>
             </div>
           )}
         </div>
@@ -222,11 +231,13 @@ export default function Profile() {
         <div className="flex justify-around items-stretch h-16">
           {MENU_ITEMS.filter((item) => !item.requiresAdmin || isAdmin).map((item) => {
             const Icon = item.icon;
-            const isActive = activeView === item.value;
+            const isActive = !item.to && activeView === item.value;
             return (
               <button
                 key={item.value}
-                onClick={() => setActiveView(item.value)}
+                onClick={() =>
+                  item.to ? navigate(item.to) : setActiveView(item.value as NavigationView)
+                }
                 className={`flex flex-col items-center justify-center flex-1 gap-1 text-xs font-medium transition-colors ${
                   isActive ? "text-[--secondary-color]" : "text-gray-500 hover:text-gray-700"
                 }`}

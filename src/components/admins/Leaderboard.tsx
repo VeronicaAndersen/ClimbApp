@@ -49,7 +49,7 @@ export function Leaderboard() {
         </div>
       ) : (
         <select
-          className="border border-gray-300 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[--secondary-color]"
+          className="w-full p-2 rounded-lg border text-base focus:outline-none focus:ring-2 focus:ring-[--secondary-color]"
           value={selectedId ?? ""}
           onChange={(e) => setSelectedId(e.target.value ? Number(e.target.value) : null)}
         >
@@ -115,7 +115,13 @@ export function Leaderboard() {
                           className={entry.rank <= 3 ? "bg-amber-50" : "bg-white"}
                         >
                           <td className="px-4 py-3 font-semibold text-gray-500">
-                            {entry.rank === 1 ? "🥇" : entry.rank === 2 ? "🥈" : entry.rank === 3 ? "🥉" : entry.rank}
+                            {entry.rank === 1
+                              ? "🥇"
+                              : entry.rank === 2
+                                ? "🥈"
+                                : entry.rank === 3
+                                  ? "🥉"
+                                  : entry.rank}
                           </td>
                           <td className="px-4 py-3 font-medium text-gray-800">{entry.name}</td>
                           <td className="px-4 py-3 text-right font-mono text-gray-700">
