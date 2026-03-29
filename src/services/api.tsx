@@ -32,6 +32,8 @@ export async function loginClimber(payload: LoginRequest): Promise<LoginResponse
 }
 
 export async function signupClimber(payload: RegistrationRequest): Promise<SignupResponse | null> {
+  // Clear cache when logging in to ensure fresh data for the new user
+  clearCache();
   const data = await api.post<SignupResponse, SignupRequest>("/auth/signup", payload);
   tokens.saveTokens(data);
   return data;
