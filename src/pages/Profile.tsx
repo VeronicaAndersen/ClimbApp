@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Spinner } from "@radix-ui/themes/components/index";
 import * as Menubar from "@radix-ui/react-menubar";
+import { CalendarDays, Zap, User, Users, Settings } from "lucide-react";
 import useGetUserInfo from "@/hooks/useGetUserInfo";
 import CalloutMessage from "@/components/user_feedback/CalloutMessage";
 import ProfilInfo from "@/components/ProfilInfo";
@@ -26,12 +27,41 @@ const ActiveCompetition = lazy(() =>
 type NavigationView = "competition" | "active_competition" | "profile" | "users" | "admin" | "leaderboard";
 
 const MENU_ITEMS = [
-  { value: "competition" as const, label: "Tävlingar", requiresAdmin: false },
-  { value: "active_competition" as const, label: "Aktiv Tävling", requiresAdmin: false },
-  { value: "profile" as const, label: "Profil", requiresAdmin: false },
-  { value: "users" as const, label: "Klättrare", requiresAdmin: true },
-  { value: "leaderboard" as const, label: "Resultatlista", requiresAdmin: true },
-  { value: "admin" as const, label: "Admin", requiresAdmin: true },
+  {
+    value: "competition" as const,
+    label: "Tävlingar",
+    mobileLabel: "Tävlingar",
+    requiresAdmin: false,
+    icon: CalendarDays,
+  },
+  {
+    value: "active_competition" as const,
+    label: "Aktiv Tävling",
+    mobileLabel: "Aktiv",
+    requiresAdmin: false,
+    icon: Zap,
+  },
+  {
+    value: "profile" as const,
+    label: "Profil",
+    mobileLabel: "Profil",
+    requiresAdmin: false,
+    icon: User,
+  },
+  {
+    value: "users" as const,
+    label: "Klättrare",
+    mobileLabel: "Klättrare",
+    requiresAdmin: true,
+    icon: Users,
+  },
+  {
+    value: "admin" as const,
+    label: "Admin",
+    mobileLabel: "Admin",
+    requiresAdmin: true,
+    icon: Settings,
+  },
 ];
 
 const LoadingFallback = () => (
@@ -113,11 +143,11 @@ export default function Profile() {
   return (
     <div className="h-fit flex flex-col items-center justify-center">
       <img src="./grepp.svg" alt="grepp logo" className="w-28 absolute top-8 left-5" />
-      <div className="flex flex-col items-center my-24 mx-4 p-4 shadow-md rounded-lg bg-[--primary-color] backdrop-blur max-w-6xl w-full overflow-y-auto">
+      <div className="flex flex-col items-center mt-24 mb-20 md:my-24 mx-4 p-4 shadow-md rounded-lg bg-[--primary-color] backdrop-blur max-w-6xl w-full overflow-y-auto">
         {messageInfo && <CalloutMessage message={messageInfo.message} color={messageInfo.color} />}
 
-        {/* Navigation Menubar */}
-        <Menubar.Root className="w-full mb-6 flex justify-center bg-white rounded-md shadow-sm text-sm">
+        {/* Navigation Menubar — desktop only */}
+        <Menubar.Root className="w-full mb-6 hidden md:flex justify-center bg-white rounded-md shadow-sm text-sm">
           {MENU_ITEMS.filter((item) => !item.requiresAdmin || isAdmin).map((item) => (
             <Menubar.Menu key={item.value} value={item.value}>
               <Menubar.Trigger
@@ -187,6 +217,33 @@ export default function Profile() {
           )}
         </div>
       </div>
+      {/* Mobile bottom navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-lg md:hidden">
+        <div className="flex justify-around items-stretch h-16">
+          {MENU_ITEMS.filter((item) => !item.requiresAdmin || isAdmin).map((item) => {
+            const Icon = item.icon;
+            const isActive = activeView === item.value;
+            return (
+              <button
+                key={item.value}
+                onClick={() => setActiveView(item.value)}
+                className={`flex flex-col items-center justify-center flex-1 gap-1 text-xs font-medium transition-colors ${
+                  isActive ? "text-[--secondary-color]" : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <Icon className="w-5 h-5" />
+                <span>{item.mobileLabel}</span>
+                <span
+                  className={`w-1.5 h-1.5 rounded-full bg-[--secondary-color] transition-opacity ${
+                    isActive ? "opacity-100" : "opacity-0"
+                  }`}
+                />
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+
       <Button
         className="absolute cursor-pointer bg-[--secondary-color] hover:bg-[--secondary-color-hover] rounded-full px-4 py-2 mt-4 text-white top-4 right-4"
         onClick={handleLogout}
