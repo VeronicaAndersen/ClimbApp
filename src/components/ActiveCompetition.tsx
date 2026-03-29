@@ -85,14 +85,6 @@ export function ActiveCompetition() {
       // Pick competition: today first, otherwise nearest future
       const selectedCompetition = todayComps[0] ?? futureComps[0] ?? null;
 
-      if (!selectedCompetition) {
-        setMessageInfo({
-          message:
-            "Du har inga godkända tävlingar i framtiden. Kontakta receptionen för mer information.",
-          color: "amber",
-        });
-      }
-
       setActiveCompetition(selectedCompetition);
     } catch (error) {
       console.error("Error fetching active competition:", error);
@@ -131,7 +123,13 @@ export function ActiveCompetition() {
       {messageInfo && <CalloutMessage message={messageInfo.message} color={messageInfo.color} />}
 
       {!activeCompetition ? (
-        <p className="text-center text-gray-600">Du är inte registrerad för någon tävling ännu.</p>
+        <div>
+          <p className="text-center text-gray-600">
+            Just nu har du inga aktiva tävlingar. Om du har anmält dig och betalat tävlingen kommer
+            du att bli godkänd på tävlingsdagen.
+          </p>
+          <p className="text-center text-gray-600">Kontakta receptionen för mer information.</p>
+        </div>
       ) : (
         <>
           <div className="mb-4 p-4 border border-gray-300 rounded-lg bg-white shadow-sm">
