@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Spinner } from "@radix-ui/themes";
 import { Trophy, RotateCcw, ArrowLeft, Sparkles } from "lucide-react";
@@ -17,6 +17,8 @@ export default function Tombola() {
   const [isSpinning, setIsSpinning] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const loadedCompId = useRef<number | null>(null);
+  const storageKey = (compId: number) => `tombola_${compId}`;
 
   // Fetch competitions on mount
   useEffect(() => {
@@ -40,6 +42,7 @@ export default function Tombola() {
     if (!selectedCompetitionId) return;
 
     const fetchRegistrations = async () => {
+      loadedCompId.current = null;
       try {
         setIsLoading(true);
         setError(null);
@@ -47,11 +50,27 @@ export default function Tombola() {
 
         // Filter only approved registrations
         const approvedRegistrations = registrations.filter((reg) => reg.approved);
-
         setAllParticipants(approvedRegistrations);
-        setRemainingParticipants(approvedRegistrations);
-        setWinners([]);
+
+        const savedRaw = localStorage.getItem(storageKey(selectedCompetitionId));
+        if (savedRaw) {
+          try {
+            const saved = JSON.parse(savedRaw) as {
+              winners: RegistrationWithClimber[];
+              remainingParticipants: RegistrationWithClimber[];
+            };
+            setWinners(saved.winners);
+            setRemainingParticipants(saved.remainingParticipants);
+          } catch {
+            setWinners([]);
+            setRemainingParticipants(approvedRegistrations);
+          }
+        } else {
+          setWinners([]);
+          setRemainingParticipants(approvedRegistrations);
+        }
         setCurrentWinner(null);
+        loadedCompId.current = selectedCompetitionId;
       } catch (err) {
         setError(err instanceof Error ? err.message : "Kunde inte hämta anmälningar");
       } finally {
@@ -61,6 +80,15 @@ export default function Tombola() {
 
     fetchRegistrations();
   }, [selectedCompetitionId]);
+
+  // Persist tombola state to localStorage whenever winners/remaining change
+  useEffect(() => {
+    if (!selectedCompetitionId || loadedCompId.current !== selectedCompetitionId) return;
+    localStorage.setItem(
+      storageKey(selectedCompetitionId),
+      JSON.stringify({ winners, remainingParticipants })
+    );
+  }, [winners, remainingParticipants, selectedCompetitionId]);
 
   const spinTombola = () => {
     if (remainingParticipants.length === 0) {
@@ -97,6 +125,9 @@ export default function Tombola() {
   };
 
   const resetTombola = () => {
+    if (selectedCompetitionId) {
+      localStorage.removeItem(storageKey(selectedCompetitionId));
+    }
     setRemainingParticipants(allParticipants);
     setWinners([]);
     setCurrentWinner(null);
