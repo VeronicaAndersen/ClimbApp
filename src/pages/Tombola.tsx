@@ -186,7 +186,7 @@ export default function Tombola() {
             id="competition-select"
             value={selectedCompetitionId || ""}
             onChange={(e) => setSelectedCompetitionId(Number(e.target.value))}
-            className="w-full p-4 border-2 border-gray-200 rounded-xl text-gray-800 font-medium focus:ring-2 focus:ring-gray-400 focus:border-gray-400 transition-all duration-200 bg-white hover:border-gray-300 cursor-pointer"
+            className="w-full p-2 rounded-lg border text-base focus:outline-none focus:ring-2 focus:ring-[--secondary-color]"
           >
             <option value="">-- Välj en tävling --</option>
             {competitions.map((comp) => (

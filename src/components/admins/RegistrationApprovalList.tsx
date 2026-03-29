@@ -173,7 +173,7 @@ export function RegistrationApprovalList({
                           value={reg.level}
                           onChange={(e) => handleLevelChange(reg.user_id, Number(e.target.value))}
                           disabled={changingLevelId === reg.user_id}
-                          className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="w-full p-2 rounded-lg border text-base focus:outline-none focus:ring-2 focus:ring-[--secondary-color] disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {[1, 2, 3, 4, 5, 6, 7].map((level) => (
                             <option key={level} value={level}>
