@@ -20,6 +20,7 @@ import {
   ClimberUpdateRequest,
   PasswordResetRequest,
   PasswordResetConfirm,
+  LeaderboardResponse,
 } from "@/types";
 
 // Auth
@@ -133,6 +134,10 @@ export const updateScoreBatch = ({ comp_id, level }: UrlParams, payload: ScoreBa
     payload,
     true
   );
+
+// Leaderboard
+export const getLeaderboard = (comp_id: number) =>
+  api.get<LeaderboardResponse>(`/competition/${comp_id}/leaderboard`, true);
 
 // Password Reset
 export const requestPasswordReset = (payload: PasswordResetRequest) =>

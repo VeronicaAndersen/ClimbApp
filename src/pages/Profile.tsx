@@ -14,6 +14,7 @@ import { SeasonForm } from "@/components/forms/admins/SeasonForm";
 import { CompetitionList } from "@/components/admins/CompetitionList";
 import { CompetitionForm } from "@/components/forms/admins/CompetitionForm";
 import { ClimberList } from "@/components/admins/ClimberList";
+import { Leaderboard } from "@/components/admins/Leaderboard";
 import { SeasonList } from "@/components/admins/SeasonList";
 import { CompetitionListSection } from "@/components/CompetitionListSection";
 import { CompleteProfileForm } from "@/components/forms/CompleteProfileForm";
@@ -23,7 +24,7 @@ const ActiveCompetition = lazy(() =>
   import("@/components/ActiveCompetition").then((module) => ({ default: module.ActiveCompetition }))
 );
 
-type NavigationView = "competition" | "active_competition" | "profile" | "users" | "admin";
+type NavigationView = "competition" | "active_competition" | "profile" | "users" | "admin" | "leaderboard";
 
 const MENU_ITEMS = [
   {
@@ -177,6 +178,8 @@ export default function Profile() {
               <ClimberList />
             </div>
           )}
+
+          {activeView === "leaderboard" && isAdmin && <Leaderboard />}
 
           {activeView === "admin" && isAdmin && (
             <div className="grid grid-cols-1 gap-2">

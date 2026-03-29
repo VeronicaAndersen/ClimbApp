@@ -194,6 +194,23 @@ export type Grade = {
   level: number;
 };
 
+// Leaderboard
+export type LeaderboardEntry = {
+  rank: number;
+  name: string;
+  total_score: number;
+};
+
+export type LevelLeaderboard = {
+  level: number;
+  entries: LeaderboardEntry[];
+};
+
+export type LeaderboardResponse = {
+  competition_id: number;
+  levels: LevelLeaderboard[];
+};
+
 //UrlParams
 export type UrlParams = {
   id?: number;
