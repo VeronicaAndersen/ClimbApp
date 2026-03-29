@@ -12,8 +12,10 @@ import {
   SeasonResponse,
   MyInfoResponse,
   RegisterToCompResponse,
+  RegistrationWithClimber,
+  RegistrationApprovalUpdate,
+  RegistrationLevelUpdate,
   ProblemScoreBulkResult,
-  SignupRequest,
   ScoreBatchResponse,
   CompetitionResponse,
   ClimberResponse,
@@ -35,7 +37,7 @@ export async function loginClimber(payload: LoginRequest): Promise<LoginResponse
 export async function signupClimber(payload: RegistrationRequest): Promise<SignupResponse | null> {
   // Clear cache when logging in to ensure fresh data for the new user
   clearCache();
-  const data = await api.post<SignupResponse, SignupRequest>("/auth/signup", payload);
+  const data = await api.post<SignupResponse, RegistrationRequest>("/auth/signup", payload);
   tokens.saveTokens(data);
   return data;
 }
@@ -84,7 +86,7 @@ export const registerClimberToCompetition = (competitionId: number, level: numbe
   api.post(`/competition/${competitionId}/register`, { level }, true);
 
 export const getAllRegistrations = (competitionId: number) =>
-  api.get<import("@/types").RegistrationWithClimber[]>(
+  api.get<RegistrationWithClimber[]>(
     `/competition/${competitionId}/registrations`,
     true,
     true // skipCache - always fetch fresh data
@@ -95,14 +97,14 @@ export const updateRegistrationApproval = (
   userId: number,
   approved: boolean
 ) =>
-  api.patch<import("@/types").RegisterToCompResponse, import("@/types").RegistrationApprovalUpdate>(
+  api.patch<RegisterToCompResponse, RegistrationApprovalUpdate>(
     `/competition/${competitionId}/registration/${userId}`,
     { approved },
     true
   );
 
 export const updateRegistrationLevel = (competitionId: number, userId: number, level: number) =>
-  api.patch<import("@/types").RegisterToCompResponse, import("@/types").RegistrationLevelUpdate>(
+  api.patch<RegisterToCompResponse, RegistrationLevelUpdate>(
     `/competition/${competitionId}/registration/${userId}/level`,
     { level },
     true

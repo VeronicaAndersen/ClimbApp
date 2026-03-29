@@ -10,21 +10,16 @@ export type LoginResponse = {
   token_type: string;
 };
 
-export type SignupResponse = {
-  access_token: string;
-  refresh_token: string;
-  token_type: string;
+/** Same shape as LoginRequest — kept as alias for clarity at call sites */
+export type SignupRequest = LoginRequest;
+
+export type SignupResponse = LoginResponse & {
   climber: {
     id: number;
     name: string;
     user_scope: string;
     created_at: string;
   };
-};
-
-export type SignupRequest = {
-  username: string;
-  password: string;
 };
 
 // Password Reset
@@ -37,7 +32,7 @@ export type PasswordResetConfirm = {
   new_password: string;
 };
 
-//Climber
+// Climber
 export type RegistrationRequest = {
   username: string;
   password: string;
@@ -45,17 +40,6 @@ export type RegistrationRequest = {
   firstname: string;
   lastname: string;
   club?: string;
-};
-
-export type MyInfoResponse = {
-  id: number;
-  username: string;
-  user_scope: string;
-  created_at: string;
-  email: string;
-  firstname: string;
-  lastname: string;
-  club: string;
 };
 
 export type ClimberResponse = {
@@ -69,6 +53,9 @@ export type ClimberResponse = {
   club: string;
 };
 
+/** Alias — /climber/me returns the same shape as ClimberResponse */
+export type MyInfoResponse = ClimberResponse;
+
 export type ClimberUpdateRequest = {
   username?: string;
   password?: string;
@@ -78,6 +65,7 @@ export type ClimberUpdateRequest = {
   lastname?: string;
   club?: string;
 };
+
 // Competition
 export type CompetitionRequest = {
   name: string;
@@ -111,7 +99,7 @@ export type SeasonResponse = {
   created_at: string;
 };
 
-//Register climber to comp by level
+// Registration
 export type RegisterToComp = {
   level: number;
 };
@@ -141,57 +129,30 @@ export type RegistrationLevelUpdate = {
   level: number;
 };
 
-//Score
-export type ScoreRequest = {
+// Score — shared shape used across request, response and batch types
+export type ScoreData = {
   attempts_total: number;
   got_bonus: boolean;
   got_top: boolean;
   attempts_to_bonus: number;
   attempts_to_top: number;
 };
+
+export type ScoreRequest = ScoreData;
+export type ScoreResponse = ScoreData;
 
 export type ScoreBatchResponse = {
   problem_no: number;
-  score: {
-    attempts_total: number;
-    got_bonus: boolean;
-    got_top: boolean;
-    attempts_to_bonus: number;
-    attempts_to_top: number;
-  };
+  score: ScoreData;
 };
 
 export type ScoreBatch = {
-  items: {
-    problem_no: number;
-    attempts_total: number;
-    got_bonus: boolean;
-    got_top: boolean;
-    attempts_to_bonus: number;
-    attempts_to_top: number;
-  }[];
-};
-
-export type ScoreResponse = {
-  attempts_total: number;
-  got_bonus: boolean;
-  got_top: boolean;
-  attempts_to_bonus: number;
-  attempts_to_top: number;
+  items: ({ problem_no: number } & ScoreData)[];
 };
 
 export type ProblemScoreBulkResult = {
   problem_no: number;
-  score: ScoreResponse;
-};
-
-export type CompetitionProps = {
-  competition_id: number;
-};
-
-//Grade
-export type Grade = {
-  level: number;
+  score: ScoreData;
 };
 
 // Leaderboard
@@ -211,7 +172,15 @@ export type LeaderboardResponse = {
   levels: LevelLeaderboard[];
 };
 
-//UrlParams
+// Misc
+export type CompetitionProps = {
+  competition_id: number;
+};
+
+export type Grade = {
+  level: number;
+};
+
 export type UrlParams = {
   id?: number;
   comp_id?: number;

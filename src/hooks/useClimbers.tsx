@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { getAllClimbers } from "@/services/api";
 import { ClimberResponse } from "@/types";
 
@@ -7,7 +7,7 @@ export function useClimbers(refreshKey?: number) {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchClimbers = async () => {
+  const fetchClimbers = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -19,11 +19,11 @@ export function useClimbers(refreshKey?: number) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchClimbers();
-  }, [refreshKey]);
+  }, [fetchClimbers, refreshKey]);
 
   return { climbers, loading, error, refetch: fetchClimbers };
 }
