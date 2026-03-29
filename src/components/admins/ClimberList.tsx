@@ -189,7 +189,12 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
                         <input
                           type="email"
                           value={editValues.email}
-                          onChange={(e) => setEditValues({ ...editValues, email: e.target.value })}
+                          onChange={(e) =>
+                            setEditValues({
+                              ...editValues,
+                              email: e.target.value.trim().toLowerCase(),
+                            })
+                          }
                           className="w-full px-2 py-1 border border-gray-300 rounded"
                           disabled={isSavingRow}
                           placeholder="E-post"

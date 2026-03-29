@@ -89,7 +89,9 @@ export function CompleteProfileForm({ userInfo, onComplete }: CompleteProfileFor
               autoComplete="email"
               placeholder="E-post"
               value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value.trim().toLowerCase() })
+              }
               required
               className="w-full text-base"
               disabled={loading}

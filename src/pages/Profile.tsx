@@ -1,4 +1,5 @@
 import { useAuthStore } from "@/store/auth";
+import { clearTokens, isLoggedIn } from "@/lib/apiClient";
 import { useEffect, useState, useMemo, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Spinner } from "@radix-ui/themes/components/index";
@@ -39,7 +40,7 @@ const LoadingFallback = () => (
 );
 
 export default function Profile() {
-  const { setClimber, setToken } = useAuthStore();
+  const { setToken } = useAuthStore();
   const navigate = useNavigate();
   const [seasonRefreshKey, setSeasonRefreshKey] = useState(0);
   const [competitionRefreshKey, setCompetitionRefreshKey] = useState(0);
@@ -55,29 +56,14 @@ export default function Profile() {
   );
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("tokens");
-    if (!storedUser) {
-      navigate("/");
-      return;
-    }
-
-    try {
-      const parsed = JSON.parse(storedUser);
-      if (parsed) {
-        setClimber(parsed);
-      } else {
-        console.error("Invalid user data in localStorage:", parsed);
-        navigate("/");
-      }
-    } catch {
-      console.error("Failed to parse user data from localStorage");
+    if (!isLoggedIn()) {
       navigate("/");
     }
-  }, [navigate, setClimber]);
+  }, [navigate]);
 
   const handleLogout = () => {
     setToken(null);
-    localStorage.removeItem("tokens");
+    clearTokens();
     navigate("/");
   };
 

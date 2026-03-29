@@ -37,39 +37,47 @@ export function clearCache(): void {
 }
 
 // ----------------------------------------------------------
-// Token helpers
+// Token helpers — access token in memory, refresh token in sessionStorage
+// (sessionStorage is cleared when the tab/browser closes; inaccessible to
+//  other tabs; JS-readable but shorter-lived than localStorage)
 // ----------------------------------------------------------
-function saveTokens(tokens: { access_token: string; refresh_token: string }) {
-  localStorage.setItem("tokens", JSON.stringify(tokens));
+let _accessToken: string | null = null;
+
+function saveTokens(newTokens: { access_token: string; refresh_token: string }) {
+  _accessToken = newTokens.access_token;
+  sessionStorage.setItem("refresh_token", newTokens.refresh_token);
 }
 
-function readTokens(): { access_token?: string; refresh_token?: string } {
-  try {
-    return JSON.parse(localStorage.getItem("tokens") || "{}");
-  } catch {
-    return {};
-  }
+export function clearTokens(): void {
+  _accessToken = null;
+  sessionStorage.removeItem("refresh_token");
 }
 
 function getAccessToken(): string | null {
-  return readTokens().access_token ?? null;
+  return _accessToken;
+}
+
+export function isLoggedIn(): boolean {
+  return sessionStorage.getItem("refresh_token") !== null;
 }
 
 // ----------------------------------------------------------
 // Refresh
 // ----------------------------------------------------------
-async function refreshToken() {
-  const tokens = readTokens();
-  const refresh = tokens.refresh_token;
-  if (!refresh) return null;
+async function attemptRefresh() {
+  const rt = sessionStorage.getItem("refresh_token");
+  if (!rt) return null;
 
   const response = await fetch(`${apiUrl}/auth/refresh`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refresh_token: refresh }),
+    body: JSON.stringify({ refresh_token: rt }),
   });
 
-  if (!response.ok) return null;
+  if (!response.ok) {
+    clearTokens(); // tokens are no longer valid — force re-login
+    return null;
+  }
 
   const data = await response.json().catch(() => null);
   if (data) saveTokens(data);
@@ -122,7 +130,7 @@ async function apiRequest<T>(
   let response = await fetchWithToken(initialToken ?? undefined);
 
   if (requiresAuth && response.status === 401) {
-    const newTokens = await refreshToken();
+    const newTokens = await attemptRefresh();
     if (!newTokens) throw new Error("Autentisering misslyckades");
     response = await fetchWithToken(newTokens.access_token);
   }
@@ -135,29 +143,30 @@ async function apiRequest<T>(
   const raw = await response.text();
   if (!raw) return null as T;
 
-  const data = JSON.parse(raw) as T;
+  try {
+    const data = JSON.parse(raw) as T;
 
-  // Cache GET requests
-  if (method === "GET" && !options.skipCache) {
-    setCachedData(cacheKey, data);
-  }
+    // Cache GET requests
+    if (method === "GET" && !options.skipCache) {
+      setCachedData(cacheKey, data);
+    }
 
-  // Invalidate cache for mutations
-  if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
-    // Clear all cached GET requests for this resource type
-    const basePath = url.split("?")[0];
-    // Extract the resource type (e.g., "/season" from "/season/1")
-    const resourceType = basePath.split("/").slice(0, -1).join("/") || basePath;
+    // Invalidate cache for mutations
+    if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+      const basePath = url.split("?")[0];
+      const resourceType = basePath.split("/").slice(0, -1).join("/") || basePath;
 
-    for (const key of cache.keys()) {
-      // Clear exact matches and parent resource paths
-      if (key.includes(basePath) || key.includes(resourceType)) {
-        cache.delete(key);
+      for (const key of cache.keys()) {
+        if (key.includes(basePath) || key.includes(resourceType)) {
+          cache.delete(key);
+        }
       }
     }
-  }
 
-  return data;
+    return data;
+  } catch {
+    throw new Error("Oväntad respons från servern");
+  }
 }
 
 // ----------------------------------------------------------

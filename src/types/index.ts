@@ -27,6 +27,16 @@ export type SignupRequest = {
   password: string;
 };
 
+// Password Reset
+export type PasswordResetRequest = {
+  email: string;
+};
+
+export type PasswordResetConfirm = {
+  token: string;
+  new_password: string;
+};
+
 //Climber
 export type RegistrationRequest = {
   username: string;

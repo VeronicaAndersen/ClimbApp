@@ -28,7 +28,11 @@ export function RegistrationForm() {
     setErrorMessage(null);
 
     try {
-      const result = await signupClimber(registerClimberData);
+      const result = await signupClimber({
+        ...registerClimberData,
+        username: registerClimberData.username.trim().toLowerCase(),
+        email: registerClimberData.email.trim().toLowerCase(),
+      });
       if (result) {
         // Tokens are automatically saved in signupClimber
         navigate("/profile");
@@ -78,7 +82,7 @@ export function RegistrationForm() {
             <TextField.Root
               id="new_password"
               type="password"
-              autoComplete="new_password"
+              autoComplete="new-password"
               placeholder="Lösenord"
               value={registerClimberData.password}
               onChange={(e) =>
@@ -102,7 +106,10 @@ export function RegistrationForm() {
               placeholder="E-post"
               value={registerClimberData.email}
               onChange={(e) =>
-                setRegisterClimberData({ ...registerClimberData, email: e.target.value })
+                setRegisterClimberData({
+                  ...registerClimberData,
+                  email: e.target.value,
+                })
               }
               required
               className="w-full text-base"

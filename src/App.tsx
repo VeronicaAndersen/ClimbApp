@@ -6,6 +6,8 @@ import Login from "./pages/Login";
 import Profile from "./pages/Profile";
 import Registration from "./pages/Registration";
 import Tombola from "./pages/Tombola";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,6 +28,8 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/register" element={<Registration />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/tombola" element={<Tombola />} />
           <Route path="*" element={<NotFound />} />

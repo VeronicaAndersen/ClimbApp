@@ -20,7 +20,10 @@ export function LoginForm() {
     setErrorMessage(null);
 
     try {
-      const result = await loginClimber(loginData);
+      const result = await loginClimber({
+        ...loginData,
+        username: loginData.username.trim().toLowerCase(),
+      });
       if (result) {
         navigate("/profile");
       }
@@ -81,12 +84,17 @@ export function LoginForm() {
             )}
           </Button>
 
-          <Link
-            to="/register"
-            className="w-fit text-sm text-center text-[--secondary-color] underline flex justify-center mx-auto"
-          >
-            Registrera dig
-          </Link>
+          <div className="flex flex-col items-center gap-2">
+            <Link
+              to="/forgot-password"
+              className="text-sm text-gray-600 hover:text-[--secondary-color] underline"
+            >
+              Glömt lösenord?
+            </Link>
+            <Link to="/register" className="text-sm text-[--secondary-color] underline">
+              Registrera dig
+            </Link>
+          </div>
         </form>
       </Card>
     </div>

@@ -18,6 +18,8 @@ import {
   CompetitionResponse,
   ClimberResponse,
   ClimberUpdateRequest,
+  PasswordResetRequest,
+  PasswordResetConfirm,
 } from "@/types";
 
 // Auth
@@ -129,3 +131,10 @@ export const updateScoreBatch = ({ comp_id, level }: UrlParams, payload: ScoreBa
     payload,
     true
   );
+
+// Password Reset
+export const requestPasswordReset = (payload: PasswordResetRequest) =>
+  api.post<{ message: string }, PasswordResetRequest>("/auth/password-reset/request", payload);
+
+export const confirmPasswordReset = (payload: PasswordResetConfirm) =>
+  api.post<{ message: string }, PasswordResetConfirm>("/auth/password-reset/confirm", payload);
