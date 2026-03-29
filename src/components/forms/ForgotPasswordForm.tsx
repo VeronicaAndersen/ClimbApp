@@ -19,7 +19,7 @@ export function ForgotPasswordForm() {
     setSuccess(false);
 
     try {
-      await requestPasswordReset({ email });
+      await requestPasswordReset({ email: email.trim().toLowerCase() });
       setSuccess(true);
       setEmail("");
     } catch (error) {
