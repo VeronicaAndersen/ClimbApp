@@ -23,8 +23,10 @@ export function useCompetitionScores(competitionId: number): UseCompetitionScore
     const init = async () => {
       try {
         setLoading(true);
-        const climber = await getMyInfo();
-        const compInfo = await getCompRegistrationInfo(competitionId);
+        const [climber, compInfo] = await Promise.all([
+          getMyInfo(),
+          getCompRegistrationInfo(competitionId),
+        ]);
 
         if (!alive) return;
 

@@ -35,7 +35,6 @@ export async function loginClimber(payload: LoginRequest): Promise<LoginResponse
 }
 
 export async function signupClimber(payload: RegistrationRequest): Promise<SignupResponse | null> {
-  // Clear cache when logging in to ensure fresh data for the new user
   clearCache();
   const data = await api.post<SignupResponse, RegistrationRequest>("/auth/signup", payload);
   tokens.saveTokens(data);
@@ -48,7 +47,7 @@ export const getMyInfo = () => api.get<MyInfoResponse>("/climber/me", true);
 export const updateMyInfo = (payload: ClimberUpdateRequest) =>
   api.patch<MyInfoResponse, ClimberUpdateRequest>("/climber/me", payload, true);
 
-export const getClimberById = (id: number) => api.get(`/climber/${id}`);
+export const getClimberById = (id: number) => api.get<ClimberResponse>(`/climber/${id}`);
 
 export const getAllClimbers = () => api.get<ClimberResponse[]>("/climber", true);
 
@@ -64,10 +63,8 @@ export const createCompetition = (payload: CompetitionRequest) =>
   api.post("/competition", payload, true);
 
 export const getCompetitions = (name?: string) => {
-  const params = new URLSearchParams();
-  if (name) params.append("name", name);
-
-  return api.get<CompetitionResponse[]>(`/competition?${params.toString()}`);
+  const url = name ? `/competition?name=${encodeURIComponent(name)}` : "/competition";
+  return api.get<CompetitionResponse[]>(url);
 };
 
 export const updateCompetitionById = (competitionId: number, payload: CompetitionRequest) =>
@@ -139,7 +136,7 @@ export const updateScoreBatch = ({ comp_id, level }: UrlParams, payload: ScoreBa
 
 // Leaderboard
 export const getLeaderboard = (comp_id: number) =>
-  api.get<LeaderboardResponse>(`/competition/${comp_id}/leaderboard`, true);
+  api.get<LeaderboardResponse>(`/competition/${comp_id}/leaderboard`, true, true);
 
 // Password Reset
 export const requestPasswordReset = (payload: PasswordResetRequest) =>

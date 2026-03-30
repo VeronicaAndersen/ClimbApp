@@ -23,7 +23,7 @@ export function useCompetitions(refreshKey?: number): UseCompetitionsResult {
     setCheckingRegistration((prev) => ({ ...prev, [competitionId]: true }));
     try {
       const isRegistered = await checkRegistration(competitionId);
-      setRegistrationStatus((prev) => ({ ...prev, [competitionId]: isRegistered === true }));
+      setRegistrationStatus((prev) => ({ ...prev, [competitionId]: !!isRegistered }));
     } catch (err) {
       console.error(`Error checking registration for competition ${competitionId}:`, err);
       setRegistrationStatus((prev) => ({ ...prev, [competitionId]: false }));
@@ -46,7 +46,7 @@ export function useCompetitions(refreshKey?: number): UseCompetitionsResult {
           data.map(async (comp) => {
             try {
               const isRegistered = await checkRegistration(comp.id);
-              return { id: comp.id, isRegistered: isRegistered === true };
+              return { id: comp.id, isRegistered: !!isRegistered };
             } catch (err) {
               console.error(`Error checking registration for competition ${comp.id}:`, err);
               return { id: comp.id, isRegistered: false };
@@ -55,17 +55,13 @@ export function useCompetitions(refreshKey?: number): UseCompetitionsResult {
         );
 
         const statusMap: Record<number, boolean> = {};
-        const checkingMap: Record<number, boolean> = {};
-
         for (const result of registrationChecks) {
           if (result.status === "fulfilled") {
             statusMap[result.value.id] = result.value.isRegistered;
-            checkingMap[result.value.id] = false;
           }
         }
 
         setRegistrationStatus(statusMap);
-        setCheckingRegistration(checkingMap);
       } else {
         setCompetitions([]);
       }

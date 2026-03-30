@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Spinner } from "@radix-ui/themes";
 import { getCompetitions, getLeaderboard } from "@/services/api";
 import type { CompetitionResponse, LeaderboardResponse } from "@/types";
@@ -22,19 +22,30 @@ export function Leaderboard() {
       .finally(() => setLoadingComps(false));
   }, []);
 
+  const fetchRef = useRef(0);
+
   useEffect(() => {
     if (selectedId === null) return;
+    const token = ++fetchRef.current;
     setLoadingBoard(true);
     setLeaderboard(null);
     setActiveLevel(null);
     setError(null);
     getLeaderboard(selectedId)
       .then((data) => {
+        if (token !== fetchRef.current) return;
+        if (!data) return;
         setLeaderboard(data);
         if (data.levels.length > 0) setActiveLevel(data.levels[0].level);
       })
-      .catch(() => setError("Kunde inte hämta resultatlista."))
-      .finally(() => setLoadingBoard(false));
+      .catch(() => {
+        if (token !== fetchRef.current) return;
+        setError("Kunde inte hämta resultatlista.");
+      })
+      .finally(() => {
+        if (token !== fetchRef.current) return;
+        setLoadingBoard(false);
+      });
   }, [selectedId]);
 
   const activeLevelData = leaderboard?.levels.find((l) => l.level === activeLevel);
@@ -109,11 +120,8 @@ export function Leaderboard() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {activeLevelData.entries.map((entry) => (
-                        <tr
-                          key={entry.rank}
-                          className={entry.rank <= 3 ? "bg-amber-50" : "bg-white"}
-                        >
+                      {activeLevelData.entries.map((entry, i) => (
+                        <tr key={i} className={entry.rank <= 3 ? "bg-amber-50" : "bg-white"}>
                           <td className="px-4 py-3 font-semibold text-gray-500">
                             {entry.rank === 1
                               ? "🥇"

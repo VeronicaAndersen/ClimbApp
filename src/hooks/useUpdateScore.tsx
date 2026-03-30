@@ -1,8 +1,9 @@
 // updateScore
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { updateScore } from "@/services/api";
 import { ScoreRequest } from "@/types";
 import { getUserFriendlyError } from "@/utils/errorMessages";
+import { normalizeScorePayload } from "@/utils/competitionUtils";
 
 type UseUpdateScore = {
   saving: boolean;
@@ -21,53 +22,39 @@ export function useUpdateScore(): UseUpdateScore {
   const [error, setError] = useState<string | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
-  const saveAll = async (
-    competitionId: number,
-    level: number,
-    problem_no: number,
-    problem: ScoreRequest
-  ): Promise<boolean> => {
-    setSaving(true);
-    setError(null);
-    setSaveMessage(null);
+  const saveAll = useCallback(
+    async (
+      competitionId: number,
+      level: number,
+      problem_no: number,
+      problem: ScoreRequest
+    ): Promise<boolean> => {
+      setSaving(true);
+      setError(null);
+      setSaveMessage(null);
 
-    try {
-      // If top is achieved, bonus must also be marked as achieved (even if attempts_to_bonus is 0)
-      // This ensures backend validation passes while allowing flexible scoring
-      const hasTop = problem.attempts_to_top > 0;
-      const hasBonus = problem.attempts_to_bonus > 0;
+      try {
+        const result = await updateScore(
+          { comp_id: competitionId, level, problem_no },
+          normalizeScorePayload(problem)
+        );
 
-      const payload: ScoreRequest = {
-        attempts_total: problem.attempts_total,
-        got_bonus: hasBonus || hasTop, // Auto-set bonus if top is achieved
-        got_top: hasTop,
-        attempts_to_bonus: hasBonus
-          ? problem.attempts_to_bonus
-          : hasTop
-            ? problem.attempts_to_top
-            : 0,
-        attempts_to_top: problem.attempts_to_top,
-      };
+        if (!result) {
+          setError("Misslyckades att spara.");
+          return false;
+        }
 
-      const result = await updateScore(
-        { comp_id: competitionId, level: level, problem_no: problem_no },
-        payload
-      );
-
-      if (!result) {
-        setError("Misslyckades att spara.");
+        setSaveMessage("Poäng sparades.");
+        return true;
+      } catch (err) {
+        setError(getUserFriendlyError(err));
         return false;
+      } finally {
+        setSaving(false);
       }
-
-      setSaveMessage("Poäng sparades.");
-      return true;
-    } catch (err) {
-      setError(getUserFriendlyError(err));
-      return false;
-    } finally {
-      setSaving(false);
-    }
-  };
+    },
+    []
+  );
 
   return { saving, error, saveMessage, saveAll };
 }

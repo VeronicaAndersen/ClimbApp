@@ -61,12 +61,18 @@ export function useUserCompetitions() {
 
             if (scores.length === 0) return null;
 
-            // Calculate summary statistics
             const totalProblems = scores.length;
-            const problemsWithTop = scores.filter((s) => s.score.attempts_to_top > 0).length;
-            const problemsWithBonus = scores.filter((s) => s.score.attempts_to_bonus > 0).length;
-            const totalAttempts = scores.reduce((sum, s) => sum + s.score.attempts_total, 0);
-            const attemptedProblems = scores.filter((s) => s.score.attempts_total > 0).length;
+            const { problemsWithTop, problemsWithBonus, totalAttempts, attemptedProblems } =
+              scores.reduce(
+                (acc, s) => ({
+                  problemsWithTop: acc.problemsWithTop + (s.score.attempts_to_top > 0 ? 1 : 0),
+                  problemsWithBonus:
+                    acc.problemsWithBonus + (s.score.attempts_to_bonus > 0 ? 1 : 0),
+                  totalAttempts: acc.totalAttempts + s.score.attempts_total,
+                  attemptedProblems: acc.attemptedProblems + (s.score.attempts_total > 0 ? 1 : 0),
+                }),
+                { problemsWithTop: 0, problemsWithBonus: 0, totalAttempts: 0, attemptedProblems: 0 }
+              );
             const averageAttempts =
               attemptedProblems > 0 ? (totalAttempts / attemptedProblems).toFixed(1) : "0";
 
@@ -85,9 +91,12 @@ export function useUserCompetitions() {
           })
         );
 
-        const userCompetitionsData: CompetitionWithScores[] = competitionResults
-          .filter((result) => result.status === "fulfilled" && result.value !== null)
-          .map((result) => (result as PromiseFulfilledResult<CompetitionWithScores>).value);
+        const userCompetitionsData = competitionResults
+          .filter(
+            (r): r is PromiseFulfilledResult<CompetitionWithScores> =>
+              r.status === "fulfilled" && r.value !== null
+          )
+          .map((r) => r.value);
 
         if (!active) return;
 

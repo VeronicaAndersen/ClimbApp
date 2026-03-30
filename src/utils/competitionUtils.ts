@@ -1,6 +1,25 @@
 /**
  * Utility functions for competition management
  */
+import type { ScoreData } from "@/types";
+
+/**
+ * Maps raw score input to a ScoreData payload.
+ * Bonus and top are independent — a climber may top without having a bonus.
+ */
+export function normalizeScorePayload(s: {
+  attempts_total: number;
+  attempts_to_bonus: number;
+  attempts_to_top: number;
+}): ScoreData {
+  return {
+    attempts_total: s.attempts_total,
+    got_bonus: s.attempts_to_bonus > 0,
+    got_top: s.attempts_to_top > 0,
+    attempts_to_bonus: s.attempts_to_bonus,
+    attempts_to_top: s.attempts_to_top,
+  };
+}
 
 /**
  * Checks if the given date is today

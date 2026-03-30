@@ -29,9 +29,5 @@ export default function useGetUserInfo() {
     fetchInfo();
   }, [fetchInfo]);
 
-  const refetch = useCallback(() => {
-    fetchInfo();
-  }, [fetchInfo]);
-
-  return { userInfo, messageInfo, loading, refetch };
+  return { userInfo, messageInfo, loading, refetch: fetchInfo };
 }
