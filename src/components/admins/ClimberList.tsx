@@ -17,18 +17,20 @@ const USER_SCOPES = [
   { value: "admin", label: "Admin" },
 ];
 
+const emptyEditValues: ClimberUpdateRequest = {
+  username: "",
+  password: "",
+  user_scope: "",
+  email: "",
+  firstname: "",
+  lastname: "",
+  club: "",
+};
+
+const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString("sv-SE");
+
 export function ClimberList({ refreshKey }: ClimberListProps = {}) {
   const { climbers: climberList, loading, error, refetch } = useClimbers(refreshKey);
-
-  const emptyEditValues: ClimberUpdateRequest = {
-    username: "",
-    password: "",
-    user_scope: "",
-    email: "",
-    firstname: "",
-    lastname: "",
-    club: "",
-  };
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editValues, setEditValues] = useState<ClimberUpdateRequest>(emptyEditValues);
@@ -49,10 +51,10 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
       username: climber.username,
       password: "",
       user_scope: climber.user_scope,
-      email: climber.email,
-      firstname: climber.firstname,
-      lastname: climber.lastname,
-      club: climber.club,
+      email: climber.email ?? "",
+      firstname: climber.firstname ?? "",
+      lastname: climber.lastname ?? "",
+      club: climber.club ?? "",
     });
     setRowError(null);
     setDeleteConfirm(null);
@@ -91,7 +93,6 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
       // Don't send empty payload
       if (Object.keys(payload).length === 0) {
         setRowError({ id: climberId, message: "Inga ändringar att spara." });
-        setSaving(null);
         return;
       }
 
@@ -120,10 +121,6 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
     } finally {
       setDeleting(null);
     }
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("sv-SE");
   };
 
   return (
@@ -361,7 +358,7 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
 
                       {errorForRow && (
                         <div className="mt-2">
-                          <CalloutMessage message={rowError.message} color="red" />
+                          <CalloutMessage message={rowError!.message} color="red" />
                         </div>
                       )}
                     </td>
