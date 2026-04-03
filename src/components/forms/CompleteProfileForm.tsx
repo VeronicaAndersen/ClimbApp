@@ -14,6 +14,7 @@ interface CompleteProfileFormProps {
 export function CompleteProfileForm({ userInfo, onComplete }: CompleteProfileFormProps) {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [gdprConsent, setGdprConsent] = useState(false);
 
   const [formData, setFormData] = useState({
     email: userInfo.email || "",
@@ -34,6 +35,7 @@ export function CompleteProfileForm({ userInfo, onComplete }: CompleteProfileFor
     (missingFields.email && !formData.email) ||
     (missingFields.firstname && !formData.firstname) ||
     (missingFields.lastname && !formData.lastname) ||
+    !gdprConsent ||
     loading;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -145,6 +147,21 @@ export function CompleteProfileForm({ userInfo, onComplete }: CompleteProfileFor
             className="w-full text-base"
             disabled={loading}
           />
+        </div>
+
+        <div className="flex items-start gap-2">
+          <input
+            type="checkbox"
+            id="gdpr-consent"
+            checked={gdprConsent}
+            onChange={(e) => setGdprConsent(e.target.checked)}
+            disabled={loading}
+            className="mt-1 h-4 w-4 cursor-pointer disabled:cursor-not-allowed"
+          />
+          <Label.Root htmlFor="gdpr-consent" className="text-xs text-gray-700 leading-tight">
+            Jag godkänner att mina personuppgifter (namn, e-post, klubb och lösenord) lagras för att
+            kunna använda tjänsten. Uppgifterna används endast för inloggning och tävlingshantering.
+          </Label.Root>
         </div>
 
         <Button

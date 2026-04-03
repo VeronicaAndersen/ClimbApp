@@ -6,6 +6,7 @@ import CalloutMessage from "./user_feedback/CalloutMessage";
 import { getCompRegistrationInfo } from "@/services/api";
 import { useState, useEffect, useMemo } from "react";
 import { sortCompetitions } from "@/utils/competitionSort";
+import { SessionSwitcher } from "./SessionSwitcher";
 
 export function AssignToCompetitionsList() {
   const {
@@ -15,6 +16,7 @@ export function AssignToCompetitionsList() {
     registrationStatus,
     checkingRegistration,
     refreshRegistrationStatus,
+    refetch,
   } = useCompetitions();
 
   const [registrationDetails, setRegistrationDetails] = useState<
@@ -123,6 +125,12 @@ export function AssignToCompetitionsList() {
   return (
     <div className="mb-6 flex flex-col bg-white/90 backdrop-blur p-4 rounded-lg shadow-md">
       <h2 className="text-xl font-semibold mb-4">Tävlingar</h2>
+      <SessionSwitcher
+        onSwitch={() => {
+          setRegistrationDetails({});
+          refetch();
+        }}
+      />
 
       {error && <CalloutMessage message={error} color="red" />}
 

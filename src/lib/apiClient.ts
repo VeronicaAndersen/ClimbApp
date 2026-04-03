@@ -53,8 +53,15 @@ export function clearTokens(): void {
   sessionStorage.removeItem("refresh_token");
 }
 
-function getAccessToken(): string | null {
+export function getAccessToken(): string | null {
   return _accessToken;
+}
+
+/** Switch the active session without going through the login endpoint. */
+export function switchSession(accessToken: string, refreshToken: string): void {
+  _accessToken = accessToken;
+  sessionStorage.setItem("refresh_token", refreshToken);
+  clearCache();
 }
 
 export function isLoggedIn(): boolean {

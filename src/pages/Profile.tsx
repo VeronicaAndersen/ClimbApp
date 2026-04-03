@@ -1,5 +1,6 @@
 import { useAuthStore } from "@/store/auth";
 import { clearTokens, isLoggedIn } from "@/lib/apiClient";
+import { useSessionsStore } from "@/store/sessions";
 import { useEffect, useState, useMemo, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Spinner } from "@radix-ui/themes/components/index";
@@ -18,6 +19,7 @@ import { Leaderboard } from "@/components/admins/Leaderboard";
 import { SeasonList } from "@/components/admins/SeasonList";
 import { CompetitionListSection } from "@/components/CompetitionListSection";
 import { CompleteProfileForm } from "@/components/forms/CompleteProfileForm";
+import { SessionSwitcher } from "@/components/SessionSwitcher";
 
 // Lazy load ActiveCompetition component (the heaviest)
 const ActiveCompetition = lazy(() =>
@@ -94,6 +96,7 @@ const LoadingFallback = () => (
 
 export default function Profile() {
   const { setToken } = useAuthStore();
+  const { clearSessions, sessions } = useSessionsStore();
   const navigate = useNavigate();
   const [seasonRefreshKey, setSeasonRefreshKey] = useState(0);
   const [competitionRefreshKey, setCompetitionRefreshKey] = useState(0);
@@ -117,6 +120,7 @@ export default function Profile() {
   const handleLogout = () => {
     setToken(null);
     clearTokens();
+    clearSessions();
     navigate("/");
   };
 
@@ -193,7 +197,16 @@ export default function Profile() {
             </Suspense>
           )}
 
-          {activeView === "profile" && <ProfilInfo />}
+          {activeView === "profile" && (
+            <div>
+              {sessions.length > 1 && (
+                <div className="mb-4 p-4 bg-white/90 backdrop-blur rounded-lg shadow-md">
+                  <SessionSwitcher onSwitch={refetch} />
+                </div>
+              )}
+              <ProfilInfo />
+            </div>
+          )}
 
           {activeView === "users" && isAdmin && (
             <div>

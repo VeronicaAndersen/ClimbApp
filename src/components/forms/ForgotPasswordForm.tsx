@@ -7,7 +7,7 @@ import CalloutMessage from "../user_feedback/CalloutMessage";
 import { getUserFriendlyError } from "@/utils/errorMessages";
 
 export function ForgotPasswordForm() {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -19,9 +19,9 @@ export function ForgotPasswordForm() {
     setSuccess(false);
 
     try {
-      await requestPasswordReset({ email: email.trim().toLowerCase() });
+      await requestPasswordReset({ username: username.trim().toLowerCase() });
       setSuccess(true);
-      setEmail("");
+      setUsername("");
     } catch (error) {
       setErrorMessage(getUserFriendlyError(error));
     } finally {
@@ -35,24 +35,24 @@ export function ForgotPasswordForm() {
         {errorMessage && <CalloutMessage message={errorMessage} color="red" />}
         {success && (
           <CalloutMessage
-            message="Om e-postadressen finns i systemet kommer du att få ett mail med instruktioner för att återställa ditt lösenord."
+            message="Om användarnamnet finns i systemet och ett e-postmeddelande är kopplat till kontot kommer du att få en återställningslänk."
             color="green"
           />
         )}
         <form onSubmit={handleSubmit} className="space-y-6">
           <h1 className="text-2xl font-semibold text-center mb-4">Glömt lösenord</h1>
           <p className="text-sm text-gray-600 text-center">
-            Ange din e-postadress så skickar vi en länk för att återställa ditt lösenord.
+            Ange ditt användarnamn så skickar vi en länk för att återställa ditt lösenord.
           </p>
           <div className="space-y-2">
-            <Label>E-post</Label>
+            <Label>Användarnamn</Label>
             <TextField.Root
-              id="email"
-              type="email"
-              autoComplete="email"
-              placeholder="din@email.se"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              id="username"
+              type="text"
+              autoComplete="username"
+              placeholder="Användarnamn"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               required
               className="w-full text-base"
               disabled={loading || success}
@@ -62,7 +62,7 @@ export function ForgotPasswordForm() {
           <Button
             type="submit"
             className="w-full cursor-pointer rounded-full bg-[--secondary-color] hover:bg-[--secondary-color-hover] disabled:bg-[--secondary-color]/50 disabled:cursor-not-allowed flex items-center justify-center"
-            disabled={!email || loading || success}
+            disabled={!username || loading || success}
           >
             {loading ? (
               <>

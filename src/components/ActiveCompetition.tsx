@@ -9,6 +9,7 @@ import {
 import { CompetitionResponse, MessageProps } from "@/types";
 import CalloutMessage from "./user_feedback/CalloutMessage";
 import CompetitionScores from "./CompetitionScores";
+import { SessionSwitcher } from "./SessionSwitcher";
 
 export function ActiveCompetition() {
   const [activeCompetition, setActiveCompetition] = useState<CompetitionResponse | null>(null);
@@ -119,6 +120,8 @@ export function ActiveCompetition() {
       <div className="flex items-center justify-center gap-2 mb-4">
         <h2 className="text-2xl font-semibold text-center">Aktiv Tävling</h2>
       </div>
+
+      <SessionSwitcher onSwitch={fetchActiveCompetition} />
 
       {messageInfo && <CalloutMessage message={messageInfo.message} color={messageInfo.color} />}
 

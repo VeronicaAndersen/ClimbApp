@@ -24,7 +24,7 @@ export type SignupResponse = LoginResponse & {
 
 // Password Reset
 export type PasswordResetRequest = {
-  email: string;
+  username: string;
 };
 
 export type PasswordResetConfirm = {
