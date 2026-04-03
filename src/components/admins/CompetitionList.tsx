@@ -157,7 +157,7 @@ export function CompetitionList({ refreshKey }: CompetitionListProps = {}) {
                               <input
                                 type="number"
                                 min="1"
-                                max="3"
+                                max="4"
                                 value={editValues[field] || ""}
                                 onChange={(e) =>
                                   setEditValues({
