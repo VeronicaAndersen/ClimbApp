@@ -1,26 +1,23 @@
 import { useEffect, useRef, useState } from "react";
 import { Spinner } from "@radix-ui/themes";
-import { getCompetitions, getLeaderboard } from "@/services/api";
-import type { CompetitionResponse, LeaderboardResponse } from "@/types";
+import { getSeasons, getSeasonStandings } from "@/services/api";
+import type { SeasonResponse, SeasonStandingsResponse } from "@/types";
 import { getGradeColor } from "@/constants/gradeColors";
-import { SeasonStandings } from "./SeasonStandings";
 
-type View = "competition" | "season";
-
-function CompetitionLeaderboard() {
-  const [competitions, setCompetitions] = useState<CompetitionResponse[]>([]);
+export function SeasonStandings() {
+  const [seasons, setSeasons] = useState<SeasonResponse[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [leaderboard, setLeaderboard] = useState<LeaderboardResponse | null>(null);
+  const [standings, setStandings] = useState<SeasonStandingsResponse | null>(null);
   const [activeLevel, setActiveLevel] = useState<number | null>(null);
-  const [loadingComps, setLoadingComps] = useState(true);
-  const [loadingBoard, setLoadingBoard] = useState(false);
+  const [loadingSeasons, setLoadingSeasons] = useState(true);
+  const [loadingStandings, setLoadingStandings] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    getCompetitions()
-      .then((data) => setCompetitions(data ?? []))
-      .catch(() => setError("Kunde inte hämta tävlingar."))
-      .finally(() => setLoadingComps(false));
+    getSeasons()
+      .then((data) => setSeasons(data ?? []))
+      .catch(() => setError("Kunde inte hämta säsonger."))
+      .finally(() => setLoadingSeasons(false));
   }, []);
 
   const fetchRef = useRef(0);
@@ -28,34 +25,34 @@ function CompetitionLeaderboard() {
   useEffect(() => {
     if (selectedId === null) return;
     const token = ++fetchRef.current;
-    setLoadingBoard(true);
-    setLeaderboard(null);
+    setLoadingStandings(true);
+    setStandings(null);
     setActiveLevel(null);
     setError(null);
-    getLeaderboard(selectedId)
+    getSeasonStandings(selectedId)
       .then((data) => {
         if (token !== fetchRef.current) return;
         if (!data) return;
-        setLeaderboard(data);
+        setStandings(data);
         if (data.levels.length > 0) setActiveLevel(data.levels[0].level);
       })
       .catch(() => {
         if (token !== fetchRef.current) return;
-        setError("Kunde inte hämta resultatlista.");
+        setError("Kunde inte hämta säsongsresultat.");
       })
       .finally(() => {
         if (token !== fetchRef.current) return;
-        setLoadingBoard(false);
+        setLoadingStandings(false);
       });
   }, [selectedId]);
 
-  const activeLevelData = leaderboard?.levels.find((l) => l.level === activeLevel);
+  const activeLevelData = standings?.levels.find((l) => l.level === activeLevel);
 
   return (
     <div className="space-y-4">
-      {loadingComps ? (
+      {loadingSeasons ? (
         <div className="flex items-center gap-2 text-gray-500">
-          <Spinner size="2" /> Laddar tävlingar...
+          <Spinner size="2" /> Laddar säsonger...
         </div>
       ) : (
         <select
@@ -63,10 +60,10 @@ function CompetitionLeaderboard() {
           value={selectedId ?? ""}
           onChange={(e) => setSelectedId(e.target.value ? Number(e.target.value) : null)}
         >
-          <option value="">Välj tävling...</option>
-          {competitions.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name} ({c.comp_date})
+          <option value="">Välj säsong...</option>
+          {seasons.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name} ({s.year})
             </option>
           ))}
         </select>
@@ -74,20 +71,21 @@ function CompetitionLeaderboard() {
 
       {error && <p className="text-red-500 text-sm">{error}</p>}
 
-      {loadingBoard && (
+      {loadingStandings && (
         <div className="flex items-center gap-2 text-gray-500">
-          <Spinner size="2" /> Laddar resultatlista...
+          <Spinner size="2" /> Laddar resultat...
         </div>
       )}
 
-      {leaderboard && !loadingBoard && (
+      {standings && !loadingStandings && (
         <>
-          {leaderboard.levels.length === 0 ? (
-            <p className="text-gray-500 text-sm">Inga godkända resultat för denna tävling.</p>
+          {standings.levels.length === 0 ? (
+            <p className="text-gray-500 text-sm">Inga godkända resultat för denna säsong.</p>
           ) : (
             <>
+              {/* Level tabs */}
               <div className="flex flex-wrap gap-2">
-                {leaderboard.levels.map((l) => (
+                {standings.levels.map((l) => (
                   <button
                     key={l.level}
                     onClick={() => setActiveLevel(l.level)}
@@ -106,6 +104,7 @@ function CompetitionLeaderboard() {
                 ))}
               </div>
 
+              {/* Table */}
               {activeLevelData && (
                 <div className="overflow-x-auto rounded-lg border border-gray-200">
                   <table className="w-full text-sm">
@@ -113,7 +112,7 @@ function CompetitionLeaderboard() {
                       <tr>
                         <th className="px-4 py-3 text-left w-16">#</th>
                         <th className="px-4 py-3 text-left">Namn</th>
-                        <th className="px-4 py-3 text-right">Poäng</th>
+                        <th className="px-4 py-3 text-right">Totalpoäng</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
@@ -142,42 +141,6 @@ function CompetitionLeaderboard() {
           )}
         </>
       )}
-    </div>
-  );
-}
-
-export function Leaderboard() {
-  const [view, setView] = useState<View>("competition");
-
-  return (
-    <div className="w-full space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-xl font-semibold text-gray-800">Resultatlista</h3>
-        <div className="flex rounded-lg border border-gray-200 overflow-hidden text-sm font-medium">
-          <button
-            onClick={() => setView("competition")}
-            className={`px-4 py-1.5 transition-colors ${
-              view === "competition"
-                ? "bg-[--secondary-color] text-white"
-                : "bg-white text-gray-600 hover:bg-gray-50"
-            }`}
-          >
-            Tävling
-          </button>
-          <button
-            onClick={() => setView("season")}
-            className={`px-4 py-1.5 border-l border-gray-200 transition-colors ${
-              view === "season"
-                ? "bg-[--secondary-color] text-white"
-                : "bg-white text-gray-600 hover:bg-gray-50"
-            }`}
-          >
-            Säsong
-          </button>
-        </div>
-      </div>
-
-      {view === "competition" ? <CompetitionLeaderboard /> : <SeasonStandings />}
     </div>
   );
 }

@@ -23,6 +23,7 @@ import {
   PasswordResetRequest,
   PasswordResetConfirm,
   LeaderboardResponse,
+  SeasonStandingsResponse,
 } from "@/types";
 
 // Auth
@@ -137,6 +138,10 @@ export const updateScoreBatch = ({ comp_id, level }: UrlParams, payload: ScoreBa
 // Leaderboard
 export const getLeaderboard = (comp_id: number) =>
   api.get<LeaderboardResponse>(`/competition/${comp_id}/leaderboard`, true, true);
+
+// Season standings
+export const getSeasonStandings = (season_id: number) =>
+  api.get<SeasonStandingsResponse>(`/season/${season_id}/standings`, true, true);
 
 // Password Reset
 export const requestPasswordReset = (payload: PasswordResetRequest) =>

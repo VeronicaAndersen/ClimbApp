@@ -172,6 +172,24 @@ export type LeaderboardResponse = {
   levels: LevelLeaderboard[];
 };
 
+// Season standings
+export type SeasonStandingsEntry = {
+  rank: number;
+  name: string;
+  total_score: number;
+};
+
+export type LevelStandings = {
+  level: number;
+  entries: SeasonStandingsEntry[];
+};
+
+export type SeasonStandingsResponse = {
+  season_id: number;
+  season_name: string;
+  levels: LevelStandings[];
+};
+
 // Misc
 export type CompetitionProps = {
   competition_id: number;

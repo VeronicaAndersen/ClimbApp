@@ -128,14 +128,14 @@ export function CompetitionForm({ onCompetitionCreated }: CompetitionFormProps =
         {competitionData.comp_type === "QUALIFIER" && (
           <>
             <label htmlFor="round_no" className="block mb-1">
-              Omgångsnummer (1-3)
+              Omgångsnummer (1-4)
             </label>
             <input
               id="round_no"
               type="number"
               placeholder="Omgångsnummer"
               min="1"
-              max="3"
+              max="4"
               value={competitionData.round_no || ""}
               onChange={handleChange("round_no")}
               className="w-full p-2 rounded-lg border text-base"
