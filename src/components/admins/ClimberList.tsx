@@ -175,7 +175,7 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
                           onChange={(e) =>
                             setEditValues({ ...editValues, username: e.target.value })
                           }
-                          className="w-full px-2 py-1 border border-gray-300 rounded"
+                          className="w-full px-2 py-1 border border-gray-300 rounded text-base"
                           disabled={isSavingRow}
                           placeholder="Användarnamn"
                         />
@@ -195,7 +195,7 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
                               email: e.target.value.trim().toLowerCase(),
                             })
                           }
-                          className="w-full px-2 py-1 border border-gray-300 rounded"
+                          className="w-full px-2 py-1 border border-gray-300 rounded text-base"
                           disabled={isSavingRow}
                           placeholder="E-post"
                         />
@@ -212,7 +212,7 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
                           onChange={(e) =>
                             setEditValues({ ...editValues, firstname: e.target.value })
                           }
-                          className="w-full px-2 py-1 border border-gray-300 rounded"
+                          className="w-full px-2 py-1 border border-gray-300 rounded text-base"
                           disabled={isSavingRow}
                           placeholder="Förnamn"
                         />
@@ -229,7 +229,7 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
                           onChange={(e) =>
                             setEditValues({ ...editValues, lastname: e.target.value })
                           }
-                          className="w-full px-2 py-1 border border-gray-300 rounded"
+                          className="w-full px-2 py-1 border border-gray-300 rounded text-base"
                           disabled={isSavingRow}
                           placeholder="Efternamn"
                         />
@@ -244,7 +244,7 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
                           type="text"
                           value={editValues.club}
                           onChange={(e) => setEditValues({ ...editValues, club: e.target.value })}
-                          className="w-full px-2 py-1 border border-gray-300 rounded"
+                          className="w-full px-2 py-1 border border-gray-300 rounded text-base"
                           disabled={isSavingRow}
                           placeholder="Klubb"
                         />
@@ -261,7 +261,7 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
                           onChange={(e) =>
                             setEditValues({ ...editValues, password: e.target.value })
                           }
-                          className="w-full px-2 py-1 border border-gray-300 rounded"
+                          className="w-full px-2 py-1 border border-gray-300 rounded text-base"
                           disabled={isSavingRow}
                           placeholder="Nytt lösenord (valfritt)"
                         />

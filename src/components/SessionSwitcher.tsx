@@ -144,7 +144,7 @@ export function SessionSwitcher({ onSwitch }: Props) {
             placeholder="Användarnamn"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[--secondary-color]"
+            className="w-full px-3 py-2 text-base rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[--secondary-color]"
             required
           />
           <input
@@ -152,7 +152,7 @@ export function SessionSwitcher({ onSwitch }: Props) {
             placeholder="Lösenord"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[--secondary-color]"
+            className="w-full px-3 py-2 text-base rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[--secondary-color]"
             required
           />
           <div className="flex gap-2 pt-1">

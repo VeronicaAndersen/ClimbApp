@@ -121,7 +121,7 @@ export function SeasonList({ refreshKey }: SeasonListProps = {}) {
                             onChange={(e) =>
                               setEditValues({ ...editValues, [field]: e.target.value })
                             }
-                            className="w-full px-2 py-1 border border-gray-300 rounded"
+                            className="w-full px-2 py-1 border border-gray-300 rounded text-base"
                             disabled={isSavingRow}
                           />
                         ) : (

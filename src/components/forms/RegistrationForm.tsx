@@ -174,7 +174,7 @@ export function RegistrationForm() {
               checked={gdprConsent}
               onChange={(e) => setGdprConsent(e.target.checked)}
               disabled={loading}
-              className="mt-1 h-4 w-4 cursor-pointer disabled:cursor-not-allowed"
+              className="mt-1 h-4 w-4 cursor-pointer disabled:cursor-not-allowed text-base"
             />
             <Label.Root htmlFor="gdpr-consent" className="text-xs text-gray-700 leading-tight">
               Jag godkänner att mina personuppgifter (namn, e-post, klubb och lösenord) lagras för
