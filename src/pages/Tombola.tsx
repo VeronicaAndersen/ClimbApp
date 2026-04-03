@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Spinner } from "@radix-ui/themes";
 import { Trophy, RotateCcw, ArrowLeft, Sparkles, Users } from "lucide-react";
@@ -85,7 +85,7 @@ export default function Tombola() {
     );
   }, [winners, remainingParticipants, selectedCompetitionId]);
 
-  const spinTombola = () => {
+  const spinTombola = useCallback(() => {
     const pool = remainingParticipants;
     if (pool.length === 0) {
       setError("Inga fler deltagare i tombolan!");
@@ -96,7 +96,6 @@ export default function Tombola() {
     setCurrentWinner(null);
     setError(null);
 
-    // Slowdown effect: starts at ~50ms per tick, ends at ~400ms
     const steps = 20;
     let step = 0;
 
@@ -116,7 +115,26 @@ export default function Tombola() {
     };
 
     setTimeout(snap, 50);
-  };
+  }, [remainingParticipants]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+
+      // Ignorera inputs / textarea
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) {
+        return;
+      }
+
+      if (e.code === "Space" && !isSpinning && remainingParticipants.length > 0) {
+        e.preventDefault();
+        spinTombola();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isSpinning, remainingParticipants, spinTombola]);
 
   const resetTombola = () => {
     if (selectedCompetitionId) localStorage.removeItem(storageKey(selectedCompetitionId));
@@ -295,6 +313,7 @@ export default function Tombola() {
                 {/* Spin Button */}
                 <div className="flex justify-center mb-6">
                   <Button
+                    id="btnWinner"
                     onClick={spinTombola}
                     disabled={isSpinning || remainingParticipants.length === 0}
                     className="bg-[--secondary-color] hover:bg-[--secondary-color-hover] text-white px-14 py-6 rounded-full text-2xl font-bold shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 cursor-pointer flex items-center gap-3"
