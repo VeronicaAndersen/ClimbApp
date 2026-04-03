@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { Spinner, Button } from "@radix-ui/themes";
 import { useSeasons } from "@/hooks/useSeasons";
 import { updateSeasonById, deleteSeasonById } from "@/services/api";
@@ -12,6 +12,8 @@ interface SeasonListProps {
 
 const emptyEditValues: SeasonRequest = { name: "", year: null };
 
+const FIELDS: (keyof SeasonRequest)[] = ["name", "year"];
+
 export function SeasonList({ refreshKey }: SeasonListProps = {}) {
   const { seasons: seasonList, loading, error, refetch } = useSeasons(refreshKey);
 
@@ -21,8 +23,6 @@ export function SeasonList({ refreshKey }: SeasonListProps = {}) {
   const [deleting, setDeleting] = useState<number | null>(null);
   const [rowError, setRowError] = useState<{ id: number; message: string } | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
-
-  const fields = useMemo<(keyof SeasonRequest)[]>(() => ["name", "year"], []);
 
   const resetState = () => {
     setEditingId(null);
@@ -113,13 +113,13 @@ export function SeasonList({ refreshKey }: SeasonListProps = {}) {
           <Spinner size="3" />
           <span className="ml-2">Hämtar säsonger...</span>
         </div>
-      ) : seasonList && seasonList.length > 0 ? (
+      ) : seasonList.length > 0 ? (
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
               <tr className="border-b border-gray-300">
                 <th className="text-left p-2 font-semibold text-gray-700">ID</th>
-                {fields.map((f) => (
+                {FIELDS.map((f) => (
                   <th key={f} className="text-left p-2 font-semibold text-gray-700 capitalize">
                     {f}
                   </th>
@@ -140,7 +140,7 @@ export function SeasonList({ refreshKey }: SeasonListProps = {}) {
                   <tr key={season.id} className="border-b border-gray-200 hover:bg-gray-50">
                     <td className="p-2 text-gray-800">{season.id}</td>
 
-                    {fields.map((field) => (
+                    {FIELDS.map((field) => (
                       <td key={field} className="p-2">
                         {isEditing ? (
                           renderEditInput(field, isSavingRow)

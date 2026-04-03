@@ -1,8 +1,7 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import CalloutMessage from "../user_feedback/CalloutMessage";
 import { Spinner, Button } from "@radix-ui/themes";
-import { useCompetitions } from "@/hooks/useCompetitions";
-import { updateCompetitionById, deleteCompetitionById } from "@/services/api";
+import { getCompetitions, updateCompetitionById, deleteCompetitionById } from "@/services/api";
 import { CompetitionResponse, CompetitionRequest } from "@/types";
 import { Pencil, Trash2, Check, X } from "lucide-react";
 
@@ -19,8 +18,36 @@ const emptyEditValues: CompetitionRequest = {
   round_no: null,
 };
 
+const FIELDS: (keyof CompetitionRequest)[] = [
+  "name",
+  "description",
+  "comp_type",
+  "comp_date",
+  "season_id",
+  "round_no",
+];
+
 export function CompetitionList({ refreshKey }: CompetitionListProps = {}) {
-  const { competitions: compList, loading, error, refetch } = useCompetitions(refreshKey);
+  const [compList, setCompList] = useState<CompetitionResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const refetch = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getCompetitions();
+      setCompList(data ?? []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Kunde inte hämta tävlingar.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refetch();
+  }, [refetch, refreshKey]);
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editValues, setEditValues] = useState<CompetitionRequest>(emptyEditValues);
@@ -28,11 +55,6 @@ export function CompetitionList({ refreshKey }: CompetitionListProps = {}) {
   const [deleting, setDeleting] = useState<number | null>(null);
   const [rowError, setRowError] = useState<{ id: number; message: string } | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
-
-  const fields = useMemo<(keyof CompetitionRequest)[]>(
-    () => ["name", "description", "comp_type", "comp_date", "season_id", "round_no"],
-    []
-  );
 
   const resetState = () => {
     setEditingId(null);
@@ -182,13 +204,13 @@ export function CompetitionList({ refreshKey }: CompetitionListProps = {}) {
           <Spinner size="3" />
           <span className="ml-2">Hämtar tävlingar...</span>
         </div>
-      ) : compList && compList.length > 0 ? (
+      ) : compList.length > 0 ? (
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
               <tr className="border-b border-gray-300">
                 <th className="p-2 font-semibold text-gray-700 text-left">ID</th>
-                {fields.map((f) => (
+                {FIELDS.map((f) => (
                   <th key={f} className="p-2 font-semibold text-gray-700 text-left capitalize">
                     {f.replace("_", " ")}
                   </th>
@@ -210,7 +232,7 @@ export function CompetitionList({ refreshKey }: CompetitionListProps = {}) {
                     <td className="p-2">
                       <span className="text-gray-600 font-mono text-sm">{competition.id}</span>
                     </td>
-                    {fields.map((field) => (
+                    {FIELDS.map((field) => (
                       <td key={field} className="p-2">
                         {isEditing ? (
                           renderEditInput(field, isSavingRow)

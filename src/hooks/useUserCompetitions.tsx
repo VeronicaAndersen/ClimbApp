@@ -1,10 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  getCompetitions,
-  checkRegistration,
-  getCompRegistrationInfo,
-  getScoresBatch,
-} from "@/services/api";
+import { getCompetitions, getCompRegistrationInfo, getScoresBatch } from "@/services/api";
 import { CompetitionResponse, ScoreBatchResponse } from "@/types";
 
 export interface CompetitionWithScores {
@@ -45,13 +40,9 @@ export function useUserCompetitions() {
         // Parallelize all competition checks instead of sequential loop
         const competitionResults = await Promise.allSettled(
           allCompetitions.map(async (comp) => {
-            const isRegistered = await checkRegistration(comp.id);
-
-            if (!isRegistered) return null;
-
-            // First get registration to know the level
-            const registration = await getCompRegistrationInfo(comp.id);
-            if (!registration || !registration.level) return null;
+            // getCompRegistrationInfo throws 404 if not registered — catch means "not registered"
+            const registration = await getCompRegistrationInfo(comp.id).catch(() => null);
+            if (!registration?.level) return null;
 
             // Then fetch scores for that level
             const scores = await getScoresBatch({

@@ -1,17 +1,38 @@
+import { useState, useEffect, useMemo } from "react";
 import { CompetitionResponse } from "@/types";
+import { getCompetitions } from "@/services/api";
 import { CompetitionRegistrations } from "./admins/CompetitionRegistrations";
-import { useMemo } from "react";
 import { sortCompetitions } from "@/utils/competitionSort";
+import { Spinner } from "@radix-ui/themes";
 
 interface CompetitionListSectionProps {
-  competitions: CompetitionResponse[];
   refreshKey: number;
 }
 
-export function CompetitionListSection({ competitions, refreshKey }: CompetitionListSectionProps) {
+export function CompetitionListSection({ refreshKey }: CompetitionListSectionProps) {
+  const [competitions, setCompetitions] = useState<CompetitionResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    getCompetitions()
+      .then((data) => setCompetitions(data ?? []))
+      .catch(() => setCompetitions([]))
+      .finally(() => setLoading(false));
+  }, [refreshKey]);
+
   const { upcoming, past } = useMemo(() => sortCompetitions(competitions), [competitions]);
 
-  if (!competitions || competitions.length === 0) {
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-4">
+        <Spinner size="2" />
+        <span className="ml-2 text-sm">Hämtar tävlingar...</span>
+      </div>
+    );
+  }
+
+  if (competitions.length === 0) {
     return <p className="text-gray-600 mb-4">Inga tävlingar tillgängliga.</p>;
   }
 

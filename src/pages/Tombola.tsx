@@ -7,6 +7,8 @@ import { RegistrationWithClimber, CompetitionResponse } from "@/types";
 import CalloutMessage from "@/components/user_feedback/CalloutMessage";
 import { getGradeColor } from "@/constants/gradeColors";
 
+const storageKey = (compId: number) => `tombola_${compId}`;
+
 export default function Tombola() {
   const navigate = useNavigate();
   const [competitions, setCompetitions] = useState<CompetitionResponse[]>([]);
@@ -19,7 +21,6 @@ export default function Tombola() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const loadedCompId = useRef<number | null>(null);
-  const storageKey = (compId: number) => `tombola_${compId}`;
 
   useEffect(() => {
     const fetchCompetitions = async () => {
@@ -322,7 +323,7 @@ export default function Tombola() {
                     <div className="space-y-2 max-h-72 overflow-y-auto">
                       {winners.map((winner, index) => (
                         <div
-                          key={`${winner.user_id}-${index}`}
+                          key={winner.user_id}
                           className="flex items-center gap-3 p-3 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-lg border border-yellow-200"
                         >
                           <span className="w-8 h-8 shrink-0 bg-gradient-to-br from-yellow-400 to-amber-500 text-white rounded-full flex items-center justify-center font-bold text-sm shadow-sm">

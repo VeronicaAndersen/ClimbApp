@@ -58,8 +58,8 @@ export default function ProblemGrid({
     [competitionDate, userScope, adminOverride]
   );
 
-  const userIsAdmin = useMemo(() => isAdmin(userScope), [userScope]);
-  const isCompetitionToday = useMemo(() => isToday(competitionDate), [competitionDate]);
+  const userIsAdmin = isAdmin(userScope);
+  const isCompetitionToday = isToday(competitionDate);
 
   // Clear the saved problem message after 3 seconds
   useEffect(() => {
@@ -202,7 +202,7 @@ export default function ProblemGrid({
             </div>
           </div>
           <Button
-            onClick={() => setAdminOverride(!adminOverride)}
+            onClick={() => setAdminOverride((prev) => !prev)}
             className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
               adminOverride
                 ? "bg-blue-600 hover:bg-blue-700 text-white"
@@ -311,7 +311,7 @@ export default function ProblemGrid({
                       <div className="flex items-center gap-2">
                         <Button
                           onClick={() => dec(problem, key)}
-                          disabled={saving || !canEdit}
+                          disabled={saving || batchSaving || !canEdit}
                           className={`w-8 h-8 rounded-full bg-[--secondary-color] hover:bg-[--primary-color-hover]
                                     text-white font-bold text-lg cursor-pointer`}
                           aria-label={`Minska ${SCORE_FIELD_LABELS[key]}`}
@@ -321,7 +321,7 @@ export default function ProblemGrid({
                         <input
                           id={`problem-${problem.problem_no}-${key}`}
                           type="number"
-                          disabled={saving || !canEdit}
+                          disabled={saving || batchSaving || !canEdit}
                           min={MIN_SCORE_VALUE}
                           inputMode="numeric"
                           value={String(sanitizeValue(Number(problem.score[key])))}
@@ -332,7 +332,7 @@ export default function ProblemGrid({
                         />
                         <Button
                           onClick={() => inc(problem, key)}
-                          disabled={saving || !canEdit}
+                          disabled={saving || batchSaving || !canEdit}
                           className={`w-8 h-8 rounded-full bg-[--secondary-color] hover:bg-[--primary-color-hover]
                                     text-white font-bold text-lg cursor-pointer`}
                           aria-label={`Öka ${SCORE_FIELD_LABELS[key]}`}
@@ -386,7 +386,7 @@ export default function ProblemGrid({
                           setSavedProblemNo(null); // Clear any previous success message
                         }
                       }}
-                      disabled={saving || !gradeLevel || !canEdit}
+                      disabled={saving || batchSaving || !gradeLevel || !canEdit}
                       className={`bg-[--secondary-color] hover:bg-[--primary-color-hover] text-white px-6 py-2 mt-4 rounded-full
                         shadow font-medium cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed w-full`}
                     >

@@ -4,7 +4,7 @@ import { Spinner } from "@radix-ui/themes";
 import RegisterToCompForm from "./forms/RegisterToCompForm";
 import CalloutMessage from "./user_feedback/CalloutMessage";
 import { getCompRegistrationInfo } from "@/services/api";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { sortCompetitions } from "@/utils/competitionSort";
 import { SessionSwitcher } from "./SessionSwitcher";
 
@@ -22,39 +22,37 @@ export function AssignToCompetitionsList() {
   const [registrationDetails, setRegistrationDetails] = useState<
     Record<number, RegisterToCompResponse>
   >({});
+  const fetchedIdsRef = useRef(new Set<number>());
 
-  // Fetch registration details for registered competitions
+  // Fetch registration details for registered competitions.
+  // Uses a ref to track already-fetched IDs to avoid re-fetching on every render
+  // without needing registrationDetails in the deps array (which would cause a loop).
   useEffect(() => {
-    const fetchRegistrationDetails = async () => {
-      const registeredComps = competitionList.filter(
-        (comp) => registrationStatus[comp.id] && !registrationDetails[comp.id]
-      );
+    if (competitionList.length === 0) return;
 
-      if (registeredComps.length === 0) return;
+    const toFetch = competitionList.filter(
+      (comp) => registrationStatus[comp.id] && !fetchedIdsRef.current.has(comp.id)
+    );
+    if (toFetch.length === 0) return;
 
-      const results = await Promise.allSettled(
-        registeredComps.map(async (comp) => {
-          const regInfo = await getCompRegistrationInfo(comp.id);
-          return { id: comp.id, regInfo };
-        })
-      );
+    toFetch.forEach((comp) => fetchedIdsRef.current.add(comp.id));
 
+    Promise.allSettled(
+      toFetch.map(async (comp) => {
+        const regInfo = await getCompRegistrationInfo(comp.id);
+        return { id: comp.id, regInfo };
+      })
+    ).then((results) => {
       const newDetails: Record<number, RegisterToCompResponse> = {};
       results.forEach((result) => {
         if (result.status === "fulfilled" && result.value.regInfo) {
           newDetails[result.value.id] = result.value.regInfo;
         }
       });
-
       if (Object.keys(newDetails).length > 0) {
         setRegistrationDetails((prev) => ({ ...prev, ...newDetails }));
       }
-    };
-
-    if (competitionList.length > 0) {
-      fetchRegistrationDetails();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    });
   }, [competitionList, registrationStatus]);
 
   const { upcoming: upcomingCompetitions, past: pastCompetitions } = useMemo(
@@ -127,6 +125,7 @@ export function AssignToCompetitionsList() {
       <h2 className="text-xl font-semibold mb-4">Tävlingar</h2>
       <SessionSwitcher
         onSwitch={() => {
+          fetchedIdsRef.current.clear();
           setRegistrationDetails({});
           refetch();
         }}

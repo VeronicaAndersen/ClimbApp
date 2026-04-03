@@ -10,7 +10,6 @@ import useGetUserInfo from "@/hooks/useGetUserInfo";
 import CalloutMessage from "@/components/user_feedback/CalloutMessage";
 import ProfilInfo from "@/components/ProfilInfo";
 import { AssignToCompetitionsList } from "@/components/AssignToCompetitionsList";
-import { useCompetitions } from "@/hooks/useCompetitions";
 import { CompleteProfileForm } from "@/components/forms/CompleteProfileForm";
 import { SessionSwitcher } from "@/components/SessionSwitcher";
 
@@ -116,7 +115,6 @@ export default function Profile() {
   const [activeView, setActiveView] = useState<NavigationView>("active_competition");
 
   const { userInfo, messageInfo, loading: userLoading, refetch } = useGetUserInfo();
-  const { competitions } = useCompetitions();
 
   const isAdmin = useMemo(() => userInfo?.user_scope === "admin", [userInfo?.user_scope]);
   const isProfileIncomplete = useMemo(
@@ -240,10 +238,7 @@ export default function Profile() {
             <Suspense fallback={<LoadingFallback />}>
               <div className="grid grid-cols-1 gap-2">
                 <h3 className="text-xl font-semibold mb-2 text-gray-800">Godkänn anmälda</h3>
-                <CompetitionListSection
-                  competitions={competitions || []}
-                  refreshKey={competitionRefreshKey}
-                />
+                <CompetitionListSection refreshKey={competitionRefreshKey} />
 
                 <h3 className="text-xl font-semibold mt-4 mb-2 text-gray-800">
                   Hantera säsonger och tävlingar
