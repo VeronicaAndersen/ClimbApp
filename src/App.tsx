@@ -1,13 +1,15 @@
 import "@radix-ui/themes/styles.css";
+import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import NotFound from "./pages/NotFound";
-import Login from "./pages/Login";
-import Profile from "./pages/Profile";
-import Registration from "./pages/Registration";
-import Tombola from "./pages/Tombola";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
+
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Login = lazy(() => import("./pages/Login"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Registration = lazy(() => import("./pages/Registration"));
+const Tombola = lazy(() => import("./pages/Tombola"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -25,15 +27,17 @@ const App = () => (
   <>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Login />} />
-          <Route path="/register" element={<Registration />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/tombola" element={<Tombola />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <Suspense>
+          <Routes>
+            <Route path="/" element={<Login />} />
+            <Route path="/register" element={<Registration />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/tombola" element={<Tombola />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
       </BrowserRouter>
     </QueryClientProvider>
   </>

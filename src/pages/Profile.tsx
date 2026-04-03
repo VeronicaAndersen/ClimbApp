@@ -11,19 +11,32 @@ import CalloutMessage from "@/components/user_feedback/CalloutMessage";
 import ProfilInfo from "@/components/ProfilInfo";
 import { AssignToCompetitionsList } from "@/components/AssignToCompetitionsList";
 import { useCompetitions } from "@/hooks/useCompetitions";
-import { SeasonForm } from "@/components/forms/admins/SeasonForm";
-import { CompetitionList } from "@/components/admins/CompetitionList";
-import { CompetitionForm } from "@/components/forms/admins/CompetitionForm";
-import { ClimberList } from "@/components/admins/ClimberList";
-import { Leaderboard } from "@/components/admins/Leaderboard";
-import { SeasonList } from "@/components/admins/SeasonList";
-import { CompetitionListSection } from "@/components/CompetitionListSection";
 import { CompleteProfileForm } from "@/components/forms/CompleteProfileForm";
 import { SessionSwitcher } from "@/components/SessionSwitcher";
 
-// Lazy load ActiveCompetition component (the heaviest)
 const ActiveCompetition = lazy(() =>
-  import("@/components/ActiveCompetition").then((module) => ({ default: module.ActiveCompetition }))
+  import("@/components/ActiveCompetition").then((m) => ({ default: m.ActiveCompetition }))
+);
+const SeasonForm = lazy(() =>
+  import("@/components/forms/admins/SeasonForm").then((m) => ({ default: m.SeasonForm }))
+);
+const CompetitionForm = lazy(() =>
+  import("@/components/forms/admins/CompetitionForm").then((m) => ({ default: m.CompetitionForm }))
+);
+const CompetitionList = lazy(() =>
+  import("@/components/admins/CompetitionList").then((m) => ({ default: m.CompetitionList }))
+);
+const SeasonList = lazy(() =>
+  import("@/components/admins/SeasonList").then((m) => ({ default: m.SeasonList }))
+);
+const ClimberList = lazy(() =>
+  import("@/components/admins/ClimberList").then((m) => ({ default: m.ClimberList }))
+);
+const Leaderboard = lazy(() =>
+  import("@/components/admins/Leaderboard").then((m) => ({ default: m.Leaderboard }))
+);
+const CompetitionListSection = lazy(() =>
+  import("@/components/CompetitionListSection").then((m) => ({ default: m.CompetitionListSection }))
 );
 
 type NavigationView =
@@ -211,31 +224,39 @@ export default function Profile() {
           {activeView === "users" && isAdmin && (
             <div>
               <h3 className="text-xl font-semibold mt-4 mb-2 text-gray-800">Hantera klättrare</h3>
-              <ClimberList />
+              <Suspense fallback={<LoadingFallback />}>
+                <ClimberList />
+              </Suspense>
             </div>
           )}
 
-          {activeView === "leaderboard" && isAdmin && <Leaderboard />}
+          {activeView === "leaderboard" && isAdmin && (
+            <Suspense fallback={<LoadingFallback />}>
+              <Leaderboard />
+            </Suspense>
+          )}
 
           {activeView === "admin" && isAdmin && (
-            <div className="grid grid-cols-1 gap-2">
-              <h3 className="text-xl font-semibold mb-2 text-gray-800">Godkänn anmälda</h3>
-              <CompetitionListSection
-                competitions={competitions || []}
-                refreshKey={competitionRefreshKey}
-              />
+            <Suspense fallback={<LoadingFallback />}>
+              <div className="grid grid-cols-1 gap-2">
+                <h3 className="text-xl font-semibold mb-2 text-gray-800">Godkänn anmälda</h3>
+                <CompetitionListSection
+                  competitions={competitions || []}
+                  refreshKey={competitionRefreshKey}
+                />
 
-              <h3 className="text-xl font-semibold mt-4 mb-2 text-gray-800">
-                Hantera säsonger och tävlingar
-              </h3>
-              <SeasonList refreshKey={seasonRefreshKey} />
-              <CompetitionList refreshKey={competitionRefreshKey} />
+                <h3 className="text-xl font-semibold mt-4 mb-2 text-gray-800">
+                  Hantera säsonger och tävlingar
+                </h3>
+                <SeasonList refreshKey={seasonRefreshKey} />
+                <CompetitionList refreshKey={competitionRefreshKey} />
 
-              <SeasonForm onSeasonCreated={() => setSeasonRefreshKey((prev) => prev + 1)} />
-              <CompetitionForm
-                onCompetitionCreated={() => setCompetitionRefreshKey((prev) => prev + 1)}
-              />
-            </div>
+                <SeasonForm onSeasonCreated={() => setSeasonRefreshKey((prev) => prev + 1)} />
+                <CompetitionForm
+                  onCompetitionCreated={() => setCompetitionRefreshKey((prev) => prev + 1)}
+                />
+              </div>
+            </Suspense>
           )}
         </div>
       </div>
