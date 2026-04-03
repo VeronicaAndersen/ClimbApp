@@ -25,7 +25,7 @@ export function CompetitionRegistrations({
           </p>
         </div>
         <Button
-          onClick={() => setIsOpen(!isOpen)}
+          onClick={() => setIsOpen((prev) => !prev)}
           className="bg-[--secondary-color] hover:bg-[--secondary-color-hover] text-white px-3 py-2 rounded cursor-pointer"
           size="2"
         >

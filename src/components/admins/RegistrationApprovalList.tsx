@@ -10,6 +10,39 @@ import { Check, X, RefreshCw } from "lucide-react";
 import CalloutMessage from "../user_feedback/CalloutMessage";
 import { getUserFriendlyError } from "@/utils/errorMessages";
 
+const LEVEL_COLORS: Record<number, string> = {
+  1: "#C084FC",
+  2: "#F9A8D4",
+  3: "#FDBA74",
+  4: "#FACC15",
+  5: "#4ADE80",
+  6: "#FFFFFF",
+  7: "#000000",
+};
+
+const LEVEL_NAMES: Record<number, string> = {
+  1: "Lila",
+  2: "Rosa",
+  3: "Orange",
+  4: "Gul",
+  5: "Grön",
+  6: "Vit",
+  7: "Svart",
+};
+
+const LEVELS = [1, 2, 3, 4, 5, 6, 7];
+
+const getLevelColor = (level: number): string => LEVEL_COLORS[level] ?? "#D1D5DB";
+
+const formatDate = (dateString: string) =>
+  new Date(dateString).toLocaleDateString("sv-SE", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
 interface RegistrationApprovalListProps {
   competitionId: number;
   refreshKey?: number;
@@ -83,45 +116,12 @@ export function RegistrationApprovalList({
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("sv-SE", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  const getLevelColor = (level: number): string => {
-    const levelColors: Record<number, string> = {
-      1: "#C084FC",
-      2: "#F9A8D4",
-      3: "#FDBA74",
-      4: "#FACC15",
-      5: "#4ADE80",
-      6: "#FFFFFF",
-      7: "#000000",
-    };
-    return levelColors[level] ?? "#D1D5DB";
-  };
-
-  const LEVEL_NAMES: Record<number, string> = {
-    1: "Lila",
-    2: "Rosa",
-    3: "Orange",
-    4: "Gul",
-    5: "Grön",
-    6: "Vit",
-    7: "Svart",
-  };
-
   return (
     <div className="mb-6 h-fit flex flex-col bg-white/90 backdrop-blur p-4 rounded-lg shadow-md">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-semibold">Anmälda</h2>
         <Button
-          onClick={() => fetchRegistrations()}
+          onClick={fetchRegistrations}
           disabled={loading}
           className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded disabled:opacity-50 cursor-pointer"
           size="1"
@@ -137,7 +137,7 @@ export function RegistrationApprovalList({
           <Spinner size="3" />
           <span className="ml-2">Hämtar anmälda...</span>
         </div>
-      ) : registrations && registrations.length > 0 ? (
+      ) : registrations.length > 0 ? (
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
@@ -154,6 +154,8 @@ export function RegistrationApprovalList({
             <tbody>
               {registrations.map((reg) => {
                 const isUpdating = updatingId === reg.user_id;
+                const isChangingLevel = changingLevelId === reg.user_id;
+                const isBusy = isUpdating || isChangingLevel;
 
                 return (
                   <tr
@@ -172,16 +174,16 @@ export function RegistrationApprovalList({
                         <select
                           value={reg.level}
                           onChange={(e) => handleLevelChange(reg.user_id, Number(e.target.value))}
-                          disabled={changingLevelId === reg.user_id}
+                          disabled={isChangingLevel}
                           className="w-full p-2 rounded-lg border text-base focus:outline-none focus:ring-2 focus:ring-[--secondary-color] disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          {[1, 2, 3, 4, 5, 6, 7].map((level) => (
+                          {LEVELS.map((level) => (
                             <option key={level} value={level}>
                               {LEVEL_NAMES[level]}
                             </option>
                           ))}
                         </select>
-                        {changingLevelId === reg.user_id && <Spinner size="1" />}
+                        {isChangingLevel && <Spinner size="1" />}
                       </div>
                     </td>
                     <td className="p-2 text-gray-600 text-sm">{formatDate(reg.created_at)}</td>
@@ -202,7 +204,7 @@ export function RegistrationApprovalList({
                         {reg.approved ? (
                           <Button
                             onClick={() => handleApprovalChange(reg.user_id, false)}
-                            disabled={isUpdating}
+                            disabled={isBusy}
                             className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded disabled:opacity-50"
                             size="1"
                           >
@@ -211,7 +213,7 @@ export function RegistrationApprovalList({
                         ) : (
                           <Button
                             onClick={() => handleApprovalChange(reg.user_id, true)}
-                            disabled={isUpdating}
+                            disabled={isBusy}
                             className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded disabled:opacity-50"
                             size="1"
                           >

@@ -10,10 +10,10 @@ interface SeasonListProps {
   refreshKey?: number;
 }
 
+const emptyEditValues: SeasonRequest = { name: "", year: null };
+
 export function SeasonList({ refreshKey }: SeasonListProps = {}) {
   const { seasons: seasonList, loading, error, refetch } = useSeasons(refreshKey);
-
-  const emptyEditValues: SeasonRequest = { name: "", year: null };
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editValues, setEditValues] = useState<SeasonRequest>(emptyEditValues);
@@ -74,6 +74,34 @@ export function SeasonList({ refreshKey }: SeasonListProps = {}) {
     }
   };
 
+  const renderEditInput = (field: keyof SeasonRequest, isSavingRow: boolean) => {
+    if (field === "year") {
+      return (
+        <input
+          type="number"
+          min="2000"
+          max="2100"
+          value={editValues.year ?? ""}
+          onChange={(e) =>
+            setEditValues({ ...editValues, year: e.target.value ? parseInt(e.target.value) : null })
+          }
+          className="w-full px-2 py-1 border border-gray-300 rounded text-base"
+          disabled={isSavingRow}
+        />
+      );
+    }
+
+    return (
+      <input
+        type="text"
+        value={editValues.name}
+        onChange={(e) => setEditValues({ ...editValues, name: e.target.value })}
+        className="w-full px-2 py-1 border border-gray-300 rounded text-base"
+        disabled={isSavingRow}
+      />
+    );
+  };
+
   return (
     <div className="mb-6 h-fit flex flex-col bg-white/90 backdrop-blur p-4 rounded-lg shadow-md">
       <h2 className="text-2xl font-semibold text-center mb-4">Säsonger</h2>
@@ -115,15 +143,7 @@ export function SeasonList({ refreshKey }: SeasonListProps = {}) {
                     {fields.map((field) => (
                       <td key={field} className="p-2">
                         {isEditing ? (
-                          <input
-                            type="text"
-                            value={editValues[field]}
-                            onChange={(e) =>
-                              setEditValues({ ...editValues, [field]: e.target.value })
-                            }
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-base"
-                            disabled={isSavingRow}
-                          />
+                          renderEditInput(field, isSavingRow)
                         ) : (
                           <span className="text-gray-800">{season[field]}</span>
                         )}
@@ -199,7 +219,7 @@ export function SeasonList({ refreshKey }: SeasonListProps = {}) {
 
                       {errorForRow && (
                         <div className="mt-2">
-                          <CalloutMessage message={rowError.message} color="red" />
+                          <CalloutMessage message={rowError!.message} color="red" />
                         </div>
                       )}
                     </td>
