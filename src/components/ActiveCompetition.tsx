@@ -1,17 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
 import { Spinner } from "@radix-ui/themes";
-import {
-  checkRegistration,
-  getCompetitions,
-  getCompRegistrationInfo,
-  getMyInfo,
-} from "@/services/api";
+import { getCompetitions, getCompRegistrationInfo, getMyInfo } from "@/services/api";
 import { CompetitionResponse, MessageProps } from "@/types";
 import CalloutMessage from "./user_feedback/CalloutMessage";
 import CompetitionScores from "./CompetitionScores";
 import { SessionSwitcher } from "./SessionSwitcher";
 
-export function ActiveCompetition() {
+interface ActiveCompetitionProps {
+  onHasChangesChange?: (hasChanges: boolean) => void;
+}
+
+export function ActiveCompetition({ onHasChangesChange }: ActiveCompetitionProps) {
   const [activeCompetition, setActiveCompetition] = useState<CompetitionResponse | null>(null);
   const [messageInfo, setMessageInfo] = useState<MessageProps | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -31,7 +30,7 @@ export function ActiveCompetition() {
         setCurrentUserName(userInfo.username);
       }
 
-      if (!Array.isArray(competitions) || competitions.length === 0) {
+      if (competitions.length === 0) {
         setActiveCompetition(null);
         setLoading(false);
         return;
@@ -40,10 +39,7 @@ export function ActiveCompetition() {
       // Check all registrations in parallel
       const registrationChecks = await Promise.allSettled(
         competitions.map(async (comp) => {
-          const isRegistered = await checkRegistration(comp.id);
-          if (!isRegistered) return null;
-
-          const regInfo = await getCompRegistrationInfo(comp.id);
+          const regInfo = await getCompRegistrationInfo(comp.id).catch(() => null);
           return regInfo?.approved ? { competition: comp, registrationInfo: regInfo } : null;
         })
       );
@@ -154,6 +150,7 @@ export function ActiveCompetition() {
             competitionDate={activeCompetition.comp_date}
             userScope={userScope}
             viewingClimberName={currentUserName}
+            onHasChangesChange={onHasChangesChange}
           />
         </>
       )}

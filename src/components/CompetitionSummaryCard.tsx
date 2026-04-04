@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Trophy, Star, Target, Medal, Calendar, LucideIcon } from "lucide-react";
 import { CompetitionWithScores } from "@/hooks/useUserCompetitions";
+import { getGradeColor } from "@/constants/gradeColors";
 
 interface CompetitionSummaryCardProps {
   competitionData: CompetitionWithScores;
@@ -15,18 +16,6 @@ interface StatCardConfig {
   borderColor: string;
   textColor: string;
 }
-
-const GRADE_COLORS: Record<number, string> = {
-  1: "#C084FC", // Purple
-  2: "#F9A8D4", // Pink
-  3: "#FDBA74", // Orange
-  4: "#FACC15", // Yellow
-  5: "#4ADE80", // Green
-  6: "#FFFFFF", // White
-  7: "#000000", // Black
-};
-
-const DEFAULT_GRADE_COLOR = "#D1D5DB";
 
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
@@ -61,7 +50,7 @@ function StatCard({ config }: StatCardProps) {
 export default function CompetitionSummaryCard({ competitionData }: CompetitionSummaryCardProps) {
   const { competition, level, summary } = competitionData;
 
-  const gradeColor = GRADE_COLORS[level] ?? DEFAULT_GRADE_COLOR;
+  const gradeColor = getGradeColor(level);
 
   const statCards: StatCardConfig[] = useMemo(
     () => [
@@ -132,8 +121,8 @@ export default function CompetitionSummaryCard({ competitionData }: CompetitionS
 
       {/* Statistics Grid */}
       <div className="grid grid-cols-2 gap-3">
-        {statCards.map((config, index) => (
-          <StatCard key={index} config={config} />
+        {statCards.map((config) => (
+          <StatCard key={config.label} config={config} />
         ))}
       </div>
     </div>

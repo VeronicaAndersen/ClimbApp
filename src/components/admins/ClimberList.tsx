@@ -175,6 +175,7 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
                           className="w-full px-2 py-1 border border-gray-300 rounded text-base"
                           disabled={isSavingRow}
                           placeholder="Användarnamn"
+                          autoComplete="username"
                         />
                       ) : (
                         <span className="text-gray-800">{climber.username}</span>
@@ -261,6 +262,7 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
                           className="w-full px-2 py-1 border border-gray-300 rounded text-base"
                           disabled={isSavingRow}
                           placeholder="Nytt lösenord (valfritt)"
+                          autoComplete="new-password"
                         />
                       ) : (
                         <span className="text-gray-500">••••••••</span>

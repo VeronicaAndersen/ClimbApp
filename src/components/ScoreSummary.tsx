@@ -124,8 +124,8 @@ export default function ScoreSummary({ problems, gradeLevel }: ScoreSummaryProps
       </header>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {statCards.map((config, index) => (
-          <StatCard key={`${config.label}-${index}`} config={config} />
+        {statCards.map((config) => (
+          <StatCard key={config.label} config={config} />
         ))}
       </div>
     </div>

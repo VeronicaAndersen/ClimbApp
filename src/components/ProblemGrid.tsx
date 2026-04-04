@@ -18,6 +18,7 @@ interface ProblemGridProps {
   setProblems: React.Dispatch<React.SetStateAction<ScoreBatchResponse[]>>;
   setInitialProblems: React.Dispatch<React.SetStateAction<ScoreBatchResponse[]>>;
   gradeLevel: number | null;
+  onHasChangesChange?: (hasChanges: boolean) => void;
 }
 
 const SCORE_FIELDS = ["attempts_total", "attempts_to_bonus", "attempts_to_top"] as const;
@@ -39,6 +40,7 @@ export default function ProblemGrid({
   setProblems,
   setInitialProblems,
   gradeLevel,
+  onHasChangesChange,
 }: ProblemGridProps) {
   const { saving, error: saveError, saveMessage, saveAll } = useUpdateScore();
   const {
@@ -150,6 +152,10 @@ export default function ProblemGrid({
       });
     });
   }, [problems, initialScoreMap]);
+
+  useEffect(() => {
+    onHasChangesChange?.(hasAnyChanges);
+  }, [hasAnyChanges, onHasChangesChange]);
 
   const handleSaveAll = async () => {
     if (!gradeLevel) return;

@@ -11,6 +11,7 @@ interface CompetitionScoresProps {
   viewingClimberName?: string;
   refreshTrigger?: number;
   overrideLevel?: number | null;
+  onHasChangesChange?: (hasChanges: boolean) => void;
 }
 
 export default function CompetitionScores({
@@ -20,6 +21,7 @@ export default function CompetitionScores({
   viewingClimberName,
   refreshTrigger,
   overrideLevel,
+  onHasChangesChange,
 }: CompetitionScoresProps) {
   const {
     problems,
@@ -60,6 +62,7 @@ export default function CompetitionScores({
         setProblems={setProblems}
         setInitialProblems={setInitialProblems}
         gradeLevel={displayLevel}
+        onHasChangesChange={onHasChangesChange}
       />
     </div>
   );

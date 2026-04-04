@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getMyInfo, getCompRegistrationInfo, getScoresBatch } from "@/services/api";
 import { ScoreBatchResponse } from "@/types";
+import { getUserFriendlyError } from "@/utils/errorMessages";
 
 export function useScores(competitionId: number, refreshTrigger?: number) {
   const [climberId, setClimberId] = useState<number | null>(null);
@@ -46,8 +47,7 @@ export function useScores(competitionId: number, refreshTrigger?: number) {
         setProblems(scores);
         setInitialProblems(initialScoresCopy);
       } catch (err) {
-        const msg = err instanceof Error ? err.message : "Något gick fel vid inläsning.";
-        setError(msg);
+        setError(getUserFriendlyError(err));
       } finally {
         if (active) setIsLoading(false);
       }

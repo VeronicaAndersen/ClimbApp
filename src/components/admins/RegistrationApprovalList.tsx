@@ -9,30 +9,11 @@ import { Spinner, Button } from "@radix-ui/themes";
 import { Check, X, RefreshCw } from "lucide-react";
 import CalloutMessage from "../user_feedback/CalloutMessage";
 import { getUserFriendlyError } from "@/utils/errorMessages";
-
-const LEVEL_COLORS: Record<number, string> = {
-  1: "#C084FC",
-  2: "#F9A8D4",
-  3: "#FDBA74",
-  4: "#FACC15",
-  5: "#4ADE80",
-  6: "#FFFFFF",
-  7: "#000000",
-};
-
-const LEVEL_NAMES: Record<number, string> = {
-  1: "Lila",
-  2: "Rosa",
-  3: "Orange",
-  4: "Gul",
-  5: "Grön",
-  6: "Vit",
-  7: "Svart",
-};
+import { getGradeColor, LEVEL_NAMES } from "@/constants/gradeColors";
 
 const LEVELS = [1, 2, 3, 4, 5, 6, 7];
 
-const getLevelColor = (level: number): string => LEVEL_COLORS[level] ?? "#D1D5DB";
+const getLevelColor = (level: number): string => getGradeColor(level);
 
 const formatDate = (dateString: string) =>
   new Date(dateString).toLocaleDateString("sv-SE", {

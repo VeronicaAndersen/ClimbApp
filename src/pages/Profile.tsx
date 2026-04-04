@@ -1,11 +1,20 @@
 import { useAuthStore } from "@/store/auth";
 import { clearTokens, isLoggedIn } from "@/lib/apiClient";
 import { useSessionsStore } from "@/store/sessions";
-import { useEffect, useState, useMemo, lazy, Suspense } from "react";
+import { useCallback, useEffect, useState, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Spinner } from "@radix-ui/themes/components/index";
 import * as Menubar from "@radix-ui/react-menubar";
-import { CalendarDays, Zap, User, Users, Trophy, Dices, Settings } from "lucide-react";
+import {
+  CalendarDays,
+  Zap,
+  User,
+  Users,
+  Trophy,
+  Dices,
+  Settings,
+  MoreHorizontal,
+} from "lucide-react";
 import useGetUserInfo from "@/hooks/useGetUserInfo";
 import CalloutMessage from "@/components/user_feedback/CalloutMessage";
 import ProfilInfo from "@/components/ProfilInfo";
@@ -49,15 +58,15 @@ type NavigationView =
 const MENU_ITEMS = [
   {
     value: "competition" as const,
-    label: "Tävlingar",
-    mobileLabel: "Tävlingar",
+    label: "Anmälan",
+    mobileLabel: "Anmälan",
     requiresAdmin: false,
     icon: CalendarDays,
   },
   {
     value: "active_competition" as const,
-    label: "Aktiv Tävling",
-    mobileLabel: "Aktiv",
+    label: "Mina poäng",
+    mobileLabel: "Poäng",
     requiresAdmin: false,
     icon: Zap,
   },
@@ -112,21 +121,43 @@ export default function Profile() {
   const navigate = useNavigate();
   const [seasonRefreshKey, setSeasonRefreshKey] = useState(0);
   const [competitionRefreshKey, setCompetitionRefreshKey] = useState(0);
-  const [activeView, setActiveView] = useState<NavigationView>("active_competition");
+  const [activeView, setActiveView] = useState<NavigationView>("competition");
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 
   const { userInfo, messageInfo, loading: userLoading, refetch } = useGetUserInfo();
 
-  const isAdmin = useMemo(() => userInfo?.user_scope === "admin", [userInfo?.user_scope]);
-  const isProfileIncomplete = useMemo(
-    () => userInfo && (!userInfo.email || !userInfo.firstname || !userInfo.lastname),
-    [userInfo]
-  );
+  const isAdmin = userInfo?.user_scope === "admin";
+  const isProfileIncomplete =
+    userInfo && (!userInfo.email || !userInfo.firstname || !userInfo.lastname);
 
   useEffect(() => {
     if (!isLoggedIn()) {
       navigate("/");
     }
   }, [navigate]);
+
+  // Reset unsaved-changes flag when leaving the score view
+  useEffect(() => {
+    if (activeView !== "active_competition") {
+      setHasUnsavedChanges(false);
+    }
+  }, [activeView]);
+
+  const handleNavigate = useCallback(
+    (view: NavigationView | null, to?: string) => {
+      if (hasUnsavedChanges && activeView === "active_competition") {
+        if (!window.confirm("Du har osparade ändringar. Vill du lämna sidan ändå?")) return;
+      }
+      setMoreMenuOpen(false);
+      if (to) {
+        navigate(to);
+      } else if (view) {
+        setActiveView(view);
+      }
+    },
+    [hasUnsavedChanges, activeView, navigate]
+  );
 
   const handleLogout = () => {
     setToken(null);
@@ -187,9 +218,7 @@ export default function Profile() {
           {MENU_ITEMS.filter((item) => !item.requiresAdmin || isAdmin).map((item) => (
             <Menubar.Menu key={item.value} value={item.value}>
               <Menubar.Trigger
-                onClick={() =>
-                  item.to ? navigate(item.to) : setActiveView(item.value as NavigationView)
-                }
+                onClick={() => handleNavigate(item.value as NavigationView, item.to)}
                 className={getMenuItemClass(item.value as NavigationView)}
               >
                 {item.label}
@@ -204,7 +233,7 @@ export default function Profile() {
 
           {activeView === "active_competition" && (
             <Suspense fallback={<LoadingFallback />}>
-              <ActiveCompetition />
+              <ActiveCompetition onHasChangesChange={setHasUnsavedChanges} />
             </Suspense>
           )}
 
@@ -257,16 +286,41 @@ export default function Profile() {
       </div>
       {/* Mobile bottom navigation */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-lg md:hidden">
+        {/* Admin overflow panel */}
+        {isAdmin && moreMenuOpen && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setMoreMenuOpen(false)} />
+            <div className="absolute bottom-16 right-0 z-50 bg-white border border-gray-200 rounded-tl-xl shadow-lg py-2 min-w-40">
+              {MENU_ITEMS.filter((item) => item.requiresAdmin).map((item) => {
+                const Icon = item.icon;
+                const isActive = !item.to && activeView === item.value;
+                return (
+                  <button
+                    key={item.value}
+                    onClick={() => handleNavigate(item.value as NavigationView, item.to)}
+                    className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-medium transition-colors ${
+                      isActive
+                        ? "text-[--secondary-color] bg-gray-50"
+                        : "text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {item.mobileLabel}
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
+
         <div className="flex justify-around items-stretch h-16">
-          {MENU_ITEMS.filter((item) => !item.requiresAdmin || isAdmin).map((item) => {
+          {MENU_ITEMS.filter((item) => !item.requiresAdmin).map((item) => {
             const Icon = item.icon;
-            const isActive = !item.to && activeView === item.value;
+            const isActive = activeView === item.value;
             return (
               <button
                 key={item.value}
-                onClick={() =>
-                  item.to ? navigate(item.to) : setActiveView(item.value as NavigationView)
-                }
+                onClick={() => handleNavigate(item.value as NavigationView)}
                 className={`flex flex-col items-center justify-center flex-1 gap-1 text-xs font-medium transition-colors ${
                   isActive ? "text-[--secondary-color]" : "text-gray-500 hover:text-gray-700"
                 }`}
@@ -281,6 +335,32 @@ export default function Profile() {
               </button>
             );
           })}
+
+          {isAdmin && (
+            <button
+              onClick={() => setMoreMenuOpen((prev) => !prev)}
+              className={`flex flex-col items-center justify-center flex-1 gap-1 text-xs font-medium transition-colors ${
+                moreMenuOpen ||
+                MENU_ITEMS.filter((i) => i.requiresAdmin).some(
+                  (i) => !i.to && activeView === i.value
+                )
+                  ? "text-[--secondary-color]"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              <MoreHorizontal className="w-5 h-5" />
+              <span>Mer</span>
+              <span
+                className={`w-1.5 h-1.5 rounded-full bg-[--secondary-color] transition-opacity ${
+                  MENU_ITEMS.filter((i) => i.requiresAdmin).some(
+                    (i) => !i.to && activeView === i.value
+                  )
+                    ? "opacity-100"
+                    : "opacity-0"
+                }`}
+              />
+            </button>
+          )}
         </div>
       </nav>
 

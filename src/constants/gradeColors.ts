@@ -1,8 +1,18 @@
 /**
- * Grade level color mappings used for visual indicators throughout the app
+ * Grade level color and name mappings used for visual indicators throughout the app
  */
 
 export const DEFAULT_GRADE_COLOR = "#D1D5DB";
+
+export const LEVEL_NAMES: Record<number, string> = {
+  1: "Lila",
+  2: "Rosa",
+  3: "Orange",
+  4: "Gul",
+  5: "Grön",
+  6: "Vit",
+  7: "Svart",
+};
 
 export const GRADE_COLORS: Record<number, string> = {
   1: "#C084FC", // Purple
