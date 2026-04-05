@@ -2,7 +2,7 @@ import { useCompetitions } from "@/hooks/useCompetitions";
 import { CompetitionResponse, RegisterToCompResponse } from "@/types";
 import { Spinner } from "@radix-ui/themes";
 import RegisterToCompForm from "./forms/RegisterToCompForm";
-import CalloutMessage from "./user_feedback/CalloutMessage";
+import CalloutMessage from "./feedback/CalloutMessage";
 import { getCompRegistrationInfo } from "@/services/api";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { sortCompetitions } from "@/utils/competitionSort";

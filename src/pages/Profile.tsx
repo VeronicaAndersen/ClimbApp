@@ -16,7 +16,7 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import useGetUserInfo from "@/hooks/useGetUserInfo";
-import CalloutMessage from "@/components/user_feedback/CalloutMessage";
+import CalloutMessage from "@/components/feedback/CalloutMessage";
 import ProfilInfo from "@/components/ProfilInfo";
 import { AssignToCompetitionsList } from "@/components/AssignToCompetitionsList";
 import { CompleteProfileForm } from "@/components/forms/CompleteProfileForm";

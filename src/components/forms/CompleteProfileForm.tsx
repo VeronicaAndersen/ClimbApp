@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button, TextField, Spinner } from "@radix-ui/themes";
 import * as Label from "@radix-ui/react-label";
-import CalloutMessage from "../user_feedback/CalloutMessage";
+import CalloutMessage from "../feedback/CalloutMessage";
 import { updateMyInfo } from "@/services/api";
 import { MyInfoResponse, ClimberUpdateRequest } from "@/types";
 import { getUserFriendlyError } from "@/utils/errorMessages";

@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState, useEffect } from "react";
 import { Star, Medal, Lock, Unlock, ChevronDown, ChevronUp } from "lucide-react";
 import { ScoreBatchResponse } from "@/types";
-import CalloutMessage from "./user_feedback/CalloutMessage";
+import CalloutMessage from "./feedback/CalloutMessage";
 import { Button } from "@radix-ui/themes";
 import { useUpdateScore } from "@/hooks/useUpdateScore";
 import { useUpdateScoreBatch } from "@/hooks/useUpdateScoreBatchResult";

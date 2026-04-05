@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import {
   clearTokens,
   getAccessToken,
@@ -163,7 +163,6 @@ describe("api.patch", () => {
 
 describe("api.delete", () => {
   it("sends a DELETE request", async () => {
-    const spy = mockFetch(204, "");
     vi.spyOn(global, "fetch").mockResolvedValue({
       ok: true,
       status: 204,

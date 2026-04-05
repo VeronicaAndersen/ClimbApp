@@ -14,9 +14,7 @@ describe("useForm — initial values", () => {
   });
 
   it("returns initial mixed values", () => {
-    const { result } = renderHook(() =>
-      useForm({ label: "x", score: 5, active: false })
-    );
+    const { result } = renderHook(() => useForm({ label: "x", score: 5, active: false }));
     expect(result.current.values).toEqual({ label: "x", score: 5, active: false });
   });
 });
@@ -120,9 +118,7 @@ describe("useForm — setValues (bulk merge)", () => {
 
 describe("useForm — reset", () => {
   it("reverts all fields to initial values", () => {
-    const { result } = renderHook(() =>
-      useForm({ name: "initial", count: 0 })
-    );
+    const { result } = renderHook(() => useForm({ name: "initial", count: 0 }));
     act(() => {
       result.current.setValue("name", "changed");
       result.current.setValue("count", 42);

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { requestPasswordReset } from "@/services/api";
 import { Button, Card, TextField, Spinner } from "@radix-ui/themes";
 import { Label } from "@radix-ui/react-context-menu";
-import CalloutMessage from "../user_feedback/CalloutMessage";
+import CalloutMessage from "../feedback/CalloutMessage";
 import { getUserFriendlyError } from "@/utils/errorMessages";
 
 export function ForgotPasswordForm() {

@@ -1,6 +1,6 @@
 import { SeasonRequest } from "@/types";
 import { Button, Spinner } from "@radix-ui/themes";
-import CalloutMessage from "../../user_feedback/CalloutMessage";
+import CalloutMessage from "../../feedback/CalloutMessage";
 import { useCreateSeason } from "@/hooks/useCreateSeason";
 import { useForm } from "@/hooks/useForm";
 

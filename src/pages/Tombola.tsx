@@ -4,7 +4,7 @@ import { Button, Spinner } from "@radix-ui/themes";
 import { Trophy, RotateCcw, ArrowLeft, Sparkles, Users } from "lucide-react";
 import { getAllRegistrations, getCompetitions } from "@/services/api";
 import { RegistrationWithClimber, CompetitionResponse } from "@/types";
-import CalloutMessage from "@/components/user_feedback/CalloutMessage";
+import CalloutMessage from "@/components/feedback/CalloutMessage";
 import { getGradeColor } from "@/constants/gradeColors";
 
 const storageKey = (compId: number) => `tombola_${compId}`;

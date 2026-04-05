@@ -4,7 +4,7 @@ import { useSeasons } from "@/hooks/useSeasons";
 import { updateSeasonById, deleteSeasonById } from "@/services/api";
 import { SeasonResponse, SeasonRequest } from "@/types";
 import { Pencil, Trash2, Check, X } from "lucide-react";
-import CalloutMessage from "../user_feedback/CalloutMessage";
+import CalloutMessage from "../feedback/CalloutMessage";
 
 interface SeasonListProps {
   refreshKey?: number;

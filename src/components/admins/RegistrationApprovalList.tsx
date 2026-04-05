@@ -7,7 +7,7 @@ import {
 } from "@/services/api";
 import { Spinner, Button } from "@radix-ui/themes";
 import { Check, X, RefreshCw } from "lucide-react";
-import CalloutMessage from "../user_feedback/CalloutMessage";
+import CalloutMessage from "../feedback/CalloutMessage";
 import { getUserFriendlyError } from "@/utils/errorMessages";
 import { getGradeColor, LEVEL_NAMES } from "@/constants/gradeColors";
 

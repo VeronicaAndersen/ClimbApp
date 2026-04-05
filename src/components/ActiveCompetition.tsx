@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Spinner } from "@radix-ui/themes";
 import { getCompetitions, getCompRegistrationInfo, getMyInfo } from "@/services/api";
 import { CompetitionResponse, MessageProps } from "@/types";
-import CalloutMessage from "./user_feedback/CalloutMessage";
+import CalloutMessage from "./feedback/CalloutMessage";
 import CompetitionScores from "./CompetitionScores";
 import { SessionSwitcher } from "./SessionSwitcher";
 

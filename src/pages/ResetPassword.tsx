@@ -3,7 +3,7 @@ import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { confirmPasswordReset } from "@/services/api";
 import { Button, Card, TextField, Spinner } from "@radix-ui/themes";
 import { Label } from "@radix-ui/react-context-menu";
-import CalloutMessage from "@/components/user_feedback/CalloutMessage";
+import CalloutMessage from "@/components/feedback/CalloutMessage";
 import { getUserFriendlyError } from "@/utils/errorMessages";
 
 export default function ResetPassword() {

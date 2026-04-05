@@ -4,7 +4,7 @@ import { signupClimber } from "@/services/api";
 import { Link, useNavigate } from "react-router-dom";
 import * as Label from "@radix-ui/react-label";
 import { Card, Button, TextField, Spinner } from "@radix-ui/themes";
-import CalloutMessage from "../user_feedback/CalloutMessage";
+import CalloutMessage from "../feedback/CalloutMessage";
 import { getUserFriendlyError } from "@/utils/errorMessages";
 
 export function RegistrationForm() {

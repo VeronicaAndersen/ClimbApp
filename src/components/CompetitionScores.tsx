@@ -1,6 +1,6 @@
 import { useScores } from "@/hooks/useScores";
 import { Spinner } from "@radix-ui/themes";
-import CalloutMessage from "./user_feedback/CalloutMessage";
+import CalloutMessage from "./feedback/CalloutMessage";
 import ScoreSummary from "./ScoreSummary";
 import ProblemGrid from "./ProblemGrid";
 

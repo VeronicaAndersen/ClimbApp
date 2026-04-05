@@ -51,7 +51,9 @@ describe("getUserFriendlyError", () => {
     });
 
     it("handles attempts_to_top < attempts_to_bonus", () => {
-      const result = getUserFriendlyError(new Error("attempts_to_top must be >= attempts_to_bonus"));
+      const result = getUserFriendlyError(
+        new Error("attempts_to_top must be >= attempts_to_bonus")
+      );
       expect(result).toContain("topp");
     });
 
@@ -93,7 +95,9 @@ describe("getUserFriendlyError", () => {
 
   describe("technical error prefix stripping", () => {
     it("strips 'Error:' prefix from message", () => {
-      const result = getUserFriendlyError(new Error("Error: something went wrong unexpectedly here"));
+      const result = getUserFriendlyError(
+        new Error("Error: something went wrong unexpectedly here")
+      );
       expect(result).not.toMatch(/^Error:/);
     });
   });

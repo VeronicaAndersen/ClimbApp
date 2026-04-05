@@ -1,6 +1,6 @@
 import { CompetitionRequest } from "@/types";
 import { Button, Spinner } from "@radix-ui/themes";
-import CalloutMessage from "../../user_feedback/CalloutMessage";
+import CalloutMessage from "../../feedback/CalloutMessage";
 import { useCreateCompetition } from "@/hooks/useCreateCompetition";
 import { useForm } from "@/hooks/useForm";
 

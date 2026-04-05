@@ -97,34 +97,58 @@ describe("canEditCompetition", () => {
 
 describe("normalizeScorePayload", () => {
   it("sets got_bonus to true when attempts_to_bonus > 0", () => {
-    const result = normalizeScorePayload({ attempts_total: 3, attempts_to_bonus: 2, attempts_to_top: 0 });
+    const result = normalizeScorePayload({
+      attempts_total: 3,
+      attempts_to_bonus: 2,
+      attempts_to_top: 0,
+    });
     expect(result.got_bonus).toBe(true);
   });
 
   it("sets got_bonus to false when attempts_to_bonus is 0", () => {
-    const result = normalizeScorePayload({ attempts_total: 3, attempts_to_bonus: 0, attempts_to_top: 0 });
+    const result = normalizeScorePayload({
+      attempts_total: 3,
+      attempts_to_bonus: 0,
+      attempts_to_top: 0,
+    });
     expect(result.got_bonus).toBe(false);
   });
 
   it("sets got_top to true when attempts_to_top > 0", () => {
-    const result = normalizeScorePayload({ attempts_total: 3, attempts_to_bonus: 1, attempts_to_top: 2 });
+    const result = normalizeScorePayload({
+      attempts_total: 3,
+      attempts_to_bonus: 1,
+      attempts_to_top: 2,
+    });
     expect(result.got_top).toBe(true);
   });
 
   it("sets got_top to false when attempts_to_top is 0", () => {
-    const result = normalizeScorePayload({ attempts_total: 3, attempts_to_bonus: 0, attempts_to_top: 0 });
+    const result = normalizeScorePayload({
+      attempts_total: 3,
+      attempts_to_bonus: 0,
+      attempts_to_top: 0,
+    });
     expect(result.got_top).toBe(false);
   });
 
   it("preserves all attempt counts", () => {
-    const result = normalizeScorePayload({ attempts_total: 5, attempts_to_bonus: 2, attempts_to_top: 4 });
+    const result = normalizeScorePayload({
+      attempts_total: 5,
+      attempts_to_bonus: 2,
+      attempts_to_top: 4,
+    });
     expect(result.attempts_total).toBe(5);
     expect(result.attempts_to_bonus).toBe(2);
     expect(result.attempts_to_top).toBe(4);
   });
 
   it("handles zero attempts correctly", () => {
-    const result = normalizeScorePayload({ attempts_total: 0, attempts_to_bonus: 0, attempts_to_top: 0 });
+    const result = normalizeScorePayload({
+      attempts_total: 0,
+      attempts_to_bonus: 0,
+      attempts_to_top: 0,
+    });
     expect(result).toEqual({
       attempts_total: 0,
       got_bonus: false,
