@@ -68,27 +68,48 @@ export function isLoggedIn(): boolean {
   return sessionStorage.getItem("refresh_token") !== null;
 }
 
+/**
+ * Call once at app startup. If a refresh token exists in sessionStorage but
+ * the access token is gone (page reload), eagerly exchange it so the first
+ * authenticated requests don't hit a 401.
+ */
+export async function initializeAuth(): Promise<void> {
+  if (!_accessToken && sessionStorage.getItem("refresh_token")) {
+    await attemptRefresh();
+  }
+}
+
 // ----------------------------------------------------------
 // Refresh
 // ----------------------------------------------------------
-async function attemptRefresh() {
-  const rt = sessionStorage.getItem("refresh_token");
-  if (!rt) return null;
+let _refreshPromise: Promise<{ access_token: string; refresh_token: string } | null> | null = null;
 
-  const response = await fetch(`${apiUrl}/auth/refresh`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refresh_token: rt }),
+async function attemptRefresh() {
+  if (_refreshPromise) return _refreshPromise;
+
+  _refreshPromise = (async () => {
+    const rt = sessionStorage.getItem("refresh_token");
+    if (!rt) return null;
+
+    const response = await fetch(`${apiUrl}/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh_token: rt }),
+    });
+
+    if (!response.ok) {
+      clearTokens(); // tokens are no longer valid — force re-login
+      return null;
+    }
+
+    const data = await response.json().catch(() => null);
+    if (data) saveTokens(data);
+    return data;
+  })().finally(() => {
+    _refreshPromise = null;
   });
 
-  if (!response.ok) {
-    clearTokens(); // tokens are no longer valid — force re-login
-    return null;
-  }
-
-  const data = await response.json().catch(() => null);
-  if (data) saveTokens(data);
-  return data;
+  return _refreshPromise;
 }
 
 // ----------------------------------------------------------
