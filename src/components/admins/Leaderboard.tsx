@@ -70,7 +70,10 @@ function RankedTable({
         </thead>
         <tbody className="divide-y divide-gray-100">
           {levelData.entries.map((entry) => (
-            <tr key={entry.rank} className={entry.rank <= 3 ? "bg-amber-50" : "bg-white"}>
+            <tr
+              key={`${entry.rank}-${entry.name}`}
+              className={entry.rank <= 3 ? "bg-amber-50" : "bg-white"}
+            >
               <td className="px-4 py-3 font-semibold text-gray-500">{getRankIcon(entry.rank)}</td>
               <td className="px-4 py-3 font-medium text-gray-800">{entry.name}</td>
               <td className="px-4 py-3 text-right font-mono text-gray-700">

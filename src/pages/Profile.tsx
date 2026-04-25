@@ -121,13 +121,24 @@ export default function Profile() {
   const navigate = useNavigate();
   const [seasonRefreshKey, setSeasonRefreshKey] = useState(0);
   const [competitionRefreshKey, setCompetitionRefreshKey] = useState(0);
-  const [activeView, setActiveView] = useState<NavigationView>("competition");
+  const [activeView, setActiveView] = useState<NavigationView>(() => {
+    const saved = sessionStorage.getItem("profile_view") as NavigationView | null;
+    return saved ?? "active_competition";
+  });
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 
   const { userInfo, messageInfo, loading: userLoading, refetch } = useGetUserInfo();
 
   const isAdmin = userInfo?.user_scope === "admin";
+
+  // If a non-admin ended up on an admin-only view (e.g. after role change), fall back.
+  useEffect(() => {
+    const adminViews: NavigationView[] = ["users", "leaderboard", "admin"];
+    if (!userLoading && !isAdmin && adminViews.includes(activeView)) {
+      setActiveView("active_competition");
+    }
+  }, [isAdmin, userLoading, activeView]);
   const isProfileIncomplete =
     userInfo && (!userInfo.email || !userInfo.firstname || !userInfo.lastname);
 
@@ -153,6 +164,7 @@ export default function Profile() {
       if (to) {
         navigate(to);
       } else if (view) {
+        sessionStorage.setItem("profile_view", view);
         setActiveView(view);
       }
     },
@@ -163,6 +175,7 @@ export default function Profile() {
     setToken(null);
     clearTokens();
     clearSessions();
+    sessionStorage.removeItem("profile_view");
     navigate("/");
   };
 
