@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Spinner } from "@radix-ui/themes";
 import { Trophy, RotateCcw, ArrowLeft, Sparkles, Users } from "lucide-react";
-import { getAllRegistrations, getCompetitions } from "@/services/api";
+import { getAllRegistrations, getCompetitions, getClimberById } from "@/services/api";
 import { RegistrationWithClimber, CompetitionResponse } from "@/types";
 import CalloutMessage from "@/components/feedback/CalloutMessage";
 import { getGradeColor } from "@/constants/gradeColors";
@@ -20,6 +20,7 @@ export default function Tombola() {
   const [isSpinning, setIsSpinning] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [climberNames, setClimberNames] = useState<Map<number, string>>(new Map());
   const loadedCompId = useRef<number | null>(null);
 
   useEffect(() => {
@@ -48,6 +49,11 @@ export default function Tombola() {
         const registrations = await getAllRegistrations(selectedCompetitionId);
         const approved = registrations.filter((reg) => reg.approved);
         setAllParticipants(approved);
+
+        const climbers = await Promise.all(approved.map((r) => getClimberById(r.user_id)));
+        setClimberNames(
+          new Map(climbers.map((c, i) => [approved[i].user_id, `${c.firstname} ${c.lastname}`]))
+        );
 
         const savedRaw = localStorage.getItem(storageKey(selectedCompetitionId));
         if (savedRaw) {
@@ -143,6 +149,8 @@ export default function Tombola() {
     setCurrentWinner(null);
     setError(null);
   };
+
+  const getName = (userId: number) => climberNames.get(userId) ?? "…";
 
   const selectedCompetition = competitions.find((c) => c.id === selectedCompetitionId);
 
@@ -285,7 +293,7 @@ export default function Tombola() {
                           isSpinning ? "text-gray-400" : "text-gray-800"
                         }`}
                       >
-                        {currentWinner.climber_name}
+                        {getName(currentWinner.user_id)}
                       </p>
                       {!isSpinning && (
                         <div className="flex flex-col items-center gap-1">
@@ -350,7 +358,7 @@ export default function Tombola() {
                           </span>
                           <div className="min-w-0">
                             <p className="font-semibold text-gray-800 truncate">
-                              {winner.climber_name}
+                              {getName(winner.user_id)}
                             </p>
                             <span
                               className="inline-block w-3 h-3 rounded-full border border-gray-300 mt-0.5"
@@ -376,7 +384,7 @@ export default function Tombola() {
                           key={p.user_id}
                           className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-50 border border-gray-200 rounded-full text-sm text-gray-700"
                         >
-                          {p.climber_name}
+                          {getName(p.user_id)}
                           <span
                             className="inline-block w-2.5 h-2.5 rounded-full border border-gray-300 shrink-0"
                             style={{ backgroundColor: getGradeColor(p.level) }}
