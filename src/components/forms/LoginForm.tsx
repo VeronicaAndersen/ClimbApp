@@ -48,7 +48,9 @@ export function LoginForm() {
               autoComplete="username"
               placeholder="Användarnamn"
               value={loginData.username}
-              onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
+              onChange={(e) =>
+                setLoginData({ ...loginData, username: e.target.value.toLowerCase() })
+              }
               required
               className="w-full text-base"
               disabled={loading}
