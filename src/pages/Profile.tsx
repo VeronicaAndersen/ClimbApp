@@ -21,6 +21,9 @@ import ProfilInfo from "@/components/ProfilInfo";
 import { AssignToCompetitionsList } from "@/components/AssignToCompetitionsList";
 import { CompleteProfileForm } from "@/components/forms/CompleteProfileForm";
 import { SessionSwitcher } from "@/components/SessionSwitcher";
+import { getCompetitions } from "@/services/api";
+import { CompetitionResponse } from "@/types";
+import { getGradeColor } from "@/constants/gradeColors";
 
 const ActiveCompetition = lazy(() =>
   import("@/components/ActiveCompetition").then((m) => ({ default: m.ActiveCompetition }))
@@ -45,6 +48,9 @@ const Leaderboard = lazy(() =>
 );
 const CompetitionListSection = lazy(() =>
   import("@/components/CompetitionListSection").then((m) => ({ default: m.CompetitionListSection }))
+);
+const ProblemStatsTable = lazy(() =>
+  import("@/components/admins/ProblemStatsTable").then((m) => ({ default: m.ProblemStatsTable }))
 );
 
 type NavigationView =
@@ -131,6 +137,13 @@ export default function Profile() {
   const { userInfo, messageInfo, loading: userLoading, refetch } = useGetUserInfo();
 
   const isAdmin = userInfo?.user_scope === "admin";
+  const [selectedCompForStats, setSelectedCompForStats] = useState<number | null>(null);
+  const [selectedLevelForStats, setSelectedLevelForStats] = useState<number | null>(null);
+  const [statsRefreshKey] = useState(0);
+  const [competitions, setCompetitions] = useState<CompetitionResponse[]>([]);
+  const LEVELS = [1, 2, 3, 4, 5, 6, 7];
+
+  const getLevelColor = (level: number): string => getGradeColor(level);
 
   // If a non-admin ended up on an admin-only view (e.g. after role change), fall back.
   useEffect(() => {
@@ -154,6 +167,18 @@ export default function Profile() {
       setHasUnsavedChanges(false);
     }
   }, [activeView]);
+
+  useEffect(() => {
+    const fetchCompetitions = async () => {
+      try {
+        const comps = await getCompetitions();
+        setCompetitions(comps);
+      } catch (err) {
+        console.error("Failed to fetch competitions:", err);
+      }
+    };
+    fetchCompetitions();
+  }, []);
 
   const handleNavigate = useCallback(
     (view: NavigationView | null, to?: string) => {
@@ -281,6 +306,76 @@ export default function Profile() {
               <div className="grid grid-cols-1 gap-2">
                 <h3 className="text-xl font-semibold mb-2 text-gray-800">Godkänn anmälda</h3>
                 <CompetitionListSection refreshKey={competitionRefreshKey} />
+
+                <h3 className="text-xl font-semibold mt-4 mb-2 text-gray-800">Statistik</h3>
+                <div className="mb-4 p-4 bg-white/90 backdrop-blur rounded-lg shadow-md flex flex-col md:flex-row gap-4">
+                  <div className="flex-1">
+                    <label className="block text-sm font-semibold text-gray-600 mb-2 uppercase tracking-wide">
+                      Tävling
+                    </label>
+                    <select
+                      value={selectedCompForStats ?? ""}
+                      onChange={(e) =>
+                        setSelectedCompForStats(e.target.value ? parseInt(e.target.value) : null)
+                      }
+                      className="w-full p-2.5 rounded-lg border border-gray-300 text-base focus:outline-none focus:ring-2 focus:ring-[--secondary-color] bg-white text-gray-800"
+                    >
+                      <option value="">Välj tävling...</option>
+                      {competitionRefreshKey !== undefined &&
+                        competitions.map((comp) => (
+                          <option key={comp.id} value={comp.id}>
+                            {comp.name} ({comp.comp_date})
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  {selectedCompForStats !== null && (
+                    <div className="flex-1">
+                      <label className="block text-sm font-semibold text-gray-600 mb-2 uppercase tracking-wide">
+                        Nivå
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {LEVELS.map((level) => (
+                          <button
+                            key={level}
+                            onClick={() => setSelectedLevelForStats(level)}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all font-medium ${
+                              selectedLevelForStats === level
+                                ? "border-gray-800 shadow-lg bg-opacity-100"
+                                : "border-gray-200 hover:border-gray-300"
+                            }`}
+                            style={{
+                              backgroundColor:
+                                selectedLevelForStats === level
+                                  ? getLevelColor(level)
+                                  : "transparent",
+                              color: selectedLevelForStats === level ? "white" : "gray",
+                              borderColor:
+                                selectedLevelForStats === level
+                                  ? getLevelColor(level)
+                                  : "rgb(229, 231, 235)",
+                            }}
+                          >
+                            <span
+                              className="w-4 h-4 rounded-full border border-gray-300 shrink-0"
+                              style={{ backgroundColor: getLevelColor(level) }}
+                            />
+                            Nivå {level}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {selectedCompForStats !== null && selectedLevelForStats !== null && (
+                  <ProblemStatsTable
+                    comp_id={selectedCompForStats}
+                    level={selectedLevelForStats}
+                    refreshKey={statsRefreshKey}
+                  />
+                )}
 
                 <h3 className="text-xl font-semibold mt-4 mb-2 text-gray-800">
                   Hantera säsonger och tävlingar

@@ -24,6 +24,7 @@ import {
   PasswordResetConfirm,
   LeaderboardResponse,
   SeasonStandingsResponse,
+  LevelStatsResponse,
 } from "@/types";
 
 // Auth
@@ -134,6 +135,9 @@ export const updateScoreBatch = ({ comp_id, level }: UrlParams, payload: ScoreBa
     payload,
     true
   );
+
+export const getLevelStats = ({ comp_id, level }: UrlParams) =>
+  api.get<LevelStatsResponse>(`/competitions/${comp_id}/level/${level}/stats`, true);
 
 // Leaderboard
 export const getLeaderboard = (comp_id: number) =>

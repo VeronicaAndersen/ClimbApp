@@ -197,6 +197,21 @@ async function apiRequest<T>(
   }
 }
 
+// Problem stats types
+interface ProblemStats {
+  problem_no: number;
+  total_competitors: number;
+  got_top_count: number;
+  got_bonus_count: number;
+  got_top_percentage: number;
+  got_bonus_percentage: number;
+}
+
+interface LevelStatsResponse {
+  level: number;
+  problems: ProblemStats[];
+}
+
 // ----------------------------------------------------------
 // Safe helper methods
 // ----------------------------------------------------------
@@ -215,6 +230,10 @@ export const api = {
 
   delete: <T>(path: string, auth = false) =>
     apiRequest<T>(`${apiUrl}${path}`, { method: "DELETE" }, auth),
+
+  // Get problem stats for a competition level
+  getLevelStats: (compId: number, level: number, auth = false) =>
+    api.get<LevelStatsResponse>(`/competitions/${compId}/level/${level}/stats`, auth),
 };
 
 export const tokens = { saveTokens };
