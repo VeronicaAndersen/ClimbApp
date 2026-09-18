@@ -1,13 +1,15 @@
 import { useCompetitions } from "@/hooks/useCompetitions";
 import { CompetitionResponse, RegisterToCompResponse } from "@/types";
 import { Spinner } from "@radix-ui/themes";
+import { X } from "lucide-react";
 import RegisterToCompForm from "./forms/RegisterToCompForm";
 import CalloutMessage from "./feedback/CalloutMessage";
-import { getCompRegistrationInfo } from "@/services/api";
+import { getCompRegistrationInfo, withdrawRegistration } from "@/services/api";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { sortCompetitions } from "@/utils/competitionSort";
 import { SessionSwitcher } from "./SessionSwitcher";
 import { getGradeColor, LEVEL_NAMES } from "@/constants/gradeColors";
+import { getUserFriendlyError } from "@/utils/errorMessages";
 
 export function AssignToCompetitionsList() {
   const {
@@ -24,6 +26,29 @@ export function AssignToCompetitionsList() {
     Record<number, RegisterToCompResponse>
   >({});
   const fetchedIdsRef = useRef(new Set<number>());
+  const [withdrawing, setWithdrawing] = useState<number | null>(null);
+  const [withdrawConfirm, setWithdrawConfirm] = useState<number | null>(null);
+  const [withdrawError, setWithdrawError] = useState<{ id: number; message: string } | null>(null);
+
+  const handleWithdraw = async (competitionId: number) => {
+    setWithdrawing(competitionId);
+    setWithdrawError(null);
+    try {
+      await withdrawRegistration(competitionId);
+      setWithdrawConfirm(null);
+      fetchedIdsRef.current.delete(competitionId);
+      setRegistrationDetails((prev) => {
+        const next = { ...prev };
+        delete next[competitionId];
+        return next;
+      });
+      await refreshRegistrationStatus(competitionId);
+    } catch (err) {
+      setWithdrawError({ id: competitionId, message: getUserFriendlyError(err) });
+    } finally {
+      setWithdrawing(null);
+    }
+  };
 
   // Fetch registration details for registered competitions.
   // Uses a ref to track already-fetched IDs to avoid re-fetching on every render
@@ -103,7 +128,46 @@ export function AssignToCompetitionsList() {
               )}
             </div>
           ) : (
-            <p className="text-sm text-amber-600 mb-2">⏳ Väntar på godkännande</p>
+            <div className="mb-2">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm text-amber-600">⏳ Väntar på godkännande</p>
+
+                {withdrawConfirm === comp.id ? (
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-xs text-gray-500">Säker?</span>
+                    <button
+                      onClick={() => handleWithdraw(comp.id)}
+                      disabled={withdrawing === comp.id}
+                      className="flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
+                    >
+                      {withdrawing === comp.id ? <Spinner size="1" /> : "Ja, dra tillbaka"}
+                    </button>
+                    <span className="text-gray-300">|</span>
+                    <button
+                      onClick={() => setWithdrawConfirm(null)}
+                      disabled={withdrawing === comp.id}
+                      className="text-xs font-medium text-gray-500 hover:text-gray-700 disabled:opacity-50"
+                    >
+                      Avbryt
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setWithdrawConfirm(comp.id)}
+                    className="flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700 hover:underline shrink-0"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    Dra tillbaka anmälan
+                  </button>
+                )}
+              </div>
+
+              {withdrawError?.id === comp.id && (
+                <div className="mt-2">
+                  <CalloutMessage message={withdrawError.message} color="red" />
+                </div>
+              )}
+            </div>
           )}
         </div>
       );

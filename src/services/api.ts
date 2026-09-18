@@ -88,6 +88,9 @@ export const checkRegistration = (competitionId: number) =>
 export const registerClimberToCompetition = (competitionId: number, level: number) =>
   api.post(`/competition/${competitionId}/register`, { level }, true);
 
+export const withdrawRegistration = (competitionId: number) =>
+  api.delete(`/competition/${competitionId}/registration`, true);
+
 export const getAllRegistrations = (competitionId: number) =>
   api.get<RegistrationWithClimber[]>(
     `/competition/${competitionId}/registrations`,
