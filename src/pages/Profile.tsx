@@ -14,6 +14,7 @@ import {
   Dices,
   Settings,
   MoreHorizontal,
+  BarChart3,
 } from "lucide-react";
 import useGetUserInfo from "@/hooks/useGetUserInfo";
 import CalloutMessage from "@/components/feedback/CalloutMessage";
@@ -59,7 +60,8 @@ type NavigationView =
   | "profile"
   | "users"
   | "admin"
-  | "leaderboard";
+  | "leaderboard"
+  | "statistics";
 
 const MENU_ITEMS = [
   {
@@ -96,6 +98,13 @@ const MENU_ITEMS = [
     mobileLabel: "Resultat",
     requiresAdmin: true,
     icon: Trophy,
+  },
+  {
+    value: "statistics" as const,
+    label: "Statistik",
+    mobileLabel: "Statistik",
+    requiresAdmin: true,
+    icon: BarChart3,
   },
   {
     value: "tombola" as const,
@@ -147,7 +156,7 @@ export default function Profile() {
 
   // If a non-admin ended up on an admin-only view (e.g. after role change), fall back.
   useEffect(() => {
-    const adminViews: NavigationView[] = ["users", "leaderboard", "admin"];
+    const adminViews: NavigationView[] = ["users", "leaderboard", "admin", "statistics"];
     if (!userLoading && !isAdmin && adminViews.includes(activeView)) {
       setActiveView("active_competition");
     }
@@ -307,7 +316,24 @@ export default function Profile() {
                 <h3 className="text-xl font-semibold mb-2 text-gray-800">Godkänn anmälda</h3>
                 <CompetitionListSection refreshKey={competitionRefreshKey} />
 
-                <h3 className="text-xl font-semibold mt-4 mb-2 text-gray-800">Statistik</h3>
+                <h3 className="text-xl font-semibold mt-4 mb-2 text-gray-800">
+                  Hantera säsonger och tävlingar
+                </h3>
+                <SeasonList refreshKey={seasonRefreshKey} />
+                <CompetitionList refreshKey={competitionRefreshKey} />
+
+                <SeasonForm onSeasonCreated={() => setSeasonRefreshKey((prev) => prev + 1)} />
+                <CompetitionForm
+                  onCompetitionCreated={() => setCompetitionRefreshKey((prev) => prev + 1)}
+                />
+              </div>
+            </Suspense>
+          )}
+
+          {activeView === "statistics" && isAdmin && (
+            <Suspense fallback={<LoadingFallback />}>
+              <div className="grid grid-cols-1 gap-2">
+                <h3 className="text-xl font-semibold mb-2 text-gray-800">Statistik</h3>
                 <div className="mb-4 p-4 bg-white/90 backdrop-blur rounded-lg shadow-md flex flex-col md:flex-row gap-4">
                   <div className="flex-1">
                     <label className="block text-sm font-semibold text-gray-600 mb-2 uppercase tracking-wide">
@@ -376,17 +402,6 @@ export default function Profile() {
                     refreshKey={statsRefreshKey}
                   />
                 )}
-
-                <h3 className="text-xl font-semibold mt-4 mb-2 text-gray-800">
-                  Hantera säsonger och tävlingar
-                </h3>
-                <SeasonList refreshKey={seasonRefreshKey} />
-                <CompetitionList refreshKey={competitionRefreshKey} />
-
-                <SeasonForm onSeasonCreated={() => setSeasonRefreshKey((prev) => prev + 1)} />
-                <CompetitionForm
-                  onCompetitionCreated={() => setCompetitionRefreshKey((prev) => prev + 1)}
-                />
               </div>
             </Suspense>
           )}

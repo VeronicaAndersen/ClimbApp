@@ -13,6 +13,7 @@ import {
   MyInfoResponse,
   RegisterToCompResponse,
   RegistrationWithClimber,
+  RegistrationWithCompetition,
   RegistrationApprovalUpdate,
   RegistrationLevelUpdate,
   ProblemScoreBulkResult,
@@ -57,6 +58,9 @@ export const updateClimberById = (climberId: number, payload: ClimberUpdateReque
   api.patch(`/climber/${climberId}`, payload, true);
 
 export const deleteClimberById = (climberId: number) => api.delete(`/climber/${climberId}`, true);
+
+export const getClimberRegistrations = (climberId: number) =>
+  api.get<RegistrationWithCompetition[]>(`/climber/${climberId}/registrations`, true);
 
 export const registerClimber = (payload: RegistrationRequest) => api.post("/climber", payload);
 
@@ -138,6 +142,12 @@ export const updateScoreBatch = ({ comp_id, level }: UrlParams, payload: ScoreBa
 
 export const getLevelStats = ({ comp_id, level }: UrlParams) =>
   api.get<LevelStatsResponse>(`/competitions/${comp_id}/level/${level}/stats`, true);
+
+export const getUserScoresBatch = ({ comp_id, level }: UrlParams, userId: number) =>
+  api.get<ProblemScoreBulkResult[]>(
+    `/competitions/${comp_id}/level/${level}/users/${userId}/scores`,
+    true
+  );
 
 // Leaderboard
 export const getLeaderboard = (comp_id: number) =>

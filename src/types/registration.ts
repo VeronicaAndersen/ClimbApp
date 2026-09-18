@@ -19,6 +19,15 @@ export type RegistrationWithClimber = {
   climber_name: string;
 };
 
+export type RegistrationWithCompetition = {
+  comp_id: number;
+  competition_name: string;
+  comp_date: string;
+  level: number;
+  approved: boolean;
+  created_at: string;
+};
+
 export type RegistrationApprovalUpdate = {
   approved: boolean;
 };

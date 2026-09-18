@@ -4,7 +4,8 @@ import { Spinner, Button } from "@radix-ui/themes";
 import { useClimbers } from "@/hooks/useClimbers";
 import { updateClimberById, deleteClimberById } from "@/services/api";
 import { ClimberResponse, ClimberUpdateRequest } from "@/types";
-import { Pencil, Trash2, Check, X } from "lucide-react";
+import { Pencil, Trash2, Check, X, BarChart3 } from "lucide-react";
+import { ClimberStatsModal } from "./ClimberStatsModal";
 
 interface ClimberListProps {
   refreshKey?: number;
@@ -38,6 +39,7 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
   const [deleting, setDeleting] = useState<number | null>(null);
   const [rowError, setRowError] = useState<{ id: number; message: string } | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
+  const [statsClimber, setStatsClimber] = useState<ClimberResponse | null>(null);
 
   const resetState = () => {
     setEditingId(null);
@@ -316,6 +318,16 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
                         ) : (
                           <>
                             <Button
+                              onClick={() => setStatsClimber(climber)}
+                              disabled={isSavingRow || isDeletingRow}
+                              className="bg-pink-600 hover:bg-pink-700 text-white px-3 py-1 rounded disabled:opacity-50"
+                              size="1"
+                              title="Visa statistik"
+                            >
+                              <BarChart3 className="w-4 h-4" />
+                            </Button>
+
+                            <Button
                               onClick={() => startEdit(climber)}
                               disabled={isSavingRow || isDeletingRow || editingId !== null}
                               className="bg-[--secondary-color] hover:bg-[--secondary-color-hover] text-white px-3 py-1 rounded disabled:opacity-50"
@@ -373,6 +385,8 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
       ) : (
         <p className="text-center text-gray-500 py-4">Inga klättrare tillgängliga.</p>
       )}
+
+      <ClimberStatsModal climber={statsClimber} onClose={() => setStatsClimber(null)} />
     </div>
   );
 }
