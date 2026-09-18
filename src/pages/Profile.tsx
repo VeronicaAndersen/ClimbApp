@@ -150,6 +150,7 @@ export default function Profile() {
   const [selectedLevelForStats, setSelectedLevelForStats] = useState<number | null>(null);
   const [statsRefreshKey] = useState(0);
   const [competitions, setCompetitions] = useState<CompetitionResponse[]>([]);
+  const [competitionsLoading, setCompetitionsLoading] = useState(true);
   const LEVELS = [1, 2, 3, 4, 5, 6, 7];
 
   const getLevelColor = (level: number): string => getGradeColor(level);
@@ -179,11 +180,14 @@ export default function Profile() {
 
   useEffect(() => {
     const fetchCompetitions = async () => {
+      setCompetitionsLoading(true);
       try {
         const comps = await getCompetitions();
         setCompetitions(comps);
       } catch (err) {
         console.error("Failed to fetch competitions:", err);
+      } finally {
+        setCompetitionsLoading(false);
       }
     };
     fetchCompetitions();
@@ -339,21 +343,29 @@ export default function Profile() {
                     <label className="block text-sm font-semibold text-gray-600 mb-2 uppercase tracking-wide">
                       Tävling
                     </label>
-                    <select
-                      value={selectedCompForStats ?? ""}
-                      onChange={(e) =>
-                        setSelectedCompForStats(e.target.value ? parseInt(e.target.value) : null)
-                      }
-                      className="w-full p-2.5 rounded-lg border border-gray-300 text-base focus:outline-none focus:ring-2 focus:ring-[--secondary-color] bg-white text-gray-800"
-                    >
-                      <option value="">Välj tävling...</option>
-                      {competitionRefreshKey !== undefined &&
-                        competitions.map((comp) => (
+                    {competitionsLoading ? (
+                      <div className="flex items-center gap-2 text-gray-500 p-2.5">
+                        <Spinner size="2" />
+                        <span>Hämtar tävlingar...</span>
+                      </div>
+                    ) : competitions.length === 0 ? (
+                      <p className="text-gray-500 p-2.5">Inga tävlingar tillgängliga.</p>
+                    ) : (
+                      <select
+                        value={selectedCompForStats ?? ""}
+                        onChange={(e) =>
+                          setSelectedCompForStats(e.target.value ? parseInt(e.target.value) : null)
+                        }
+                        className="w-full p-2.5 rounded-lg border border-gray-300 text-base focus:outline-none focus:ring-2 focus:ring-[--secondary-color] bg-white text-gray-800"
+                      >
+                        <option value="">Välj tävling...</option>
+                        {competitions.map((comp) => (
                           <option key={comp.id} value={comp.id}>
                             {comp.name} ({comp.comp_date})
                           </option>
                         ))}
-                    </select>
+                      </select>
+                    )}
                   </div>
 
                   {selectedCompForStats !== null && (
@@ -395,12 +407,23 @@ export default function Profile() {
                   )}
                 </div>
 
-                {selectedCompForStats !== null && selectedLevelForStats !== null && (
+                {selectedCompForStats !== null && selectedLevelForStats !== null ? (
                   <ProblemStatsTable
                     comp_id={selectedCompForStats}
                     level={selectedLevelForStats}
                     refreshKey={statsRefreshKey}
                   />
+                ) : selectedCompForStats !== null ? (
+                  <p className="text-center text-gray-500 bg-white/90 backdrop-blur rounded-lg shadow-md py-6">
+                    Välj en nivå ovan för att visa statistik.
+                  </p>
+                ) : (
+                  !competitionsLoading &&
+                  competitions.length > 0 && (
+                    <p className="text-center text-gray-500 bg-white/90 backdrop-blur rounded-lg shadow-md py-6">
+                      Välj en tävling ovan för att visa statistik.
+                    </p>
+                  )
                 )}
               </div>
             </Suspense>
