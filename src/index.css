@@ -1,6 +1,10 @@
-@tailwind base;
-@tailwind components;
 @tailwind utilities;
+
+@theme inline {
+  --color-border: hsl(var(--border));
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+}
 
 @layer base {
   :root {
