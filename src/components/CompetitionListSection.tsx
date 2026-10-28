@@ -12,14 +12,20 @@ interface CompetitionListSectionProps {
 export function CompetitionListSection({ refreshKey }: CompetitionListSectionProps) {
   const [competitions, setCompetitions] = useState<CompetitionResponse[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     setLoading(true);
+    setError(false);
     getCompetitions()
       .then((data) => setCompetitions(data ?? []))
-      .catch(() => setCompetitions([]))
+      .catch(() => {
+        setCompetitions([]);
+        setError(true);
+      })
       .finally(() => setLoading(false));
-  }, [refreshKey]);
+  }, [refreshKey, retryCount]);
 
   const { upcoming, past } = useMemo(() => sortCompetitions(competitions), [competitions]);
 
@@ -28,6 +34,21 @@ export function CompetitionListSection({ refreshKey }: CompetitionListSectionPro
       <div className="flex items-center justify-center py-4">
         <Spinner size="2" />
         <span className="ml-2 text-sm">Hämtar tävlingar...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div role="alert" className="mb-4">
+        <p className="text-red-600 mb-2">Det gick inte att hämta tävlingar.</p>
+        <button
+          type="button"
+          className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 text-sm"
+          onClick={() => setRetryCount((c) => c + 1)}
+        >
+          Försök igen
+        </button>
       </div>
     );
   }
