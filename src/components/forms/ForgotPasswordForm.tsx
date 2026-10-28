@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { requestPasswordReset } from "@/services/api";
 import { Button, Card, TextField, Spinner } from "@radix-ui/themes";
-import { Label } from "@radix-ui/react-context-menu";
 import CalloutMessage from "../feedback/CalloutMessage";
 import { getUserFriendlyError } from "@/utils/errorMessages";
 
@@ -45,7 +44,7 @@ export function ForgotPasswordForm() {
             Ange ditt användarnamn så skickar vi en länk för att återställa ditt lösenord.
           </p>
           <div className="space-y-2">
-            <Label>Användarnamn</Label>
+            <label htmlFor="username" className="text-sm font-medium">Användarnamn</label>
             <TextField.Root
               id="username"
               type="text"

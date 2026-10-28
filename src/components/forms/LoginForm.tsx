@@ -3,7 +3,6 @@ import type { LoginRequest } from "@/types";
 import { Link, useNavigate } from "react-router-dom";
 import { loginClimber } from "@/services/api";
 import { Button, Card, TextField, Spinner } from "@radix-ui/themes";
-import { Label } from "@radix-ui/react-context-menu";
 import CalloutMessage from "../feedback/CalloutMessage";
 import { getUserFriendlyError } from "@/utils/errorMessages";
 
@@ -41,7 +40,7 @@ export function LoginForm() {
         <form onSubmit={handleLogin} className="space-y-6">
           <h1 className="text-2xl font-semibold text-center mb-4">Logga in</h1>
           <div className="space-y-2">
-            <Label>Användarnamn</Label>
+            <label htmlFor="username" className="text-sm font-medium">Användarnamn</label>
             <TextField.Root
               id="username"
               type="text"
@@ -58,7 +57,7 @@ export function LoginForm() {
           </div>
 
           <div className="space-y-2">
-            <Label>Lösenord</Label>
+            <label htmlFor="password" className="text-sm font-medium">Lösenord</label>
             <TextField.Root
               id="password"
               type="password"
