@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { confirmPasswordReset } from "@/services/api";
 import { Button, Card, TextField, Spinner } from "@radix-ui/themes";
-import { Label } from "@radix-ui/react-context-menu";
 import CalloutMessage from "@/components/feedback/CalloutMessage";
 import { getUserFriendlyError } from "@/utils/errorMessages";
 
@@ -82,7 +81,7 @@ export default function ResetPassword() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <h1 className="text-2xl font-semibold text-center mb-4">Nytt lösenord</h1>
           <div className="space-y-2">
-            <Label>Nytt lösenord</Label>
+            <label htmlFor="password" className="text-sm font-medium">Nytt lösenord</label>
             <TextField.Root
               id="password"
               type="password"
@@ -97,7 +96,7 @@ export default function ResetPassword() {
           </div>
 
           <div className="space-y-2">
-            <Label>Bekräfta lösenord</Label>
+            <label htmlFor="confirmPassword" className="text-sm font-medium">Bekräfta lösenord</label>
             <TextField.Root
               id="confirmPassword"
               type="password"
