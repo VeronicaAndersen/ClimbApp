@@ -33,12 +33,14 @@ export function ForgotPasswordForm() {
     <div className="w-80 flex items-center justify-center">
       <Card className="w-full h-fit max-w-md p-6 bg-white/95 backdrop-blur shadow-xl">
         {errorMessage && <CalloutMessage message={errorMessage} color="red" />}
-        {success && (
-          <CalloutMessage
-            message="Om användarnamnet finns i systemet och ett e-postmeddelande är kopplat till kontot kommer du att få en återställningslänk."
-            color="green"
-          />
-        )}
+        <CalloutMessage
+          message={
+            success
+              ? "Om användarnamnet finns i systemet och ett e-postmeddelande är kopplat till kontot kommer du att få en återställningslänk."
+              : ""
+          }
+          color="green"
+        />
         <form onSubmit={handleSubmit} className="space-y-6">
           <h1 className="text-2xl font-semibold text-center mb-4">Glömt lösenord</h1>
           <p className="text-sm text-gray-600 text-center">
