@@ -16,15 +16,25 @@ export function CompetitionListSection({ refreshKey }: CompetitionListSectionPro
   const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
+    let isCurrent = true;
     setLoading(true);
     setError(false);
     getCompetitions()
-      .then((data) => setCompetitions(data ?? []))
+      .then((data) => {
+        if (isCurrent) setCompetitions(data ?? []);
+      })
       .catch(() => {
+        if (!isCurrent) return;
         setCompetitions([]);
         setError(true);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (isCurrent) setLoading(false);
+      });
+
+    return () => {
+      isCurrent = false;
+    };
   }, [refreshKey, retryCount]);
 
   const { upcoming, past } = useMemo(() => sortCompetitions(competitions), [competitions]);
