@@ -1,131 +1,94 @@
-# Greppmästerskapen Scoreboard
+# Greppmästerskapen
 
-## Overview
+This workspace contains the Vite/React frontend in `ClimbApp` and the FastAPI backend in `ClimbAPI`. The backend uses PostgreSQL and dbmate migrations.
 
-Greppmästerskapen Scoreboard is a web application for managing and tracking bouldering competitions. It allows climbers to register, join competitions, select their grade, and log their problem attempts. Organizers can create competitions and manage problems for each grade. The application provides a user-friendly interface for climbers to view and update their attempts, and for admins to oversee competition progress.
+## Prerequisites
 
-The project consists of two main parts:
-
-- **Frontend:** A React + TypeScript app using Vite, Tailwind CSS, shadcn-ui, and Radix UI for the user interface.
-- **Backend:** A FastAPI (Python) REST API for managing climbers, competitions, problems, and attempts, with a MySQL database.
-
-## Features
-
-- **Climber Registration & Login:** Climbers can register with a name, password, and select their climbing grade.
-- **Competition Management:** Organizers can create new competitions and define problems for each grade.
-- **Join Competitions:** Climbers can join competitions and are assigned problems based on their grade.
-- **Problem Attempt Tracking:** Climbers can log the number of attempts, tops, and bonuses for each problem.
-- **Profile Dashboard:** Climbers can view and update their attempts for each competition.
-- **Responsive UI:** Modern, mobile-friendly design with dark mode support.
-
-## Technologies Used
-
-- **Frontend:**  
-  - [React](https://react.dev/)
-  - [TypeScript](https://www.typescriptlang.org/)
-  - [Vite](https://vitejs.dev/)
-  - [Tailwind CSS](https://tailwindcss.com/)
-  - [shadcn-ui](https://ui.shadcn.com/)
-  - [Radix UI](https://www.radix-ui.com/)
-  - [Zustand](https://zustand-demo.pmnd.rs/) (state management)
-  - [React Query](https://tanstack.com/query/latest) (data fetching)
-
-- **Backend:**  
-  - [FastAPI](https://fastapi.tiangolo.com/)
-  - [SQLAlchemy](https://www.sqlalchemy.org/) (ORM)
-  - [Alembic](https://alembic.sqlalchemy.org/) (migrations)
-  - [MySQL](https://www.mysql.com/) (database)
-  - [Pydantic](https://docs.pydantic.dev/) (data validation)
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js & npm
+- Node.js 20.19+ or 22.12+, with npm
 - Python 3.10+
-- MySQL database
+- PostgreSQL
+- dbmate (on macOS, install with `brew install dbmate`)
 
-### Setup
+## Start Both Applications Locally
 
-#### 1. Clone the repository
+Start PostgreSQL first and create a local database named `grepp` if it does not already exist. For a local PostgreSQL installation, `createdb grepp` is a common option; adjust the database user and connection details below to match your setup.
 
-```sh
-git clone <YOUR_GIT_URL>
-cd ClimbingApp
+### 1. Configure and migrate the backend database
+
+In `ClimbAPI`, create or update a local `.env` file with valid shell-style assignments. Do not commit this file or use production credentials locally.
+
+```dotenv
+DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@127.0.0.1:5432/grepp?sslmode=disable"
+ASYNC_DATABASE_URL="postgresql+asyncpg://postgres:YOUR_PASSWORD@127.0.0.1:5432/grepp"
+PASSWORD_PEPPER="replace-with-a-long-random-secret"
+FRONTEND_URL="http://localhost:5173"
 ```
 
-#### 2. Install frontend dependencies
+Create a Python virtual environment and install the backend dependencies:
 
 ```sh
-cd boulder-beat-scoreboard
-npm install
+cd ClimbAPI
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
 ```
 
-#### 3. Configure environment variables
-
-- Copy `.env.example` to `.env` in both `boulder-beat-scoreboard/` and `ClimbAPI/` and fill in the required values (API URLs, tokens, database credentials).
-
-#### 4. Set up the backend
+Load the variables into the shell and apply migrations:
 
 ```sh
-cd ../ClimbAPI
-pip install -r requirements.txt
-# Set up the database (see Alembic migrations or run `init_db.py`)
+set -a
+source .env
+set +a
+dbmate up
 ```
 
-#### 5. Run the backend server
+Keep this terminal open for the backend so the environment variables remain loaded. Start the API:
 
 ```sh
-uvicorn main:app --reload
+python main.py
 ```
 
-#### 6. Run the frontend development server
+The API listens at `http://127.0.0.1:8080`; interactive API documentation is at [http://127.0.0.1:8080/docs](http://127.0.0.1:8080/docs).
+
+Mail configuration (`MAIL_USERNAME`, `MAIL_PASSWORD`, and related `MAIL_*` variables) is optional for local startup. Without mail credentials, password-reset links are printed by the backend for development.
+
+### 2. Configure and start the frontend
+
+Open a second terminal at the workspace root; leave the backend terminal running.
+
+In `ClimbApp`, create `.env.local` with the backend API base URL. The URL must include `/api/v1` because frontend service paths are appended to it:
+
+```dotenv
+VITE_REACT_APP_API_URL=http://127.0.0.1:8080/api/v1
+```
+
+Install the frontend dependencies and start Vite:
 
 ```sh
-cd ../boulder-beat-scoreboard
+cd ClimbApp
+npm ci
 npm run dev
 ```
 
-The app will be available at [http://localhost:8080](http://localhost:8080).
+Open the URL Vite prints, normally [http://localhost:5173](http://localhost:5173). The backend CORS configuration allows this default frontend origin. If Vite selects another port, add that frontend origin to `allow_origins` in `ClimbAPI/main.py`.
 
-## Project Structure
+Restart Vite after creating or changing `.env.local`; Vite reads environment files at startup. Both `.env` files are local configuration and must not contain committed secrets.
 
-```
-boulder-beat-scoreboard/
-  ├── src/
-  │   ├── components/         # React components (Login, Registration, ProblemGrid, etc.)
-  │   ├── hooks/              # API hooks for backend communication
-  │   ├── pages/              # Route pages (Login, Profile, Registration, NotFound)
-  │   ├── store/              # Zustand state management
-  │   ├── types/              # TypeScript types
-  │   └── index.css           # Tailwind and custom styles
-  ├── tailwind.config.ts      # Tailwind theme config
-  └── ...
-ClimbAPI/
-  ├── models/                 # SQLAlchemy models (Climber, Competition, Problem, etc.)
-  ├── routes/                 # FastAPI route handlers
-  ├── schemas/                # Pydantic schemas
-  ├── migrations/             # Alembic migrations
-  ├── main.py                 # FastAPI app entrypoint
-  └── ...
+## Tests
+
+Backend tests (install `requirements-dev.txt` in the active virtual environment first):
+
+```sh
+cd ClimbAPI
+python -m pip install -r requirements-dev.txt
+pytest -q
 ```
 
-## Usage
+Frontend tests:
 
-1. **Register as a climber**  
-   Go to the registration page and create an account, selecting your preferred grade.
+```sh
+cd ClimbApp
+npm run test:run
+```
 
-2. **Login**  
-   Use your credentials to log in.
-
-3. **Create a competition**
-    If there isn't one available
-
-4. **Join a competition**  
-   After logging in, you can join available competitions and will be assigned problems for your grade.
-
-5. **Log attempts**  
-   On your profile page, update your attempts, tops, and bonuses for each problem.
-
-6. **Save progress**  
-   Click "Spara ändringar" to save your progress to the backend.
+For backend-specific setup details, see [ClimbAPI/README.md](../ClimbAPI/README.md).
