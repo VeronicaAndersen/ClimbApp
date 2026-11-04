@@ -32,7 +32,7 @@ export function ForgotPasswordForm() {
   return (
     <div className="w-80 flex items-center justify-center">
       <Card className="w-full h-fit max-w-md p-6 bg-white/95 backdrop-blur shadow-xl">
-        {errorMessage && <CalloutMessage message={errorMessage} color="red" />}
+        <CalloutMessage message={errorMessage ?? ""} color="red" />
         <CalloutMessage
           message={
             success

@@ -33,7 +33,9 @@ describe("ForgotPasswordForm", () => {
     renderForgotPasswordForm();
 
     const status = screen.getByRole("status");
+    const alert = screen.getByRole("alert");
     expect(status).toBeEmptyDOMElement();
+    expect(alert).toBeEmptyDOMElement();
 
     await user.type(screen.getByPlaceholderText("Användarnamn"), "alice");
     await user.click(screen.getByRole("button", { name: "Skicka återställningslänk" }));
@@ -45,5 +47,30 @@ describe("ForgotPasswordForm", () => {
       "Om användarnamnet finns i systemet och ett e-postmeddelande är kopplat till kontot kommer du att få en återställningslänk."
     );
     expect(screen.getByRole("status")).toBe(status);
+    expect(screen.getByRole("alert")).toBe(alert);
+  });
+
+  it("updates the existing assertive live region when the request fails", async () => {
+    let rejectRequest: (error: Error) => void = () => undefined;
+    const request = vi.spyOn(api, "requestPasswordReset").mockReturnValue(
+      new Promise((_, reject) => {
+        rejectRequest = reject;
+      })
+    );
+    const user = userEvent.setup();
+
+    renderForgotPasswordForm();
+
+    const alert = screen.getByRole("alert");
+    expect(alert).toBeEmptyDOMElement();
+
+    await user.type(screen.getByPlaceholderText("Användarnamn"), "alice");
+    await user.click(screen.getByRole("button", { name: "Skicka återställningslänk" }));
+
+    expect(request).toHaveBeenCalled();
+    rejectRequest(new Error("network"));
+
+    await screen.findByText("Kunde inte ansluta till servern. Kontrollera din internetanslutning.");
+    expect(screen.getByRole("alert")).toBe(alert);
   });
 });
