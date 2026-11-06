@@ -18,7 +18,7 @@ vi.mock("@/lib/apiClient", () => ({
   tokens: { saveTokens: saveTokensMock },
 }));
 
-import * as service from "../api";
+import * as service from "../../services/api";
 
 type HttpMethod = keyof typeof apiMock;
 

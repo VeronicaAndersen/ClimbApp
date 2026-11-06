@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Theme } from "@radix-ui/themes";
-import ProfilInfo from "../ProfilInfo";
+import ProfilInfo from "../../components/ProfilInfo";
 
 const { useGetUserInfoMock, useUserCompetitionsMock } = vi.hoisted(() => ({
   useGetUserInfoMock: vi.fn(),

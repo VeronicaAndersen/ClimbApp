@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getUserFriendlyError } from "../errorMessages";
+import { getUserFriendlyError } from "../../utils/errorMessages";
 
 describe("getUserFriendlyError", () => {
   describe("null / undefined input", () => {

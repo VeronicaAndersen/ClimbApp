@@ -77,9 +77,10 @@ export function LoginForm() {
             disabled={!loginData.username || !loginData.password || loading}
           >
             {loading ? (
-              <>
-                <Spinner size="2" className="mr-2" /> Loggar in...
-              </>
+              <span role="status">
+                <Spinner size="2" className="mr-2" aria-hidden="true" />
+                Loggar in...
+              </span>
             ) : (
               "Logga in"
             )}

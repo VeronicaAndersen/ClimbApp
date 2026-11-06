@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { sortCompetitions } from "../competitionSort";
+import { sortCompetitions } from "../../utils/competitionSort";
 import type { CompetitionResponse } from "@/types";
 
 const makeComp = (id: number, date: string): CompetitionResponse => ({
