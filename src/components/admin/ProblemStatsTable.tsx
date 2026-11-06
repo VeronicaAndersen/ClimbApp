@@ -3,7 +3,7 @@ import { Spinner } from "@radix-ui/themes";
 import { Trophy, Star, Users, LucideIcon } from "lucide-react";
 import { getLevelStats } from "@/services/api";
 import { LevelStatsResponse, ProblemStats } from "@/types";
-import CalloutMessage from "../user_feedback/CalloutMessage";
+import CalloutMessage from "../feedback/CalloutMessage";
 
 interface ProblemStatsTableProps {
   comp_id: number;
