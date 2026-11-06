@@ -66,7 +66,6 @@
     "tslint": "^5.20.1",
     "uuid": "^11.1.0",
     "vaul": "^0.9.9",
-    "zod": "^3.23.8",
     "zustand": "^5.0.8"
   },
   "devDependencies": {
@@ -79,7 +78,7 @@
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react-swc": "^3.5.0",
-    "@vitest/coverage-v8": "^3.2.4",
+    "@vitest/coverage-v8": "^5.1.0",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.9.0",
     "eslint-config-prettier": "^10.1.8",
@@ -95,6 +94,12 @@
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
     "vite": "^7.3.1",
-    "vitest": "^3.2.4"
+    "vitest": "^5.1.0"
+  },
+  "overrides": {
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "^11.0.5"
+    },
+    "postcss-selector-parser": "^6.1.5"
   }
 }
