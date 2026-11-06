@@ -3,6 +3,7 @@ import CalloutMessage from "./feedback/CalloutMessage";
 import useGetUserInfo from "@/hooks/useGetUserInfo";
 import { useUserCompetitions } from "@/hooks/useUserCompetitions";
 import { Button, Spinner, TextField } from "@radix-ui/themes";
+import * as Label from "@radix-ui/react-label";
 import { Pencil, Check, X } from "lucide-react";
 import CompetitionSummaryCard from "./CompetitionSummaryCard";
 import { CompleteProfileForm } from "./forms/CompleteProfileForm";
@@ -80,22 +81,28 @@ export default function ProfilInfo() {
             {isEditingName ? (
               <div className="space-y-2 mb-2">
                 <div className="flex flex-col sm:flex-row gap-2">
-                  <TextField.Root
-                    value={nameForm.firstname}
-                    onChange={(e) => setNameForm({ ...nameForm, firstname: e.target.value })}
-                    placeholder="Förnamn"
-                    autoComplete="given-name"
-                    disabled={savingName}
-                    className="w-full text-base"
-                  />
-                  <TextField.Root
-                    value={nameForm.lastname}
-                    onChange={(e) => setNameForm({ ...nameForm, lastname: e.target.value })}
-                    placeholder="Efternamn"
-                    autoComplete="family-name"
-                    disabled={savingName}
-                    className="w-full text-base"
-                  />
+                  <div className="w-full space-y-1">
+                    <Label.Root htmlFor="profile-firstname">Förnamn</Label.Root>
+                    <TextField.Root
+                      id="profile-firstname"
+                      value={nameForm.firstname}
+                      onChange={(e) => setNameForm({ ...nameForm, firstname: e.target.value })}
+                      autoComplete="given-name"
+                      disabled={savingName}
+                      className="w-full text-base"
+                    />
+                  </div>
+                  <div className="w-full space-y-1">
+                    <Label.Root htmlFor="profile-lastname">Efternamn</Label.Root>
+                    <TextField.Root
+                      id="profile-lastname"
+                      value={nameForm.lastname}
+                      onChange={(e) => setNameForm({ ...nameForm, lastname: e.target.value })}
+                      autoComplete="family-name"
+                      disabled={savingName}
+                      className="w-full text-base"
+                    />
+                  </div>
                 </div>
                 {nameError && <CalloutMessage message={nameError} color="red" />}
                 <div className="flex gap-2">
@@ -123,11 +130,12 @@ export default function ProfilInfo() {
               <p className="text-lg flex items-center gap-2">
                 <strong>Namn:</strong> {userInfo.firstname} {userInfo.lastname}
                 <button
+                  type="button"
                   onClick={startEditName}
-                  className="text-gray-400 hover:text-[--secondary-color]"
-                  title="Ändra namn"
+                  aria-label="Ändra namn"
+                  className="rounded-sm text-gray-400 hover:text-[--secondary-color] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--secondary-color] focus-visible:ring-offset-2"
                 >
-                  <Pencil className="w-4 h-4" />
+                  <Pencil className="w-4 h-4" aria-hidden="true" />
                 </button>
               </p>
             )}
