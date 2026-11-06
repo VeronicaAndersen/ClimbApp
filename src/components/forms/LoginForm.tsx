@@ -77,13 +77,17 @@ export function LoginForm() {
             disabled={!loginData.username || !loginData.password || loading}
           >
             {loading ? (
-              <>
-                <Spinner size="2" className="mr-2" /> Loggar in...
-              </>
+              <span>
+                <Spinner size="2" className="mr-2" aria-hidden="true" />
+                Loggar in...
+              </span>
             ) : (
               "Logga in"
             )}
           </Button>
+          <span role="status" className="sr-only">
+            {loading ? "Loggar in..." : ""}
+          </span>
 
           <div className="flex flex-col items-center gap-2">
             <Link

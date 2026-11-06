@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { renderHook, act } from "@testing-library/react";
-import { useForm } from "../useForm";
+import { useForm } from "../../hooks/useForm";
 
 describe("useForm — initial values", () => {
   it("returns initial string values", () => {

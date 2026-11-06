@@ -7,7 +7,7 @@ import {
   clearCache,
   tokens,
   api,
-} from "../apiClient";
+} from "../../lib/apiClient";
 
 // Reset all token/session state before each test
 beforeEach(() => {

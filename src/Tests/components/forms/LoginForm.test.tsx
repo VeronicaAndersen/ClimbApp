@@ -10,7 +10,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { Theme } from "@radix-ui/themes";
-import { LoginForm } from "../forms/LoginForm";
+import { LoginForm } from "../../../components/forms/LoginForm";
 import * as api from "@/services/api";
 
 // Wrap with the providers LoginForm needs
@@ -86,6 +86,20 @@ describe("LoginForm — interaction", () => {
     await user.type(screen.getByPlaceholderText("Lösenord"), "secret123");
 
     expect(screen.getByRole("button", { name: "Logga in" })).toBeDisabled();
+  });
+
+  it("announces the pending login status", async () => {
+    vi.spyOn(api, "loginClimber").mockImplementation(() => new Promise(() => {}));
+    const user = userEvent.setup();
+    renderLoginForm();
+
+    expect(screen.getByRole("status")).toBeEmptyDOMElement();
+
+    await user.type(screen.getByPlaceholderText("Användarnamn"), "alice");
+    await user.type(screen.getByPlaceholderText("Lösenord"), "secret123");
+    await user.click(screen.getByRole("button", { name: "Logga in" }));
+
+    expect(screen.getByRole("status")).toHaveTextContent("Loggar in...");
   });
 });
 

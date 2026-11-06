@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { Theme } from "@radix-ui/themes";
 import * as api from "@/services/api";
-import { ForgotPasswordForm } from "../forms/ForgotPasswordForm";
+import { ForgotPasswordForm } from "../../../components/forms/ForgotPasswordForm";
 
 function renderForgotPasswordForm() {
   return render(

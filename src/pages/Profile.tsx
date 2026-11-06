@@ -30,28 +30,30 @@ const ActiveCompetition = lazy(() =>
   import("@/components/ActiveCompetition").then((m) => ({ default: m.ActiveCompetition }))
 );
 const SeasonForm = lazy(() =>
-  import("@/components/forms/admins/SeasonForm").then((m) => ({ default: m.SeasonForm }))
+  import("@/components/admin/forms/SeasonForm").then((m) => ({ default: m.SeasonForm }))
 );
 const CompetitionForm = lazy(() =>
-  import("@/components/forms/admins/CompetitionForm").then((m) => ({ default: m.CompetitionForm }))
+  import("@/components/admin/forms/CompetitionForm").then((m) => ({ default: m.CompetitionForm }))
 );
 const CompetitionList = lazy(() =>
-  import("@/components/admins/CompetitionList").then((m) => ({ default: m.CompetitionList }))
+  import("@/components/admin/CompetitionList").then((m) => ({ default: m.CompetitionList }))
 );
 const SeasonList = lazy(() =>
-  import("@/components/admins/SeasonList").then((m) => ({ default: m.SeasonList }))
+  import("@/components/admin/SeasonList").then((m) => ({ default: m.SeasonList }))
 );
 const ClimberList = lazy(() =>
-  import("@/components/admins/ClimberList").then((m) => ({ default: m.ClimberList }))
+  import("@/components/admin/ClimberList").then((m) => ({ default: m.ClimberList }))
 );
 const Leaderboard = lazy(() =>
-  import("@/components/admins/Leaderboard").then((m) => ({ default: m.Leaderboard }))
+  import("@/components/admin/Leaderboard").then((m) => ({ default: m.Leaderboard }))
 );
 const CompetitionListSection = lazy(() =>
-  import("@/components/CompetitionListSection").then((m) => ({ default: m.CompetitionListSection }))
+  import("@/components/admin/CompetitionListSection").then((m) => ({
+    default: m.CompetitionListSection,
+  }))
 );
 const ProblemStatsTable = lazy(() =>
-  import("@/components/admins/ProblemStatsTable").then((m) => ({ default: m.ProblemStatsTable }))
+  import("@/components/admin/ProblemStatsTable").then((m) => ({ default: m.ProblemStatsTable }))
 );
 
 type NavigationView =

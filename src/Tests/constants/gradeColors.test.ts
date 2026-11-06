@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getGradeColor, GRADE_COLORS, LEVEL_NAMES, DEFAULT_GRADE_COLOR } from "../gradeColors";
+import { getGradeColor, GRADE_COLORS, LEVEL_NAMES, DEFAULT_GRADE_COLOR } from "../../constants/gradeColors";
 
 describe("LEVEL_NAMES", () => {
   it("has entries for levels 1 through 7", () => {
