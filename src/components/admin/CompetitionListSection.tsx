@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { CompetitionResponse } from "@/types";
 import { getCompetitions } from "@/services/api";
-import { CompetitionRegistrations } from "./admins/CompetitionRegistrations";
+import { CompetitionRegistrations } from "./CompetitionRegistrations";
 import { sortCompetitions } from "@/utils/competitionSort";
 import { Spinner } from "@radix-ui/themes";
 
