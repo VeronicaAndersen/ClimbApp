@@ -93,6 +93,8 @@ describe("LoginForm — interaction", () => {
     const user = userEvent.setup();
     renderLoginForm();
 
+    expect(screen.getByRole("status")).toBeEmptyDOMElement();
+
     await user.type(screen.getByPlaceholderText("Användarnamn"), "alice");
     await user.type(screen.getByPlaceholderText("Lösenord"), "secret123");
     await user.click(screen.getByRole("button", { name: "Logga in" }));
