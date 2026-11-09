@@ -4,7 +4,7 @@ This workspace contains the Vite/React frontend in `ClimbApp` and the FastAPI ba
 
 ## Prerequisites
 
-- Node.js 20.19+ or 22.12+, with npm
+- Node.js 22.12+ (22.x), 24.x, or 26+, with npm (enforced for frontend installs)
 - Python 3.10+
 - PostgreSQL
 - dbmate (on macOS, install with `brew install dbmate`)
