@@ -4,6 +4,8 @@ import { confirmPasswordReset } from "@/services/api";
 import { Button, Card, TextField, Spinner } from "@radix-ui/themes";
 import CalloutMessage from "@/components/feedback/CalloutMessage";
 import { getUserFriendlyError } from "@/utils/errorMessages";
+import { useCooldown } from "@/hooks/useCooldown";
+import { PASSWORD_MAX_LENGTH, validatePassword } from "@/utils/inputValidation";
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
@@ -15,6 +17,7 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const { isCoolingDown, startCooldownFor } = useCooldown();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,8 +28,9 @@ export default function ResetPassword() {
       return;
     }
 
-    if (password.length < 6) {
-      setErrorMessage("Lösenordet måste vara minst 6 tecken");
+    const passwordError = validatePassword(password, { requireMinLength: true });
+    if (passwordError) {
+      setErrorMessage(passwordError);
       return;
     }
 
@@ -45,6 +49,7 @@ export default function ResetPassword() {
       }, 3000);
     } catch (error) {
       setErrorMessage(getUserFriendlyError(error));
+      startCooldownFor(error);
     } finally {
       setLoading(false);
     }
@@ -81,7 +86,9 @@ export default function ResetPassword() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <h1 className="text-2xl font-semibold text-center mb-4">Nytt lösenord</h1>
           <div className="space-y-2">
-            <label htmlFor="password" className="text-sm font-medium">Nytt lösenord</label>
+            <label htmlFor="password" className="text-sm font-medium">
+              Nytt lösenord
+            </label>
             <TextField.Root
               id="password"
               type="password"
@@ -90,13 +97,16 @@ export default function ResetPassword() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              maxLength={PASSWORD_MAX_LENGTH}
               className="w-full text-base"
               disabled={loading || success}
             />
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="confirmPassword" className="text-sm font-medium">Bekräfta lösenord</label>
+            <label htmlFor="confirmPassword" className="text-sm font-medium">
+              Bekräfta lösenord
+            </label>
             <TextField.Root
               id="confirmPassword"
               type="password"
@@ -105,6 +115,7 @@ export default function ResetPassword() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
+              maxLength={PASSWORD_MAX_LENGTH}
               className="w-full text-base"
               disabled={loading || success}
             />
@@ -113,7 +124,7 @@ export default function ResetPassword() {
           <Button
             type="submit"
             className="w-full cursor-pointer rounded-full bg-[--secondary-color] hover:bg-[--secondary-color-hover] disabled:bg-[--secondary-color]/50 disabled:cursor-not-allowed flex items-center justify-center"
-            disabled={!password || !confirmPassword || loading || success}
+            disabled={!password || !confirmPassword || loading || success || isCoolingDown}
           >
             {loading ? (
               <>

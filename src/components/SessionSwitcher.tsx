@@ -3,6 +3,15 @@ import { Plus, X } from "lucide-react";
 import { useSessionsStore, type ClimberSession } from "@/store/sessions";
 import { loginClimber, getMyInfo } from "@/services/api";
 import { getAccessToken, switchSession } from "@/lib/apiClient";
+import { getUserFriendlyError } from "@/utils/errorMessages";
+import { useCooldown } from "@/hooks/useCooldown";
+import {
+  PASSWORD_MAX_LENGTH,
+  USERNAME_MAX_LENGTH,
+  normalizeUsername,
+  validatePassword,
+  validateUsername,
+} from "@/utils/inputValidation";
 
 interface Props {
   onSwitch: () => void;
@@ -15,6 +24,7 @@ export function SessionSwitcher({ onSwitch }: Props) {
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginLoading, setLoginLoading] = useState(false);
+  const { isCoolingDown, startCooldownFor } = useCooldown();
   const bootstrapped = useRef(false);
 
   // Bootstrap: seed the sessions list on first mount.
@@ -69,10 +79,16 @@ export function SessionSwitcher({ onSwitch }: Props) {
 
   const handleAddLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    const validationError =
+      validateUsername(username) ?? validatePassword(password, { requireMinLength: false });
+    if (validationError) {
+      setLoginError(validationError);
+      return;
+    }
     setLoginLoading(true);
     setLoginError(null);
     try {
-      const data = await loginClimber({ username: username.trim().toLowerCase(), password });
+      const data = await loginClimber({ username: normalizeUsername(username), password });
       if (!data) throw new Error("Inloggning misslyckades");
 
       const info = await getMyInfo();
@@ -90,7 +106,8 @@ export function SessionSwitcher({ onSwitch }: Props) {
       setPassword("");
       onSwitch();
     } catch (err) {
-      setLoginError(err instanceof Error ? err.message : "Inloggning misslyckades");
+      setLoginError(getUserFriendlyError(err));
+      startCooldownFor(err);
     } finally {
       setLoginLoading(false);
     }
@@ -144,6 +161,7 @@ export function SessionSwitcher({ onSwitch }: Props) {
             placeholder="Användarnamn"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
+            maxLength={USERNAME_MAX_LENGTH}
             className="w-full px-3 py-2 text-base rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[--secondary-color]"
             required
           />
@@ -152,13 +170,14 @@ export function SessionSwitcher({ onSwitch }: Props) {
             placeholder="Lösenord"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            maxLength={PASSWORD_MAX_LENGTH}
             className="w-full px-3 py-2 text-base rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[--secondary-color]"
             required
           />
           <div className="flex gap-2 pt-1">
             <button
               type="submit"
-              disabled={loginLoading}
+              disabled={loginLoading || isCoolingDown}
               className="flex-1 py-2 text-sm font-medium rounded-lg bg-[--secondary-color] hover:bg-[--secondary-color-hover] text-white disabled:opacity-50 transition-colors"
             >
               {loginLoading ? "Loggar in..." : "Logga in"}

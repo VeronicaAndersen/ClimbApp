@@ -6,11 +6,22 @@ import * as Label from "@radix-ui/react-label";
 import { Card, Button, TextField, Spinner } from "@radix-ui/themes";
 import CalloutMessage from "../feedback/CalloutMessage";
 import { getUserFriendlyError } from "@/utils/errorMessages";
+import { useCooldown } from "@/hooks/useCooldown";
+import {
+  PASSWORD_MAX_LENGTH,
+  USERNAME_MAX_LENGTH,
+  normalizeUsername,
+  validatePassword,
+  validateTextField,
+  validateUsername,
+} from "@/utils/inputValidation";
+import { FieldError } from "./FieldError";
 
 export function RegistrationForm() {
   const navigate = useNavigate();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+  const { isCoolingDown, startCooldownFor } = useCooldown();
 
   const [registerClimberData, setRegisterClimberData] = useState<RegistrationRequest>({
     username: "",
@@ -22,6 +33,16 @@ export function RegistrationForm() {
   });
   const [gdprConsent, setGdprConsent] = useState<boolean>(false);
 
+  const fieldErrors = {
+    username: validateUsername(registerClimberData.username),
+    password: validatePassword(registerClimberData.password, { requireMinLength: true }),
+    email: validateTextField(registerClimberData.email, "E-post"),
+    firstname: validateTextField(registerClimberData.firstname, "Förnamn"),
+    lastname: validateTextField(registerClimberData.lastname, "Efternamn"),
+    club: validateTextField(registerClimberData.club ?? "", "Klubb"),
+  };
+  const hasFieldErrors = Object.values(fieldErrors).some((message) => message !== null);
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -30,7 +51,7 @@ export function RegistrationForm() {
     try {
       const result = await signupClimber({
         ...registerClimberData,
-        username: registerClimberData.username.trim().toLowerCase(),
+        username: normalizeUsername(registerClimberData.username),
         email: registerClimberData.email.trim().toLowerCase(),
       });
       if (result) {
@@ -39,6 +60,7 @@ export function RegistrationForm() {
       }
     } catch (error) {
       setErrorMessage(getUserFriendlyError(error));
+      startCooldownFor(error);
     } finally {
       setLoading(false);
     }
@@ -47,12 +69,13 @@ export function RegistrationForm() {
   const isSubmitDisabled =
     !registerClimberData.username ||
     !registerClimberData.password ||
-    registerClimberData.password.length < 6 ||
+    hasFieldErrors ||
     !registerClimberData.email ||
     !registerClimberData.firstname ||
     !registerClimberData.lastname ||
     !gdprConsent ||
-    loading;
+    loading ||
+    isCoolingDown;
 
   return (
     <div className="w-80 flex items-center justify-center">
@@ -72,9 +95,13 @@ export function RegistrationForm() {
                 setRegisterClimberData({ ...registerClimberData, username: e.target.value })
               }
               required
+              maxLength={USERNAME_MAX_LENGTH}
+              aria-invalid={fieldErrors.username !== null}
+              aria-describedby={fieldErrors.username ? "username-error" : undefined}
               className="w-full text-base"
               disabled={loading}
             />
+            <FieldError id="username-error" message={fieldErrors.username} />
           </div>
 
           <div className="space-y-2">
@@ -89,12 +116,13 @@ export function RegistrationForm() {
                 setRegisterClimberData({ ...registerClimberData, password: e.target.value })
               }
               required
+              maxLength={PASSWORD_MAX_LENGTH}
+              aria-invalid={fieldErrors.password !== null}
+              aria-describedby={fieldErrors.password ? "new_password-error" : undefined}
               className="w-full text-base"
               disabled={loading}
             />
-            {registerClimberData.password.length > 0 && registerClimberData.password.length < 6 && (
-              <p className="text-red-500 text-xs italic">Måste innehålla minst sex tecken.</p>
-            )}
+            <FieldError id="new_password-error" message={fieldErrors.password} />
           </div>
 
           <div className="space-y-2">
@@ -112,9 +140,12 @@ export function RegistrationForm() {
                 })
               }
               required
+              aria-invalid={fieldErrors.email !== null}
+              aria-describedby={fieldErrors.email ? "email-error" : undefined}
               className="w-full text-base"
               disabled={loading}
             />
+            <FieldError id="email-error" message={fieldErrors.email} />
           </div>
 
           <div className="space-y-2">
@@ -129,9 +160,12 @@ export function RegistrationForm() {
                 setRegisterClimberData({ ...registerClimberData, firstname: e.target.value })
               }
               required
+              aria-invalid={fieldErrors.firstname !== null}
+              aria-describedby={fieldErrors.firstname ? "firstname-error" : undefined}
               className="w-full text-base"
               disabled={loading}
             />
+            <FieldError id="firstname-error" message={fieldErrors.firstname} />
           </div>
 
           <div className="space-y-2">
@@ -146,9 +180,12 @@ export function RegistrationForm() {
                 setRegisterClimberData({ ...registerClimberData, lastname: e.target.value })
               }
               required
+              aria-invalid={fieldErrors.lastname !== null}
+              aria-describedby={fieldErrors.lastname ? "lastname-error" : undefined}
               className="w-full text-base"
               disabled={loading}
             />
+            <FieldError id="lastname-error" message={fieldErrors.lastname} />
           </div>
 
           <div className="space-y-2">
@@ -162,9 +199,12 @@ export function RegistrationForm() {
               onChange={(e) =>
                 setRegisterClimberData({ ...registerClimberData, club: e.target.value })
               }
+              aria-invalid={fieldErrors.club !== null}
+              aria-describedby={fieldErrors.club ? "club-error" : undefined}
               className="w-full text-base"
               disabled={loading}
             />
+            <FieldError id="club-error" message={fieldErrors.club} />
           </div>
 
           <div className="flex items-start space-x-2">
