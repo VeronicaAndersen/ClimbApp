@@ -226,3 +226,41 @@ describe("LoginForm — rate limiting and server errors", () => {
     expect(screen.queryByText(/Traceback/)).not.toBeInTheDocument();
   });
 });
+
+describe("LoginForm — input rules", () => {
+  it("limits username and password length", () => {
+    renderLoginForm();
+    expect(screen.getByLabelText("Användarnamn")).toHaveAttribute("maxLength", "200");
+    expect(screen.getByLabelText("Lösenord")).toHaveAttribute("maxLength", "1024");
+  });
+
+  it("flags a whitespace-only username and keeps submit disabled", async () => {
+    const user = userEvent.setup();
+    renderLoginForm();
+
+    await user.type(screen.getByLabelText("Användarnamn"), "   ");
+    await user.type(screen.getByLabelText("Lösenord"), "secret123");
+
+    const username = screen.getByLabelText("Användarnamn");
+    expect(username).toHaveAttribute("aria-invalid", "true");
+    expect(username).toHaveAccessibleDescription(
+      "Användarnamnet får inte bara innehålla mellanslag."
+    );
+    expect(screen.getByRole("button", { name: "Logga in" })).toBeDisabled();
+  });
+
+  it("flags invisible characters in the username", async () => {
+    const spy = vi.spyOn(api, "loginClimber");
+    const user = userEvent.setup();
+    renderLoginForm();
+
+    await user.type(screen.getByLabelText("Användarnamn"), "ali\u200Bce");
+    await user.type(screen.getByLabelText("Lösenord"), "secret123");
+
+    expect(
+      screen.getByText("Användarnamnet får inte innehålla kontrolltecken eller osynliga tecken.")
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Logga in" })).toBeDisabled();
+    expect(spy).not.toHaveBeenCalled();
+  });
+});

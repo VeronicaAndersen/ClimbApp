@@ -5,6 +5,8 @@ import { Button, Card, TextField, Spinner } from "@radix-ui/themes";
 import CalloutMessage from "../feedback/CalloutMessage";
 import { getUserFriendlyError } from "@/utils/errorMessages";
 import { useCooldown } from "@/hooks/useCooldown";
+import { USERNAME_MAX_LENGTH, normalizeUsername, validateUsername } from "@/utils/inputValidation";
+import { FieldError } from "./FieldError";
 
 export function ForgotPasswordForm() {
   const [username, setUsername] = useState("");
@@ -12,6 +14,7 @@ export function ForgotPasswordForm() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const { isCoolingDown, startCooldownFor } = useCooldown();
+  const usernameError = validateUsername(username);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,7 +23,7 @@ export function ForgotPasswordForm() {
     setSuccess(false);
 
     try {
-      await requestPasswordReset({ username: username.trim().toLowerCase() });
+      await requestPasswordReset({ username: normalizeUsername(username) });
       setSuccess(true);
       setUsername("");
     } catch (error) {
@@ -60,15 +63,19 @@ export function ForgotPasswordForm() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
+              maxLength={USERNAME_MAX_LENGTH}
+              aria-invalid={usernameError !== null}
+              aria-describedby={usernameError ? "username-error" : undefined}
               className="w-full text-base"
               disabled={loading || success}
             />
+            <FieldError id="username-error" message={usernameError} />
           </div>
 
           <Button
             type="submit"
             className="w-full cursor-pointer rounded-full bg-[--secondary-color] hover:bg-[--secondary-color-hover] disabled:bg-[--secondary-color]/50 disabled:cursor-not-allowed flex items-center justify-center"
-            disabled={!username || loading || success || isCoolingDown}
+            disabled={!username || usernameError !== null || loading || success || isCoolingDown}
           >
             {loading ? (
               <>

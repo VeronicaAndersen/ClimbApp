@@ -6,6 +6,14 @@ import { Button, Card, TextField, Spinner } from "@radix-ui/themes";
 import CalloutMessage from "../feedback/CalloutMessage";
 import { getUserFriendlyError } from "@/utils/errorMessages";
 import { useCooldown } from "@/hooks/useCooldown";
+import {
+  PASSWORD_MAX_LENGTH,
+  USERNAME_MAX_LENGTH,
+  normalizeUsername,
+  validatePassword,
+  validateUsername,
+} from "@/utils/inputValidation";
+import { FieldError } from "./FieldError";
 
 export function LoginForm() {
   const navigate = useNavigate();
@@ -14,6 +22,8 @@ export function LoginForm() {
   const { isCoolingDown, startCooldownFor } = useCooldown();
 
   const [loginData, setLoginData] = useState<LoginRequest>({ username: "", password: "" });
+  const usernameError = validateUsername(loginData.username);
+  const passwordError = validatePassword(loginData.password, { requireMinLength: false });
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,7 +33,7 @@ export function LoginForm() {
     try {
       const result = await loginClimber({
         ...loginData,
-        username: loginData.username.trim().toLowerCase(),
+        username: normalizeUsername(loginData.username),
       });
       if (result) {
         navigate("/profile");
@@ -56,9 +66,13 @@ export function LoginForm() {
                 setLoginData({ ...loginData, username: e.target.value.toLowerCase() })
               }
               required
+              maxLength={USERNAME_MAX_LENGTH}
+              aria-invalid={usernameError !== null}
+              aria-describedby={usernameError ? "username-error" : undefined}
               className="w-full text-base"
               disabled={loading}
             />
+            <FieldError id="username-error" message={usernameError} />
           </div>
 
           <div className="space-y-2">
@@ -73,15 +87,26 @@ export function LoginForm() {
               value={loginData.password}
               onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
               required
+              maxLength={PASSWORD_MAX_LENGTH}
+              aria-invalid={passwordError !== null}
+              aria-describedby={passwordError ? "password-error" : undefined}
               className="w-full text-base"
               disabled={loading}
             />
+            <FieldError id="password-error" message={passwordError} />
           </div>
 
           <Button
             type="submit"
             className="w-full cursor-pointer rounded-full bg-[--secondary-color] hover:bg-[--secondary-color-hover] disabled:bg-[--secondary-color]/50 disabled:cursor-not-allowed flex items-center justify-center"
-            disabled={!loginData.username || !loginData.password || loading || isCoolingDown}
+            disabled={
+              !loginData.username ||
+              !loginData.password ||
+              usernameError !== null ||
+              passwordError !== null ||
+              loading ||
+              isCoolingDown
+            }
           >
             {loading ? (
               <span>

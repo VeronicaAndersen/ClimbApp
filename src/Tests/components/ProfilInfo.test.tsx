@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Theme } from "@radix-ui/themes";
 import ProfilInfo from "../../components/ProfilInfo";
+import { updateMyInfo } from "@/services/api";
 
 const { useGetUserInfoMock, useUserCompetitionsMock } = vi.hoisted(() => ({
   useGetUserInfoMock: vi.fn(),
@@ -51,5 +52,24 @@ describe("ProfilInfo name editing accessibility", () => {
 
     expect(screen.getByRole("textbox", { name: "Förnamn" })).toHaveValue("Alex");
     expect(screen.getByRole("textbox", { name: "Efternamn" })).toHaveValue("Climber");
+  });
+
+  it("refuses control characters in the name without calling the API", async () => {
+    const user = userEvent.setup();
+    render(
+      <Theme>
+        <ProfilInfo />
+      </Theme>
+    );
+
+    await user.click(screen.getByRole("button", { name: "Ändra namn" }));
+    await user.click(screen.getByRole("textbox", { name: "Förnamn" }));
+    await user.paste("\u0007");
+    await user.click(screen.getByRole("button", { name: "Spara" }));
+
+    expect(
+      await screen.findByText("Förnamn får inte innehålla kontrolltecken.")
+    ).toBeInTheDocument();
+    expect(updateMyInfo).not.toHaveBeenCalled();
   });
 });

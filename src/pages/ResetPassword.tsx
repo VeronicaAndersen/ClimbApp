@@ -5,6 +5,7 @@ import { Button, Card, TextField, Spinner } from "@radix-ui/themes";
 import CalloutMessage from "@/components/feedback/CalloutMessage";
 import { getUserFriendlyError } from "@/utils/errorMessages";
 import { useCooldown } from "@/hooks/useCooldown";
+import { PASSWORD_MAX_LENGTH, validatePassword } from "@/utils/inputValidation";
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
@@ -27,8 +28,9 @@ export default function ResetPassword() {
       return;
     }
 
-    if (password.length < 6) {
-      setErrorMessage("Lösenordet måste vara minst 6 tecken");
+    const passwordError = validatePassword(password, { requireMinLength: true });
+    if (passwordError) {
+      setErrorMessage(passwordError);
       return;
     }
 
@@ -95,6 +97,7 @@ export default function ResetPassword() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              maxLength={PASSWORD_MAX_LENGTH}
               className="w-full text-base"
               disabled={loading || success}
             />
@@ -112,6 +115,7 @@ export default function ResetPassword() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
+              maxLength={PASSWORD_MAX_LENGTH}
               className="w-full text-base"
               disabled={loading || success}
             />

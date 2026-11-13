@@ -110,3 +110,29 @@ describe("ForgotPasswordForm — rate limiting", () => {
     ).toBeInTheDocument();
   });
 });
+
+describe("ForgotPasswordForm — input rules", () => {
+  it("sends the trimmed, lowercased username", async () => {
+    const request = vi.spyOn(api, "requestPasswordReset").mockResolvedValue({ message: "ok" });
+    const user = userEvent.setup();
+    renderForgotPasswordForm();
+
+    expect(screen.getByLabelText("Användarnamn")).toHaveAttribute("maxLength", "200");
+    await user.type(screen.getByLabelText("Användarnamn"), "  Alice ");
+    await user.click(screen.getByRole("button", { name: "Skicka återställningslänk" }));
+
+    expect(request).toHaveBeenCalledWith({ username: "alice" });
+  });
+
+  it("keeps submit disabled for a whitespace-only username", async () => {
+    const user = userEvent.setup();
+    renderForgotPasswordForm();
+
+    await user.type(screen.getByLabelText("Användarnamn"), "   ");
+
+    expect(
+      screen.getByText("Användarnamnet får inte bara innehålla mellanslag.")
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Skicka återställningslänk" })).toBeDisabled();
+  });
+});
