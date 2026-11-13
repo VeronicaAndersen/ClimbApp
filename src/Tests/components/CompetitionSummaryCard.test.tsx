@@ -23,12 +23,13 @@ function makeCompetition(overrides: Partial<CompetitionWithScores> = {}): Compet
       round_no: 1,
     },
     level: 3,
+    scores: [],
     summary: {
       totalProblems: 8,
       problemsWithTop: 5,
       problemsWithBonus: 7,
       totalAttempts: 24,
-      averageAttempts: 3,
+      averageAttempts: "3",
     },
     ...overrides,
   };
@@ -108,7 +109,7 @@ describe("CompetitionSummaryCard — stat cards", () => {
             problemsWithTop: 3,
             problemsWithBonus: 4,
             totalAttempts: 42,
-            averageAttempts: 5,
+            averageAttempts: "5",
           },
         })}
       />
@@ -125,7 +126,7 @@ describe("CompetitionSummaryCard — stat cards", () => {
             problemsWithTop: 2,
             problemsWithBonus: 3,
             totalAttempts: 20,
-            averageAttempts: 2.5,
+            averageAttempts: "2.5",
           },
         })}
       />

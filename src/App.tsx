@@ -26,7 +26,7 @@ const queryClient = new QueryClient({
 const App = () => (
   <>
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <BrowserRouter>
         <Suspense>
           <Routes>
             <Route path="/" element={<Login />} />
