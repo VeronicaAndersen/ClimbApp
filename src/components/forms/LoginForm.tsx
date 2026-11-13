@@ -5,11 +5,13 @@ import { loginClimber } from "@/services/api";
 import { Button, Card, TextField, Spinner } from "@radix-ui/themes";
 import CalloutMessage from "../feedback/CalloutMessage";
 import { getUserFriendlyError } from "@/utils/errorMessages";
+import { useCooldown } from "@/hooks/useCooldown";
 
 export function LoginForm() {
   const navigate = useNavigate();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+  const { isCoolingDown, startCooldownFor } = useCooldown();
 
   const [loginData, setLoginData] = useState<LoginRequest>({ username: "", password: "" });
 
@@ -28,6 +30,7 @@ export function LoginForm() {
       }
     } catch (error) {
       setErrorMessage(getUserFriendlyError(error));
+      startCooldownFor(error);
     } finally {
       setLoading(false);
     }
@@ -40,7 +43,9 @@ export function LoginForm() {
         <form onSubmit={handleLogin} className="space-y-6">
           <h1 className="text-2xl font-semibold text-center mb-4">Logga in</h1>
           <div className="space-y-2">
-            <label htmlFor="username" className="text-sm font-medium">Användarnamn</label>
+            <label htmlFor="username" className="text-sm font-medium">
+              Användarnamn
+            </label>
             <TextField.Root
               id="username"
               type="text"
@@ -57,7 +62,9 @@ export function LoginForm() {
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="password" className="text-sm font-medium">Lösenord</label>
+            <label htmlFor="password" className="text-sm font-medium">
+              Lösenord
+            </label>
             <TextField.Root
               id="password"
               type="password"
@@ -74,7 +81,7 @@ export function LoginForm() {
           <Button
             type="submit"
             className="w-full cursor-pointer rounded-full bg-[--secondary-color] hover:bg-[--secondary-color-hover] disabled:bg-[--secondary-color]/50 disabled:cursor-not-allowed flex items-center justify-center"
-            disabled={!loginData.username || !loginData.password || loading}
+            disabled={!loginData.username || !loginData.password || loading || isCoolingDown}
           >
             {loading ? (
               <span>

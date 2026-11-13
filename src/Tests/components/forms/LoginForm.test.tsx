@@ -5,13 +5,14 @@
  * display by combining the form state, the service call, and the UI feedback
  * sub-component (CalloutMessage).
  */
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { Theme } from "@radix-ui/themes";
 import { LoginForm } from "../../../components/forms/LoginForm";
 import * as api from "@/services/api";
+import { ApiError } from "@/lib/apiError";
 
 // Wrap with the providers LoginForm needs
 function renderLoginForm() {
@@ -162,5 +163,66 @@ describe("LoginForm — API integration", () => {
     await waitFor(() => expect(spy).toHaveBeenCalledTimes(2));
     // The error callout should be gone
     expect(screen.queryByRole("paragraph")).not.toBeInTheDocument();
+  });
+});
+
+describe("LoginForm — rate limiting and server errors", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  async function submitLogin(user: ReturnType<typeof userEvent.setup>) {
+    await user.type(screen.getByLabelText("Användarnamn"), "alice");
+    await user.type(screen.getByLabelText("Lösenord"), "secret123");
+    await user.click(screen.getByRole("button", { name: "Logga in" }));
+  }
+
+  it("shows the wait and disables submit until Retry-After has passed", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.spyOn(api, "loginClimber").mockRejectedValue(
+      new ApiError({ status: 429, message: "x", retryAfterSeconds: 300 })
+    );
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderLoginForm();
+
+    await submitLogin(user);
+
+    expect(
+      await screen.findByText("För många försök. Försök igen om ungefär 5 minuter.")
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Logga in" })).toBeDisabled();
+
+    act(() => {
+      vi.advanceTimersByTime(300_000);
+    });
+    expect(screen.getByRole("button", { name: "Logga in" })).toBeEnabled();
+  });
+
+  it("shows a generic message when the 429 has no Retry-After", async () => {
+    vi.spyOn(api, "loginClimber").mockRejectedValue(new ApiError({ status: 429, message: "x" }));
+    const user = userEvent.setup();
+    renderLoginForm();
+
+    await submitLogin(user);
+
+    expect(
+      await screen.findByText("För många försök. Vänta en stund och försök igen.")
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Logga in" })).toBeEnabled();
+  });
+
+  it("shows a generic message for a 500, never the error text", async () => {
+    vi.spyOn(api, "loginClimber").mockRejectedValue(
+      new ApiError({ status: 500, message: "Traceback (most recent call last)" })
+    );
+    const user = userEvent.setup();
+    renderLoginForm();
+
+    await submitLogin(user);
+
+    expect(
+      await screen.findByText("Ett serverfel uppstod. Försök igen senare.")
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Traceback/)).not.toBeInTheDocument();
   });
 });

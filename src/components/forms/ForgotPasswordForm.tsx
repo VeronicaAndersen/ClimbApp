@@ -4,12 +4,14 @@ import { requestPasswordReset } from "@/services/api";
 import { Button, Card, TextField, Spinner } from "@radix-ui/themes";
 import CalloutMessage from "../feedback/CalloutMessage";
 import { getUserFriendlyError } from "@/utils/errorMessages";
+import { useCooldown } from "@/hooks/useCooldown";
 
 export function ForgotPasswordForm() {
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const { isCoolingDown, startCooldownFor } = useCooldown();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,6 +25,7 @@ export function ForgotPasswordForm() {
       setUsername("");
     } catch (error) {
       setErrorMessage(getUserFriendlyError(error));
+      startCooldownFor(error);
     } finally {
       setLoading(false);
     }
@@ -46,7 +49,9 @@ export function ForgotPasswordForm() {
             Ange ditt användarnamn så skickar vi en länk för att återställa ditt lösenord.
           </p>
           <div className="space-y-2">
-            <label htmlFor="username" className="text-sm font-medium">Användarnamn</label>
+            <label htmlFor="username" className="text-sm font-medium">
+              Användarnamn
+            </label>
             <TextField.Root
               id="username"
               type="text"
@@ -63,7 +68,7 @@ export function ForgotPasswordForm() {
           <Button
             type="submit"
             className="w-full cursor-pointer rounded-full bg-[--secondary-color] hover:bg-[--secondary-color-hover] disabled:bg-[--secondary-color]/50 disabled:cursor-not-allowed flex items-center justify-center"
-            disabled={!username || loading || success}
+            disabled={!username || loading || success || isCoolingDown}
           >
             {loading ? (
               <>

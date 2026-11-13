@@ -6,11 +6,13 @@ import * as Label from "@radix-ui/react-label";
 import { Card, Button, TextField, Spinner } from "@radix-ui/themes";
 import CalloutMessage from "../feedback/CalloutMessage";
 import { getUserFriendlyError } from "@/utils/errorMessages";
+import { useCooldown } from "@/hooks/useCooldown";
 
 export function RegistrationForm() {
   const navigate = useNavigate();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+  const { isCoolingDown, startCooldownFor } = useCooldown();
 
   const [registerClimberData, setRegisterClimberData] = useState<RegistrationRequest>({
     username: "",
@@ -39,6 +41,7 @@ export function RegistrationForm() {
       }
     } catch (error) {
       setErrorMessage(getUserFriendlyError(error));
+      startCooldownFor(error);
     } finally {
       setLoading(false);
     }
@@ -52,7 +55,8 @@ export function RegistrationForm() {
     !registerClimberData.firstname ||
     !registerClimberData.lastname ||
     !gdprConsent ||
-    loading;
+    loading ||
+    isCoolingDown;
 
   return (
     <div className="w-80 flex items-center justify-center">

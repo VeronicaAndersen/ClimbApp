@@ -3,6 +3,8 @@ import { Plus, X } from "lucide-react";
 import { useSessionsStore, type ClimberSession } from "@/store/sessions";
 import { loginClimber, getMyInfo } from "@/services/api";
 import { getAccessToken, switchSession } from "@/lib/apiClient";
+import { getUserFriendlyError } from "@/utils/errorMessages";
+import { useCooldown } from "@/hooks/useCooldown";
 
 interface Props {
   onSwitch: () => void;
@@ -15,6 +17,7 @@ export function SessionSwitcher({ onSwitch }: Props) {
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginLoading, setLoginLoading] = useState(false);
+  const { isCoolingDown, startCooldownFor } = useCooldown();
   const bootstrapped = useRef(false);
 
   // Bootstrap: seed the sessions list on first mount.
@@ -90,7 +93,8 @@ export function SessionSwitcher({ onSwitch }: Props) {
       setPassword("");
       onSwitch();
     } catch (err) {
-      setLoginError(err instanceof Error ? err.message : "Inloggning misslyckades");
+      setLoginError(getUserFriendlyError(err));
+      startCooldownFor(err);
     } finally {
       setLoginLoading(false);
     }
@@ -158,7 +162,7 @@ export function SessionSwitcher({ onSwitch }: Props) {
           <div className="flex gap-2 pt-1">
             <button
               type="submit"
-              disabled={loginLoading}
+              disabled={loginLoading || isCoolingDown}
               className="flex-1 py-2 text-sm font-medium rounded-lg bg-[--secondary-color] hover:bg-[--secondary-color-hover] text-white disabled:opacity-50 transition-colors"
             >
               {loginLoading ? "Loggar in..." : "Logga in"}

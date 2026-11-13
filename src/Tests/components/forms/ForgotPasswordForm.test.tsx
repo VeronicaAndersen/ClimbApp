@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { Theme } from "@radix-ui/themes";
 import * as api from "@/services/api";
+import { ApiError } from "@/lib/apiError";
 import { ForgotPasswordForm } from "../../../components/forms/ForgotPasswordForm";
 
 function renderForgotPasswordForm() {
@@ -72,5 +73,40 @@ describe("ForgotPasswordForm", () => {
 
     await screen.findByText("Kunde inte ansluta till servern. Kontrollera din internetanslutning.");
     expect(screen.getByRole("alert")).toBe(alert);
+  });
+});
+
+describe("ForgotPasswordForm — rate limiting", () => {
+  it("shows the wait and disables submit after a 429", async () => {
+    vi.spyOn(api, "requestPasswordReset").mockRejectedValue(
+      new ApiError({ status: 429, message: "x", retryAfterSeconds: 40 })
+    );
+    const user = userEvent.setup();
+    renderForgotPasswordForm();
+
+    await user.type(screen.getByPlaceholderText("Användarnamn"), "alice");
+    await user.click(screen.getByRole("button", { name: "Skicka återställningslänk" }));
+
+    expect(
+      await screen.findByText("För många försök. Försök igen om 40 sekunder.")
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Skicka återställningslänk" })).toBeDisabled();
+  });
+
+  it("shows the same neutral message whatever the server answers on success", async () => {
+    vi.spyOn(api, "requestPasswordReset").mockResolvedValue({
+      message: "Om e-postadressen finns i systemet har ett mail skickats.",
+    });
+    const user = userEvent.setup();
+    renderForgotPasswordForm();
+
+    await user.type(screen.getByPlaceholderText("Användarnamn"), "nobody");
+    await user.click(screen.getByRole("button", { name: "Skicka återställningslänk" }));
+
+    expect(
+      await screen.findByText(
+        "Om användarnamnet finns i systemet och ett e-postmeddelande är kopplat till kontot kommer du att få en återställningslänk."
+      )
+    ).toBeInTheDocument();
   });
 });
