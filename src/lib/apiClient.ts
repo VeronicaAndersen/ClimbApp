@@ -1,4 +1,8 @@
+import { ApiError, SERVER_ERROR_MESSAGE, formatRateLimitMessage, toApiError } from "./apiError";
+
 const apiUrl = import.meta.env.VITE_REACT_APP_API_URL;
+
+const AUTH_FAILED_MESSAGE = "Autentisering misslyckades";
 
 // ----------------------------------------------------------
 // Cache Layer
@@ -42,15 +46,21 @@ export function clearCache(): void {
 //  other tabs; JS-readable but shorter-lived than localStorage)
 // ----------------------------------------------------------
 let _accessToken: string | null = null;
+/** Epoch ms until which /auth/refresh is not called again after a 429. */
+let _refreshBlockedUntil: number | null = null;
 
-function saveTokens(newTokens: { access_token: string; refresh_token: string }) {
+type TokenPair = { access_token: string; refresh_token: string };
+
+function saveTokens(newTokens: TokenPair) {
   _accessToken = newTokens.access_token;
   sessionStorage.setItem("refresh_token", newTokens.refresh_token);
+  _refreshBlockedUntil = null;
 }
 
 export function clearTokens(): void {
   _accessToken = null;
   sessionStorage.removeItem("refresh_token");
+  _refreshBlockedUntil = null;
 }
 
 export function getAccessToken(): string | null {
@@ -61,6 +71,7 @@ export function getAccessToken(): string | null {
 export function switchSession(accessToken: string, refreshToken: string): void {
   _accessToken = accessToken;
   sessionStorage.setItem("refresh_token", refreshToken);
+  _refreshBlockedUntil = null;
   clearCache();
 }
 
@@ -72,40 +83,92 @@ export function isLoggedIn(): boolean {
  * Call once at app startup. If a refresh token exists in sessionStorage but
  * the access token is gone (page reload), eagerly exchange it so the first
  * authenticated requests don't hit a 401.
+ *
+ * Never rejects, so the app always renders: a network error or a 429/5xx
+ * leaves the refresh token in place and surfaces on the first real request.
  */
 export async function initializeAuth(): Promise<void> {
   if (!_accessToken && sessionStorage.getItem("refresh_token")) {
-    await attemptRefresh();
+    try {
+      await attemptRefresh();
+    } catch {
+      // Network failure: keep the session; requests will report the error.
+    }
   }
 }
 
 // ----------------------------------------------------------
 // Refresh
+//
+// At most one refresh request is in flight, and a failed refresh is never
+// retried here. Only a 4xx other than 429 means the refresh token was
+// rejected and logs the user out; a 429 or 5xx keeps the session. After a
+// 429, further refreshes fail fast until Retry-After has passed.
 // ----------------------------------------------------------
-let _refreshPromise: Promise<{ access_token: string; refresh_token: string } | null> | null = null;
+export type RefreshResult =
+  | { kind: "refreshed"; tokens: TokenPair }
+  | { kind: "failed"; error: ApiError };
 
-async function attemptRefresh() {
+/** Wait used when a 429 from /auth/refresh has no readable Retry-After. */
+const DEFAULT_REFRESH_BACKOFF_SECONDS = 30;
+
+let _refreshPromise: Promise<RefreshResult> | null = null;
+
+function isTokenPair(value: unknown): value is TokenPair {
+  if (typeof value !== "object" || value === null) return false;
+  const { access_token, refresh_token } = value as Record<string, unknown>;
+  return typeof access_token === "string" && typeof refresh_token === "string";
+}
+
+async function refreshOnce(): Promise<RefreshResult> {
+  const rt = sessionStorage.getItem("refresh_token");
+  if (!rt) {
+    return { kind: "failed", error: new ApiError({ status: 401, message: AUTH_FAILED_MESSAGE }) };
+  }
+
+  if (_refreshBlockedUntil !== null) {
+    const remainingMs = _refreshBlockedUntil - Date.now();
+    if (remainingMs > 0) {
+      const retryAfterSeconds = Math.ceil(remainingMs / 1000);
+      const error = new ApiError({
+        status: 429,
+        message: formatRateLimitMessage(retryAfterSeconds),
+        retryAfterSeconds,
+      });
+      return { kind: "failed", error };
+    }
+    _refreshBlockedUntil = null;
+  }
+
+  const response = await fetch(`${apiUrl}/auth/refresh`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ refresh_token: rt }),
+  });
+
+  if (!response.ok) {
+    const error = await toApiError(response);
+    if (error.isRateLimited) {
+      const waitSeconds = error.retryAfterSeconds ?? DEFAULT_REFRESH_BACKOFF_SECONDS;
+      _refreshBlockedUntil = Date.now() + waitSeconds * 1000;
+    } else if (error.isClientError) {
+      clearTokens(); // the refresh token was rejected — force re-login
+    }
+    return { kind: "failed", error };
+  }
+
+  const data: unknown = await response.json().catch(() => null);
+  if (!isTokenPair(data)) {
+    return { kind: "failed", error: new ApiError({ status: 500, message: SERVER_ERROR_MESSAGE }) };
+  }
+  saveTokens(data);
+  return { kind: "refreshed", tokens: data };
+}
+
+function attemptRefresh(): Promise<RefreshResult> {
   if (_refreshPromise) return _refreshPromise;
 
-  _refreshPromise = (async () => {
-    const rt = sessionStorage.getItem("refresh_token");
-    if (!rt) return null;
-
-    const response = await fetch(`${apiUrl}/auth/refresh`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refresh_token: rt }),
-    });
-
-    if (!response.ok) {
-      clearTokens(); // tokens are no longer valid — force re-login
-      return null;
-    }
-
-    const data = await response.json().catch(() => null);
-    if (data) saveTokens(data);
-    return data;
-  })().finally(() => {
+  _refreshPromise = refreshOnce().finally(() => {
     _refreshPromise = null;
   });
 
@@ -157,15 +220,20 @@ async function apiRequest<T>(
   const initialToken = requiresAuth ? getAccessToken() : null;
   let response = await fetchWithToken(initialToken ?? undefined);
 
+  // One refresh and one retry at most: a second 401 is thrown below.
   if (requiresAuth && response.status === 401) {
-    const newTokens = await attemptRefresh();
-    if (!newTokens) throw new Error("Autentisering misslyckades");
-    response = await fetchWithToken(newTokens.access_token);
+    const refreshed = await attemptRefresh();
+    if (refreshed.kind === "failed") {
+      // A 429 or 5xx from /auth/refresh is passed on as is so the UI can say
+      // "try again later" instead of "session expired".
+      if (refreshed.error.isRateLimited || refreshed.error.status >= 500) throw refreshed.error;
+      throw new ApiError({ status: 401, message: AUTH_FAILED_MESSAGE });
+    }
+    response = await fetchWithToken(refreshed.tokens.access_token);
   }
 
   if (!response.ok) {
-    const text = await response.text().catch(() => "");
-    throw new Error(text || `Fel: ${response.status}`);
+    throw await toApiError(response);
   }
 
   const raw = await response.text();

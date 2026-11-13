@@ -1,3 +1,5 @@
+import { ApiError, SERVER_ERROR_MESSAGE, formatRateLimitMessage } from "@/lib/apiError";
+
 /**
  * Converts technical error messages into user-friendly Swedish messages
  */
@@ -5,6 +7,12 @@ export function getUserFriendlyError(error: unknown): string {
   // Handle null/undefined
   if (!error) {
     return "Ett oväntat fel uppstod. Försök igen.";
+  }
+
+  // Rate limits and server errors get fixed texts, whatever the message says.
+  if (error instanceof ApiError) {
+    if (error.status === 429) return formatRateLimitMessage(error.retryAfterSeconds);
+    if (error.status >= 500) return SERVER_ERROR_MESSAGE;
   }
 
   // Extract error message
@@ -40,6 +48,14 @@ export function getUserFriendlyError(error: unknown): string {
 
   if (msg.includes("invalid credentials") || msg.includes("wrong password")) {
     return "Felaktigt användarnamn eller lösenord.";
+  }
+
+  if (msg.includes("invalid or expired reset token")) {
+    return "Återställningslänken är ogiltig eller har gått ut. Begär en ny länk.";
+  }
+
+  if (msg.includes("username is already taken")) {
+    return "Användarnamnet är redan upptaget. Välj ett annat.";
   }
 
   // Validation errors

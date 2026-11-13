@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { getUserFriendlyError } from "../../utils/errorMessages";
+import { ApiError } from "../../lib/apiError";
 
 describe("getUserFriendlyError", () => {
   describe("null / undefined input", () => {
@@ -100,5 +101,41 @@ describe("getUserFriendlyError", () => {
       );
       expect(result).not.toMatch(/^Error:/);
     });
+  });
+});
+
+describe("getUserFriendlyError — ApiError", () => {
+  it("shows the wait for a 429 with Retry-After", () => {
+    const error = new ApiError({ status: 429, message: "x", retryAfterSeconds: 600 });
+    expect(getUserFriendlyError(error)).toBe(
+      "För många försök. Försök igen om ungefär 10 minuter."
+    );
+  });
+
+  it("shows a generic message for a 429 without Retry-After", () => {
+    const error = new ApiError({ status: 429, message: "x" });
+    expect(getUserFriendlyError(error)).toBe("För många försök. Vänta en stund och försök igen.");
+  });
+
+  it("shows a generic message for any 5xx, whatever the message says", () => {
+    const error = new ApiError({ status: 500, message: "Internal server error: row (alice)" });
+    expect(getUserFriendlyError(error)).toBe("Ett serverfel uppstod. Försök igen senare.");
+  });
+
+  it("translates an invalid reset token", () => {
+    const error = new ApiError({ status: 400, message: "Invalid or expired reset token" });
+    expect(getUserFriendlyError(error)).toBe(
+      "Återställningslänken är ogiltig eller har gått ut. Begär en ny länk."
+    );
+  });
+
+  it("translates a taken username", () => {
+    const error = new ApiError({ status: 409, message: "Username is already taken" });
+    expect(getUserFriendlyError(error)).toBe("Användarnamnet är redan upptaget. Välj ett annat.");
+  });
+
+  it("translates invalid credentials", () => {
+    const error = new ApiError({ status: 401, message: "Invalid credentials" });
+    expect(getUserFriendlyError(error)).toBe("Felaktigt användarnamn eller lösenord.");
   });
 });
