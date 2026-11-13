@@ -2,6 +2,7 @@ import "@radix-ui/themes/styles.css";
 import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { shouldRetryQuery } from "./lib/queryRetry";
 
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Login = lazy(() => import("./pages/Login"));
@@ -16,9 +17,12 @@ const queryClient = new QueryClient({
     queries: {
       staleTime: 5 * 60 * 1000, // 5 minutes - data is considered fresh
       gcTime: 10 * 60 * 1000, // 10 minutes - cache garbage collection time
-      retry: 1, // Retry failed requests once
+      retry: shouldRetryQuery, // Once for network errors and 5xx, never for 4xx
       refetchOnWindowFocus: false, // Don't refetch when window regains focus
       refetchOnReconnect: true, // Refetch when reconnecting to network
+    },
+    mutations: {
+      retry: false, // Never resend writes such as logins automatically
     },
   },
 });
