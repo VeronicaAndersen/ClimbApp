@@ -5,7 +5,7 @@ import { Button, Card, TextField, Spinner } from "@radix-ui/themes";
 import CalloutMessage from "../feedback/CalloutMessage";
 import { getUserFriendlyError } from "@/utils/errorMessages";
 import { useCooldown } from "@/hooks/useCooldown";
-import { USERNAME_MAX_LENGTH, normalizeUsername, validateUsername } from "@/utils/inputValidation";
+import { normalizeUsername, validateUsername } from "@/utils/inputValidation";
 import { FieldError } from "./FieldError";
 
 export function ForgotPasswordForm() {
@@ -63,7 +63,6 @@ export function ForgotPasswordForm() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
-              maxLength={USERNAME_MAX_LENGTH}
               aria-invalid={usernameError !== null}
               aria-describedby={usernameError ? "username-error" : undefined}
               className="w-full text-base"

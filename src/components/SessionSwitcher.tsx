@@ -5,13 +5,7 @@ import { loginClimber, getMyInfo } from "@/services/api";
 import { getAccessToken, switchSession } from "@/lib/apiClient";
 import { getUserFriendlyError } from "@/utils/errorMessages";
 import { useCooldown } from "@/hooks/useCooldown";
-import {
-  PASSWORD_MAX_LENGTH,
-  USERNAME_MAX_LENGTH,
-  normalizeUsername,
-  validatePassword,
-  validateUsername,
-} from "@/utils/inputValidation";
+import { normalizeUsername, validatePassword, validateUsername } from "@/utils/inputValidation";
 
 interface Props {
   onSwitch: () => void;
@@ -161,7 +155,6 @@ export function SessionSwitcher({ onSwitch }: Props) {
             placeholder="Användarnamn"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            maxLength={USERNAME_MAX_LENGTH}
             className="w-full px-3 py-2 text-base rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[--secondary-color]"
             required
           />
@@ -170,7 +163,6 @@ export function SessionSwitcher({ onSwitch }: Props) {
             placeholder="Lösenord"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            maxLength={PASSWORD_MAX_LENGTH}
             className="w-full px-3 py-2 text-base rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[--secondary-color]"
             required
           />

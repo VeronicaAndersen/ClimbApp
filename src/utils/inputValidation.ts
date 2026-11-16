@@ -16,9 +16,24 @@ const CONTROL_CHARACTER = /\p{Cc}/u;
 /** Control, invisible formatting (zero-width, bidi overrides) and lone surrogates. */
 const FORBIDDEN_USERNAME_CHARACTER = /[\p{Cc}\p{Cf}\p{Cs}]/u;
 
-/** The form the API stores and matches usernames in: trimmed and lowercased. */
+/**
+ * Python's str.isspace() set, which the API's str.strip() removes. Unlike
+ * String.prototype.trim() it includes U+001C–U+001F and U+0085, and it does
+ * not include U+FEFF (so a leading BOM is kept and then rejected as Cf,
+ * exactly as the API does).
+ */
+const PYTHON_WHITESPACE =
+  "\\t\\n\\v\\f\\r\\x1c-\\x20\\x85\\xa0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000";
+const PYTHON_STRIP = new RegExp(`^[${PYTHON_WHITESPACE}]+|[${PYTHON_WHITESPACE}]+$`, "g");
+
+/** Trim like Python's str.strip(). */
+export function stripLikePython(value: string): string {
+  return value.replace(PYTHON_STRIP, "");
+}
+
+/** The form the API stores and matches usernames in: stripped and lowercased. */
 export function normalizeUsername(value: string): string {
-  return value.trim().toLowerCase();
+  return stripLikePython(value).toLowerCase();
 }
 
 /** Length in code points, which is how the API counts. */

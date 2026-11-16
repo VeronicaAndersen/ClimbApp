@@ -8,8 +8,6 @@ import CalloutMessage from "../feedback/CalloutMessage";
 import { getUserFriendlyError } from "@/utils/errorMessages";
 import { useCooldown } from "@/hooks/useCooldown";
 import {
-  PASSWORD_MAX_LENGTH,
-  USERNAME_MAX_LENGTH,
   normalizeUsername,
   validatePassword,
   validateTextField,
@@ -95,7 +93,6 @@ export function RegistrationForm() {
                 setRegisterClimberData({ ...registerClimberData, username: e.target.value })
               }
               required
-              maxLength={USERNAME_MAX_LENGTH}
               aria-invalid={fieldErrors.username !== null}
               aria-describedby={fieldErrors.username ? "username-error" : undefined}
               className="w-full text-base"
@@ -116,7 +113,6 @@ export function RegistrationForm() {
                 setRegisterClimberData({ ...registerClimberData, password: e.target.value })
               }
               required
-              maxLength={PASSWORD_MAX_LENGTH}
               aria-invalid={fieldErrors.password !== null}
               aria-describedby={fieldErrors.password ? "new_password-error" : undefined}
               className="w-full text-base"

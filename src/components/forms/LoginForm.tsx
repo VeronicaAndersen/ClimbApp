@@ -6,13 +6,7 @@ import { Button, Card, TextField, Spinner } from "@radix-ui/themes";
 import CalloutMessage from "../feedback/CalloutMessage";
 import { getUserFriendlyError } from "@/utils/errorMessages";
 import { useCooldown } from "@/hooks/useCooldown";
-import {
-  PASSWORD_MAX_LENGTH,
-  USERNAME_MAX_LENGTH,
-  normalizeUsername,
-  validatePassword,
-  validateUsername,
-} from "@/utils/inputValidation";
+import { normalizeUsername, validatePassword, validateUsername } from "@/utils/inputValidation";
 import { FieldError } from "./FieldError";
 
 export function LoginForm() {
@@ -66,7 +60,6 @@ export function LoginForm() {
                 setLoginData({ ...loginData, username: e.target.value.toLowerCase() })
               }
               required
-              maxLength={USERNAME_MAX_LENGTH}
               aria-invalid={usernameError !== null}
               aria-describedby={usernameError ? "username-error" : undefined}
               className="w-full text-base"
@@ -87,7 +80,6 @@ export function LoginForm() {
               value={loginData.password}
               onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
               required
-              maxLength={PASSWORD_MAX_LENGTH}
               aria-invalid={passwordError !== null}
               aria-describedby={passwordError ? "password-error" : undefined}
               className="w-full text-base"
