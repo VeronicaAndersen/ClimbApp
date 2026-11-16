@@ -50,7 +50,7 @@ export const getMyInfo = () => api.get<MyInfoResponse>("/climber/me", true);
 export const updateMyInfo = (payload: ClimberUpdateRequest) =>
   api.patch<MyInfoResponse, ClimberUpdateRequest>("/climber/me", payload, true);
 
-export const getClimberById = (id: number) => api.get<ClimberResponse>(`/climber/${id}`);
+export const getClimberById = (id: number) => api.get<ClimberResponse>(`/climber/${id}`, true);
 
 export const getAllClimbers = () => api.get<ClimberResponse[]>("/climber", true);
 
