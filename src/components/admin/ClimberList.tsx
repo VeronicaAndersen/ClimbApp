@@ -21,6 +21,7 @@ import {
   ArrowUpDown,
 } from "lucide-react";
 import { ClimberStatsModal } from "./ClimberStatsModal";
+import { getUserFriendlyError } from "@/utils/errorMessages";
 
 interface ClimberListProps {
   refreshKey?: number;
@@ -186,7 +187,8 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
       resetState();
       await refetch();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Misslyckades att uppdatera klättrare.";
+      const message =
+        err instanceof Error ? getUserFriendlyError(err) : "Misslyckades att uppdatera klättrare.";
       setRowError({ id: climberId, message });
     } finally {
       setSaving(null);
@@ -202,7 +204,8 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
       await deleteClimberById(climberId);
       await refetch();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Misslyckades att radera klättrare.";
+      const message =
+        err instanceof Error ? getUserFriendlyError(err) : "Misslyckades att radera klättrare.";
       setRowError({ id: climberId, message });
     } finally {
       setDeleting(null);

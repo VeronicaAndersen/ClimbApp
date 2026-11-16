@@ -6,6 +6,7 @@ import { getAllRegistrations, getCompetitions, getClimberById } from "@/services
 import { RegistrationWithClimber, CompetitionResponse } from "@/types";
 import CalloutMessage from "@/components/feedback/CalloutMessage";
 import { getGradeColor } from "@/constants/gradeColors";
+import { getUserFriendlyError } from "@/utils/errorMessages";
 
 const storageKey = (compId: number) => `tombola_${compId}`;
 
@@ -30,7 +31,7 @@ export default function Tombola() {
         const comps = await getCompetitions();
         setCompetitions(comps);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Kunde inte hämta tävlingar");
+        setError(err instanceof Error ? getUserFriendlyError(err) : "Kunde inte hämta tävlingar");
       } finally {
         setIsLoading(false);
       }
@@ -75,7 +76,7 @@ export default function Tombola() {
         setCurrentWinner(null);
         loadedCompId.current = selectedCompetitionId;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Kunde inte hämta anmälningar");
+        setError(err instanceof Error ? getUserFriendlyError(err) : "Kunde inte hämta anmälningar");
       } finally {
         setIsLoading(false);
       }

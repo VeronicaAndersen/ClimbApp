@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getCompetitions, getCompRegistrationInfo, getScoresBatch } from "@/services/api";
 import { CompetitionResponse, ScoreBatchResponse } from "@/types";
+import { getUserFriendlyError } from "@/utils/errorMessages";
 
 export interface CompetitionWithScores {
   competition: CompetitionResponse;
@@ -101,7 +102,8 @@ export function useUserCompetitions() {
         setCompetitions(userCompetitionsData);
       } catch (err) {
         if (!active) return;
-        const message = err instanceof Error ? err.message : "Kunde inte hämta tävlingsdata";
+        const message =
+          err instanceof Error ? getUserFriendlyError(err) : "Kunde inte hämta tävlingsdata";
         setError(message);
       } finally {
         if (active) setIsLoading(false);

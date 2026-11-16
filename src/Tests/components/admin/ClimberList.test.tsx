@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Theme } from "@radix-ui/themes";
 import type { ClimberResponse } from "@/types";
+import { toApiError } from "@/lib/apiError";
 import { ClimberList } from "../../../components/admin/ClimberList";
 
 const { useClimbersMock, updateClimberByIdMock } = vi.hoisted(() => ({
@@ -93,5 +94,54 @@ describe("ClimberList — username changes", () => {
       7,
       expect.objectContaining({ username: "ny blomma" })
     );
+  });
+});
+
+describe("ClimberList — API errors", () => {
+  it("shows a 422 in Swedish, never the English pydantic text", async () => {
+    const response = new Response(
+      JSON.stringify({
+        detail: [
+          {
+            loc: ["body", "email"],
+            msg: "Value error, must not contain control or invisible formatting characters",
+            type: "value_error",
+          },
+        ],
+      }),
+      { status: 422 }
+    );
+    updateClimberByIdMock.mockRejectedValue(await toApiError(response));
+    const user = userEvent.setup();
+    await startEditing(user);
+
+    const firstname = screen.getByDisplayValue("Blomma");
+    await user.clear(firstname);
+    await user.type(firstname, "Blom");
+    await user.click(save());
+
+    expect(
+      await screen.findByText("E-post får inte innehålla kontrolltecken eller osynliga tecken.")
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Value error|must not contain/)).not.toBeInTheDocument();
+  });
+
+  it("shows an English 4xx detail through the Swedish translations", async () => {
+    updateClimberByIdMock.mockRejectedValue(
+      await toApiError(
+        new Response(JSON.stringify({ detail: "Username is already taken" }), { status: 409 })
+      )
+    );
+    const user = userEvent.setup();
+    await startEditing(user);
+
+    const username = screen.getByDisplayValue(LEGACY_USERNAME);
+    await user.clear(username);
+    await user.type(username, "upptagen");
+    await user.click(save());
+
+    expect(
+      await screen.findByText("Användarnamnet är redan upptaget. Välj ett annat.")
+    ).toBeInTheDocument();
   });
 });

@@ -4,6 +4,7 @@ import { Trophy, Star, Users, LucideIcon } from "lucide-react";
 import { getLevelStats } from "@/services/api";
 import { LevelStatsResponse, ProblemStats } from "@/types";
 import CalloutMessage from "../feedback/CalloutMessage";
+import { getUserFriendlyError } from "@/utils/errorMessages";
 
 interface ProblemStatsTableProps {
   comp_id: number;
@@ -153,7 +154,8 @@ export function ProblemStatsTable({ comp_id, level, refreshKey }: ProblemStatsTa
       const data = await getLevelStats({ comp_id, level });
       setStats(data);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Misslyckades att hämta statistik.";
+      const message =
+        err instanceof Error ? getUserFriendlyError(err) : "Misslyckades att hämta statistik.";
       setError(message);
     } finally {
       setLoading(false);

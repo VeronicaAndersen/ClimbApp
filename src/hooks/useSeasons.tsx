@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { getSeasons } from "@/services/api";
 import { SeasonResponse } from "@/types";
+import { getUserFriendlyError } from "@/utils/errorMessages";
 
 interface UseSeasonsResult {
   seasons: SeasonResponse[];
@@ -24,7 +25,9 @@ export function useSeasons(refreshKey?: number): UseSeasonsResult {
       }
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Ett fel uppstod vid hämtning av säsonger.";
+        err instanceof Error
+          ? getUserFriendlyError(err)
+          : "Ett fel uppstod vid hämtning av säsonger.";
       setError(message);
       console.error("Error fetching seasons:", err);
     } finally {

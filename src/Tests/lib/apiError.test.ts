@@ -126,7 +126,11 @@ describe("toApiError", () => {
       { loc: ["body", "password"], msg: "Field required", type: "missing" },
     ]);
     expect(error.validationIssues.map(fieldOf)).toEqual(["username", "password"]);
-    expect(error.message).toBe("String should have at most 200 characters; Field required");
+    // Swedish message; the original English issues stay on the error.
+    expect(error.message).toBe(
+      "Användarnamnet får vara högst 200 tecken. Lösenord måste fyllas i."
+    );
+    expect(error.message).not.toMatch(/String should|Field required/);
   });
 
   it("never uses the body of a 500", async () => {
@@ -148,6 +152,55 @@ describe("toApiError", () => {
     const error = await toApiError(json(400, { detail: { nested: true } }));
 
     expect(error.message).toBe("Fel: 400");
+  });
+});
+
+describe("toApiError — Swedish 422 messages", () => {
+  it("translates a scoring rule from a model validator", async () => {
+    const error = await toApiError(
+      json(422, {
+        detail: [
+          {
+            loc: ["body"],
+            msg: "Value error, attempts_to_bonus cannot exceed attempts_total",
+            type: "value_error",
+          },
+        ],
+      })
+    );
+    expect(error.message).toBe("Försök till bonus kan inte överstiga totalt antal försök.");
+    expect(error.validationIssues[0].msg).toBe(
+      "Value error, attempts_to_bonus cannot exceed attempts_total"
+    );
+  });
+
+  it("uses a generic Swedish text when no issue can be mapped", async () => {
+    const error = await toApiError(
+      json(422, {
+        detail: [{ loc: ["body"], msg: "Input should be a valid dictionary", type: "dict_type" }],
+      })
+    );
+    expect(error.message).toBe("Kontrollera uppgifterna och försök igen.");
+  });
+
+  it("does not repeat the same message", async () => {
+    const error = await toApiError(
+      json(422, {
+        detail: [
+          {
+            loc: ["body", "items", 0],
+            msg: "Value error, attempts_to_top cannot exceed attempts_total",
+            type: "value_error",
+          },
+          {
+            loc: ["body", "items", 1],
+            msg: "Value error, attempts_to_top cannot exceed attempts_total",
+            type: "value_error",
+          },
+        ],
+      })
+    );
+    expect(error.message).toBe("Försök till topp kan inte överstiga totalt antal försök.");
   });
 });
 

@@ -179,7 +179,12 @@ describe("RegistrationForm — API errors", () => {
     await user.click(submitButton());
 
     const lastname = screen.getByLabelText("Efternamn");
-    expect(await screen.findByText("Kontrollera uppgifterna och försök igen.")).toBeInTheDocument();
+    // Shown in the callout and on the field.
+    expect(
+      await screen.findAllByText(
+        "Efternamn får inte innehålla kontrolltecken eller tecken som ändrar textriktningen."
+      )
+    ).toHaveLength(2);
     expect(lastname).toHaveAccessibleDescription(
       "Efternamn får inte innehålla kontrolltecken eller tecken som ändrar textriktningen."
     );

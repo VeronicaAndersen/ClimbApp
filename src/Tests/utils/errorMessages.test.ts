@@ -139,7 +139,7 @@ describe("getUserFriendlyError — ApiError", () => {
     expect(getUserFriendlyError(error)).toBe("Felaktigt användarnamn eller lösenord.");
   });
 
-  it("hides the English text of an unrecognized 422", () => {
+  it("shows a field's 422 issue in Swedish", () => {
     const error = new ApiError({
       status: 422,
       message: "String should have at most 200 characters",
@@ -151,6 +151,44 @@ describe("getUserFriendlyError — ApiError", () => {
         },
       ],
     });
+    expect(getUserFriendlyError(error)).toBe("Användarnamnet får vara högst 200 tecken.");
+  });
+
+  it("uses a generic Swedish text for an unrecognized 422 without a field", () => {
+    const error = new ApiError({
+      status: 422,
+      message: "x",
+      validationIssues: [
+        { loc: ["body"], msg: "Input should be a valid dictionary", type: "dict_type" },
+      ],
+    });
     expect(getUserFriendlyError(error)).toBe("Kontrollera uppgifterna och försök igen.");
+  });
+
+  it.each([
+    [
+      "Value error, attempts_to_bonus cannot exceed attempts_total",
+      "Försök till bonus kan inte överstiga totalt antal försök.",
+    ],
+    [
+      "Value error, attempts_to_top cannot exceed attempts_total",
+      "Försök till topp kan inte överstiga totalt antal försök.",
+    ],
+    [
+      "Value error, attempts_to_top must be >= attempts_to_bonus",
+      "Antal försök till topp kan inte vara färre än försök till bonus.",
+    ],
+    [
+      "Value error, attempts_to_top is required when got_top is true",
+      "Ange antal försök till topp när toppen är tagen.",
+    ],
+  ])("still translates the scoring 422 %j", (msg, swedish) => {
+    // Model validator errors have no field: loc is ["body"] (or a bulk item index).
+    const error = new ApiError({
+      status: 422,
+      message: "x",
+      validationIssues: [{ loc: ["body", "items", 0], msg, type: "value_error" }],
+    });
+    expect(getUserFriendlyError(error)).toBe(swedish);
   });
 });

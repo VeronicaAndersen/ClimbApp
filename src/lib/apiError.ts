@@ -2,9 +2,12 @@
 // Typed API errors
 //
 // The message is always safe to show: it is a `detail` string the API sent,
-// the `msg` texts of a 422, or a generic Swedish text. The raw response body
+// a Swedish summary of a 422 (the English issues stay in validationIssues),
+// or a generic Swedish text. The raw response body
 // is never used, so HTML from a proxy or a stack trace can't reach the UI.
 // ----------------------------------------------------------
+
+import { summarizeIssues } from "@/utils/validationIssues";
 
 export const SERVER_ERROR_MESSAGE = "Ett serverfel uppstod. Försök igen senare.";
 export const RATE_LIMIT_GENERIC_MESSAGE = "För många försök. Vänta en stund och försök igen.";
@@ -147,11 +150,7 @@ function parseDetail(body: string): string | ValidationIssue[] | null {
   return null;
 }
 
-/** Name of the field a 422 issue is about, e.g. "username" for ["body", "username"]. */
-export function fieldOf(issue: ValidationIssue): string | null {
-  const last = issue.loc[issue.loc.length - 1];
-  return typeof last === "string" && last !== "body" ? last : null;
-}
+export { fieldOf } from "@/utils/validationIssues";
 
 /** Build an ApiError from a failed response. Reads the body; call once. */
 export async function toApiError(response: Response): Promise<ApiError> {
@@ -176,12 +175,9 @@ export async function toApiError(response: Response): Promise<ApiError> {
   const detail = body ? parseDetail(body) : null;
 
   if (Array.isArray(detail)) {
-    const messages = detail.map((issue) => issue.msg).filter(Boolean);
-    return new ApiError({
-      status,
-      message: messages.length > 0 ? messages.join("; ") : `Fel: ${status}`,
-      validationIssues: detail,
-    });
+    // The message is Swedish so code that shows err.message never shows the
+    // English pydantic texts; those stay available in validationIssues.
+    return new ApiError({ status, message: summarizeIssues(detail), validationIssues: detail });
   }
 
   return new ApiError({ status, message: detail || `Fel: ${status}`, detail });
