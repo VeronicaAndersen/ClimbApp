@@ -138,4 +138,19 @@ describe("getUserFriendlyError — ApiError", () => {
     const error = new ApiError({ status: 401, message: "Invalid credentials" });
     expect(getUserFriendlyError(error)).toBe("Felaktigt användarnamn eller lösenord.");
   });
+
+  it("hides the English text of an unrecognized 422", () => {
+    const error = new ApiError({
+      status: 422,
+      message: "String should have at most 200 characters",
+      validationIssues: [
+        {
+          loc: ["body", "username"],
+          msg: "String should have at most 200 characters",
+          type: "string_too_long",
+        },
+      ],
+    });
+    expect(getUserFriendlyError(error)).toBe("Kontrollera uppgifterna och försök igen.");
+  });
 });

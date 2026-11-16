@@ -7,6 +7,7 @@ import CalloutMessage from "../feedback/CalloutMessage";
 import { getUserFriendlyError } from "@/utils/errorMessages";
 import { useCooldown } from "@/hooks/useCooldown";
 import { normalizeUsername, validatePassword, validateUsername } from "@/utils/inputValidation";
+import { useServerFieldErrors } from "@/hooks/useServerFieldErrors";
 import { FieldError } from "./FieldError";
 
 export function LoginForm() {
@@ -16,8 +17,10 @@ export function LoginForm() {
   const { isCoolingDown, startCooldownFor } = useCooldown();
 
   const [loginData, setLoginData] = useState<LoginRequest>({ username: "", password: "" });
-  const usernameError = validateUsername(loginData.username);
-  const passwordError = validatePassword(loginData.password, { requireMinLength: false });
+  const { serverErrorFor, recordServerErrors } = useServerFieldErrors(loginData);
+  const usernameError = validateUsername(loginData.username) ?? serverErrorFor("username");
+  const passwordError =
+    validatePassword(loginData.password, { requireMinLength: false }) ?? serverErrorFor("password");
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,6 +37,7 @@ export function LoginForm() {
       }
     } catch (error) {
       setErrorMessage(getUserFriendlyError(error));
+      recordServerErrors(error, loginData);
       startCooldownFor(error);
     } finally {
       setLoading(false);

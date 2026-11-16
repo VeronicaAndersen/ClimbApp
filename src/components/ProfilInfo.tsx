@@ -9,7 +9,7 @@ import CompetitionSummaryCard from "./CompetitionSummaryCard";
 import { CompleteProfileForm } from "./forms/CompleteProfileForm";
 import { updateMyInfo } from "@/services/api";
 import { getUserFriendlyError } from "@/utils/errorMessages";
-import { validateTextField } from "@/utils/inputValidation";
+import { validatePersonName } from "@/utils/inputValidation";
 
 export default function ProfilInfo() {
   const { userInfo, messageInfo, loading, refetch } = useGetUserInfo();
@@ -48,7 +48,7 @@ export default function ProfilInfo() {
     }
 
     const invalidName =
-      validateTextField(firstname, "Förnamn") ?? validateTextField(lastname, "Efternamn");
+      validatePersonName(firstname, "Förnamn") ?? validatePersonName(lastname, "Efternamn");
     if (invalidName) {
       setNameError(invalidName);
       return;

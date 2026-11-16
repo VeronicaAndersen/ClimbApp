@@ -43,7 +43,7 @@ describe("CompleteProfileForm — input rules", () => {
     await user.click(screen.getByRole("checkbox"));
 
     expect(screen.getByLabelText("Efternamn *")).toHaveAccessibleDescription(
-      "Efternamn får inte innehålla kontrolltecken."
+      "Efternamn får inte innehålla kontrolltecken eller tecken som ändrar textriktningen."
     );
     expect(screen.getByRole("button", { name: "Spara profil" })).toBeDisabled();
   });

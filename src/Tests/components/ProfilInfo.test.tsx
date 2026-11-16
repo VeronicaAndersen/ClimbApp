@@ -68,7 +68,9 @@ describe("ProfilInfo name editing accessibility", () => {
     await user.click(screen.getByRole("button", { name: "Spara" }));
 
     expect(
-      await screen.findByText("Förnamn får inte innehålla kontrolltecken.")
+      await screen.findByText(
+        "Förnamn får inte innehålla kontrolltecken eller tecken som ändrar textriktningen."
+      )
     ).toBeInTheDocument();
     expect(updateMyInfo).not.toHaveBeenCalled();
   });

@@ -120,6 +120,12 @@ export function getUserFriendlyError(error: unknown): string {
     return errorMessage; // Already user-friendly
   }
 
+  // Unrecognized 422: the issue texts are English pydantic messages; forms
+  // that show field errors show Swedish ones from validationIssues.ts.
+  if (error instanceof ApiError && error.status === 422) {
+    return "Kontrollera uppgifterna och försök igen.";
+  }
+
   // Default: Clean up the error message a bit
   // Remove technical prefixes like "Error:", "TypeError:", etc.
   const cleanedMessage = errorMessage

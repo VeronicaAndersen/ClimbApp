@@ -5,7 +5,8 @@ import CalloutMessage from "../feedback/CalloutMessage";
 import { updateMyInfo } from "@/services/api";
 import { MyInfoResponse, ClimberUpdateRequest } from "@/types";
 import { getUserFriendlyError } from "@/utils/errorMessages";
-import { validateTextField } from "@/utils/inputValidation";
+import { validatePersonName, validatePlainText } from "@/utils/inputValidation";
+import { useServerFieldErrors } from "@/hooks/useServerFieldErrors";
 import { FieldError } from "./FieldError";
 
 interface CompleteProfileFormProps {
@@ -33,14 +34,23 @@ export function CompleteProfileForm({ userInfo, onComplete }: CompleteProfileFor
 
   const hasMissingFields = missingFields.email || missingFields.firstname || missingFields.lastname;
 
+  const { serverErrorFor, recordServerErrors } = useServerFieldErrors(formData);
+
   // Only fields shown in the form (and so sent) are checked.
-  const fieldErrors = {
-    email: missingFields.email ? validateTextField(formData.email, "E-post") : null,
-    firstname: missingFields.firstname ? validateTextField(formData.firstname, "Förnamn") : null,
-    lastname: missingFields.lastname ? validateTextField(formData.lastname, "Efternamn") : null,
-    club: validateTextField(formData.club, "Klubb"),
+  const clientErrors = {
+    email: missingFields.email ? validatePlainText(formData.email, "E-post") : null,
+    firstname: missingFields.firstname ? validatePersonName(formData.firstname, "Förnamn") : null,
+    lastname: missingFields.lastname ? validatePersonName(formData.lastname, "Efternamn") : null,
+    club: validatePlainText(formData.club, "Klubb"),
   };
-  const hasFieldErrors = Object.values(fieldErrors).some((message) => message !== null);
+  const hasFieldErrors = Object.values(clientErrors).some((message) => message !== null);
+  // A 422 from the API is shown on its field until that field is edited.
+  const fieldErrors = {
+    email: clientErrors.email ?? serverErrorFor("email"),
+    firstname: clientErrors.firstname ?? serverErrorFor("firstname"),
+    lastname: clientErrors.lastname ?? serverErrorFor("lastname"),
+    club: clientErrors.club ?? serverErrorFor("club"),
+  };
 
   const isSubmitDisabled =
     (missingFields.email && !formData.email) ||
@@ -75,6 +85,7 @@ export function CompleteProfileForm({ userInfo, onComplete }: CompleteProfileFor
       onComplete();
     } catch (error) {
       setErrorMessage(getUserFriendlyError(error));
+      recordServerErrors(error, formData);
     } finally {
       setLoading(false);
     }

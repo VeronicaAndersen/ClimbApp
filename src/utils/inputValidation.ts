@@ -11,8 +11,6 @@ export const USERNAME_MAX_LENGTH = 200;
 export const PASSWORD_MIN_LENGTH = 6;
 export const PASSWORD_MAX_LENGTH = 1024;
 
-/** Unicode control characters (category Cc), e.g. NUL or tab. */
-const CONTROL_CHARACTER = /\p{Cc}/u;
 /** Control, invisible formatting (zero-width, bidi overrides) and lone surrogates. */
 const FORBIDDEN_USERNAME_CHARACTER = /[\p{Cc}\p{Cf}\p{Cs}]/u;
 
@@ -41,22 +39,21 @@ function lengthOf(value: string): number {
   return [...value].length;
 }
 
-export function containsControlCharacters(value: string): boolean {
-  return CONTROL_CHARACTER.test(value);
-}
+export const USERNAME_BLANK_MESSAGE = "Användarnamnet får inte bara innehålla mellanslag.";
+export const USERNAME_TOO_LONG_MESSAGE = `Användarnamnet får vara högst ${USERNAME_MAX_LENGTH} tecken.`;
+export const USERNAME_HIDDEN_CHARACTERS_MESSAGE =
+  "Användarnamnet får inte innehålla kontrolltecken eller osynliga tecken.";
+export const PASSWORD_TOO_LONG_MESSAGE = `Lösenordet får vara högst ${PASSWORD_MAX_LENGTH} tecken.`;
+export const PASSWORD_TOO_SHORT_MESSAGE = `Lösenordet måste innehålla minst ${PASSWORD_MIN_LENGTH} tecken.`;
 
 export function validateUsername(value: string): string | null {
   if (value === "") return null;
 
   const normalized = normalizeUsername(value);
-  if (normalized === "") return "Användarnamnet får inte bara innehålla mellanslag.";
+  if (normalized === "") return USERNAME_BLANK_MESSAGE;
   // Checked after normalizing, like the API: lowercasing can lengthen a name.
-  if (lengthOf(normalized) > USERNAME_MAX_LENGTH) {
-    return `Användarnamnet får vara högst ${USERNAME_MAX_LENGTH} tecken.`;
-  }
-  if (FORBIDDEN_USERNAME_CHARACTER.test(normalized)) {
-    return "Användarnamnet får inte innehålla kontrolltecken eller osynliga tecken.";
-  }
+  if (lengthOf(normalized) > USERNAME_MAX_LENGTH) return USERNAME_TOO_LONG_MESSAGE;
+  if (FORBIDDEN_USERNAME_CHARACTER.test(normalized)) return USERNAME_HIDDEN_CHARACTERS_MESSAGE;
   return null;
 }
 
@@ -72,17 +69,39 @@ export function validatePassword(
   if (value === "") return null;
 
   const length = lengthOf(value);
-  if (length > PASSWORD_MAX_LENGTH) {
-    return `Lösenordet får vara högst ${PASSWORD_MAX_LENGTH} tecken.`;
-  }
-  if (requireMinLength && length < PASSWORD_MIN_LENGTH) {
-    return `Lösenordet måste innehålla minst ${PASSWORD_MIN_LENGTH} tecken.`;
+  if (length > PASSWORD_MAX_LENGTH) return PASSWORD_TOO_LONG_MESSAGE;
+  if (requireMinLength && length < PASSWORD_MIN_LENGTH) return PASSWORD_TOO_SHORT_MESSAGE;
+  return null;
+}
+
+/** Control characters and lone surrogates: the API can't store either. */
+const UNSTORABLE_CHARACTER = /[\p{Cc}\p{Cs}]/u;
+/** Invisible format characters (zero-width, bidi controls, BOM, ...). */
+const FORMAT_CHARACTER = /\p{Cf}/u;
+/** Bidi embedding/override (U+202A–U+202E) and isolate (U+2066–U+2069) controls. */
+const BIDI_CONTROL = /[\u202A-\u202E\u2066-\u2069]/u;
+
+export const plainTextMessage = (label: string) =>
+  `${label} får inte innehålla kontrolltecken eller osynliga tecken.`;
+export const personNameMessage = (label: string) =>
+  `${label} får inte innehålla kontrolltecken eller tecken som ändrar textriktningen.`;
+
+/** For email and club: no control, surrogate or invisible format characters. */
+export function validatePlainText(value: string, label: string): string | null {
+  if (UNSTORABLE_CHARACTER.test(value) || FORMAT_CHARACTER.test(value)) {
+    return plainTextMessage(label);
   }
   return null;
 }
 
-/** For email, first name, last name and club. `label` starts the message, e.g. "E-post". */
-export function validateTextField(value: string, label: string): string | null {
-  if (containsControlCharacters(value)) return `${label} får inte innehålla kontrolltecken.`;
+/**
+ * For first and last names: no control or surrogate characters and no bidi
+ * controls. Other format characters such as ZWJ/ZWNJ are allowed, as the API
+ * does, since they occur in real names.
+ */
+export function validatePersonName(value: string, label: string): string | null {
+  if (UNSTORABLE_CHARACTER.test(value) || BIDI_CONTROL.test(value)) {
+    return personNameMessage(label);
+  }
   return null;
 }

@@ -6,6 +6,7 @@ import CalloutMessage from "../feedback/CalloutMessage";
 import { getUserFriendlyError } from "@/utils/errorMessages";
 import { useCooldown } from "@/hooks/useCooldown";
 import { normalizeUsername, validateUsername } from "@/utils/inputValidation";
+import { useServerFieldErrors } from "@/hooks/useServerFieldErrors";
 import { FieldError } from "./FieldError";
 
 export function ForgotPasswordForm() {
@@ -14,7 +15,8 @@ export function ForgotPasswordForm() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const { isCoolingDown, startCooldownFor } = useCooldown();
-  const usernameError = validateUsername(username);
+  const { serverErrorFor, recordServerErrors } = useServerFieldErrors({ username });
+  const usernameError = validateUsername(username) ?? serverErrorFor("username");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,6 +30,7 @@ export function ForgotPasswordForm() {
       setUsername("");
     } catch (error) {
       setErrorMessage(getUserFriendlyError(error));
+      recordServerErrors(error, { username });
       startCooldownFor(error);
     } finally {
       setLoading(false);

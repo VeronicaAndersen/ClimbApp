@@ -2,10 +2,10 @@ import { describe, it, expect } from "vitest";
 import {
   PASSWORD_MAX_LENGTH,
   USERNAME_MAX_LENGTH,
-  containsControlCharacters,
   normalizeUsername,
   validatePassword,
-  validateTextField,
+  validatePersonName,
+  validatePlainText,
   validateUsername,
 } from "../../utils/inputValidation";
 
@@ -108,24 +108,47 @@ describe("validatePassword", () => {
   });
 });
 
-describe("validateTextField", () => {
-  it("accepts ordinary text, including invisible format characters", () => {
-    expect(validateTextField("Klätterklubben Grepp", "Klubb")).toBeNull();
-    expect(validateTextField("a\u200Bb", "Klubb")).toBeNull();
+describe("validatePlainText (email, club)", () => {
+  it("accepts ordinary text", () => {
+    expect(validatePlainText("Klätterklubben Grepp", "Klubb")).toBeNull();
+    expect(validatePlainText("alice@example.com", "E-post")).toBeNull();
   });
 
-  it.each(["a\u0000b", "a\nb", "a\u007Fb", "a\u009Fb"])(
-    "rejects control characters in %j",
-    (value) => {
-      expect(validateTextField(value, "Förnamn")).toBe(
-        "Förnamn får inte innehålla kontrolltecken."
-      );
-    }
-  );
+  it.each([
+    ["NUL", "a\u0000b"],
+    ["newline", "a\nb"],
+    ["DEL", "a\u007Fb"],
+    ["C1 control", "a\u009Fb"],
+    ["lone surrogate", "a\uD800b"],
+    ["zero-width space", "a\u200Bb"],
+    ["zero-width joiner", "a\u200Db"],
+    ["BOM", "\uFEFFab"],
+    ["bidi override", "a\u202Eb"],
+  ])("rejects a %s", (_name, value) => {
+    expect(validatePlainText(value, "Klubb")).toBe(
+      "Klubb får inte innehålla kontrolltecken eller osynliga tecken."
+    );
+  });
 });
 
-describe("containsControlCharacters", () => {
-  it("is false for plain text", () => {
-    expect(containsControlCharacters("alice@example.com")).toBe(false);
+describe("validatePersonName (first and last name)", () => {
+  it("accepts names, including ZWJ and ZWNJ", () => {
+    expect(validatePersonName("Åsa-Öberg", "Förnamn")).toBeNull();
+    expect(validatePersonName("\u0645\u06CC\u200C\u062E\u0648\u0627\u0645", "Förnamn")).toBeNull();
+    expect(validatePersonName("👩\u200D🚀", "Förnamn")).toBeNull();
+  });
+
+  it.each([
+    ["NUL", "a\u0000b"],
+    ["tab", "a\tb"],
+    ["lone surrogate", "a\uDC00b"],
+    ["LRE", "a\u202Ab"],
+    ["RLO", "a\u202Eb"],
+    ["LRI", "a\u2066b"],
+    ["PDI", "a\u2069b"],
+  ])("rejects a %s", (_name, value) => {
+    expect(validatePersonName(value, "Efternamn")).toBe(
+      "Efternamn får inte innehålla kontrolltecken eller tecken som ändrar textriktningen."
+    );
   });
 });

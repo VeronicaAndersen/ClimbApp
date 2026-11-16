@@ -90,7 +90,7 @@ describe("RegistrationForm — input rules", () => {
     await user.paste("Grepp\u0000");
 
     expect(screen.getByLabelText("Klubb (valfritt)")).toHaveAccessibleDescription(
-      "Klubb får inte innehålla kontrolltecken."
+      "Klubb får inte innehålla kontrolltecken eller osynliga tecken."
     );
     expect(submitButton()).toBeDisabled();
   });
@@ -106,6 +106,37 @@ describe("RegistrationForm — input rules", () => {
 });
 
 describe("RegistrationForm — API errors", () => {
+  it("shows a 422 in Swedish on its field until the field is edited", async () => {
+    vi.spyOn(api, "signupClimber").mockRejectedValue(
+      new ApiError({
+        status: 422,
+        message: "Value error, must not contain control or bidirectional override characters",
+        validationIssues: [
+          {
+            loc: ["body", "lastname"],
+            msg: "Value error, must not contain control or bidirectional override characters",
+            type: "value_error",
+          },
+        ],
+      })
+    );
+    const user = userEvent.setup();
+    renderRegistrationForm();
+
+    await fillValidForm(user);
+    await user.click(submitButton());
+
+    const lastname = screen.getByLabelText("Efternamn");
+    expect(await screen.findByText("Kontrollera uppgifterna och försök igen.")).toBeInTheDocument();
+    expect(lastname).toHaveAccessibleDescription(
+      "Efternamn får inte innehålla kontrolltecken eller tecken som ändrar textriktningen."
+    );
+    expect(screen.queryByText(/Value error/)).not.toBeInTheDocument();
+
+    await user.type(lastname, "s");
+    expect(lastname).not.toHaveAccessibleDescription();
+  });
+
   it("shows a 429 wait and disables submit", async () => {
     vi.spyOn(api, "signupClimber").mockRejectedValue(
       new ApiError({ status: 429, message: "x", retryAfterSeconds: 60 })

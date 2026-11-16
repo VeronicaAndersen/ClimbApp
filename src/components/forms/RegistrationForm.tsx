@@ -10,9 +10,11 @@ import { useCooldown } from "@/hooks/useCooldown";
 import {
   normalizeUsername,
   validatePassword,
-  validateTextField,
+  validatePersonName,
+  validatePlainText,
   validateUsername,
 } from "@/utils/inputValidation";
+import { useServerFieldErrors } from "@/hooks/useServerFieldErrors";
 import { FieldError } from "./FieldError";
 
 export function RegistrationForm() {
@@ -31,15 +33,26 @@ export function RegistrationForm() {
   });
   const [gdprConsent, setGdprConsent] = useState<boolean>(false);
 
-  const fieldErrors = {
+  const { serverErrorFor, recordServerErrors } = useServerFieldErrors(registerClimberData);
+
+  const clientErrors = {
     username: validateUsername(registerClimberData.username),
     password: validatePassword(registerClimberData.password, { requireMinLength: true }),
-    email: validateTextField(registerClimberData.email, "E-post"),
-    firstname: validateTextField(registerClimberData.firstname, "Förnamn"),
-    lastname: validateTextField(registerClimberData.lastname, "Efternamn"),
-    club: validateTextField(registerClimberData.club ?? "", "Klubb"),
+    email: validatePlainText(registerClimberData.email, "E-post"),
+    firstname: validatePersonName(registerClimberData.firstname, "Förnamn"),
+    lastname: validatePersonName(registerClimberData.lastname, "Efternamn"),
+    club: validatePlainText(registerClimberData.club ?? "", "Klubb"),
   };
-  const hasFieldErrors = Object.values(fieldErrors).some((message) => message !== null);
+  const hasFieldErrors = Object.values(clientErrors).some((message) => message !== null);
+  // A 422 from the API is shown on its field until that field is edited.
+  const fieldErrors = {
+    username: clientErrors.username ?? serverErrorFor("username"),
+    password: clientErrors.password ?? serverErrorFor("password"),
+    email: clientErrors.email ?? serverErrorFor("email"),
+    firstname: clientErrors.firstname ?? serverErrorFor("firstname"),
+    lastname: clientErrors.lastname ?? serverErrorFor("lastname"),
+    club: clientErrors.club ?? serverErrorFor("club"),
+  };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,6 +71,7 @@ export function RegistrationForm() {
       }
     } catch (error) {
       setErrorMessage(getUserFriendlyError(error));
+      recordServerErrors(error, registerClimberData);
       startCooldownFor(error);
     } finally {
       setLoading(false);
