@@ -4,6 +4,7 @@ import {
   getAccessToken,
   initializeAuth,
   isLoggedIn,
+  STARTUP_REFRESH_TIMEOUT_MS,
   switchSession,
   clearCache,
   tokens,
@@ -341,17 +342,201 @@ describe("token refresh", () => {
     expect(isLoggedIn()).toBe(true);
   });
 
-  it("shares one refresh between concurrent 401s", async () => {
-    const spy = mockRoutes(unauthorized, () => tooManyRequests("30"));
+  it("logs out on a 400, 403 or 422 from refresh", async () => {
+    for (const status of [400, 403, 422]) {
+      tokens.saveTokens({ access_token: "old-acc", refresh_token: "old-ref" });
+      mockRoutes(unauthorized, () => new Response("{}", { status }));
 
-    const results = await Promise.allSettled([
-      api.get("/a", true),
-      api.get("/b", true),
-      api.get("/c", true),
-    ]);
+      await expect(api.get("/climber/me", true)).rejects.toMatchObject({ status: 401 });
+      expect(isLoggedIn()).toBe(false);
+      vi.restoreAllMocks();
+    }
+  });
 
-    expect(results.every((r) => r.status === "rejected")).toBe(true);
+  it.each([404, 408, 425])("keeps the session on a %i from refresh", async (status) => {
+    mockRoutes(unauthorized, () => new Response("{}", { status }));
+
+    await expect(api.get("/climber/me", true)).rejects.toMatchObject({ status: 401 });
+    expect(isLoggedIn()).toBe(true);
+    expect(sessionStorage.getItem("refresh_token")).toBe("old-ref");
+  });
+
+  it("caps a huge Retry-After from refresh at one hour", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-13T10:00:00Z"));
+    const spy = mockRoutes(unauthorized, () => tooManyRequests("999999"));
+
+    await expect(api.get("/climber/me", true)).rejects.toMatchObject({ status: 429 });
+    vi.setSystemTime(new Date("2026-11-13T11:00:01Z"));
+    await expect(api.get("/climber/me", true)).rejects.toMatchObject({ status: 429 });
+
+    expect(refreshCalls(spy)).toBe(2);
+  });
+});
+
+// ----------------------------------------------------------------
+// Refresh vs. session changes — a refresh result only applies to the
+// session it was started for
+// ----------------------------------------------------------------
+
+type Deferred<T> = { promise: Promise<T>; resolve: (value: T) => void };
+
+function deferred<T>(): Deferred<T> {
+  let resolve: (value: T) => void = () => undefined;
+  const promise = new Promise<T>((r) => {
+    resolve = r;
+  });
+  return { promise, resolve };
+}
+
+function bearerOf(init: RequestInit | undefined): string | null {
+  const headers = (init?.headers ?? {}) as Record<string, string>;
+  return headers.Authorization ?? null;
+}
+
+const ok = (body: unknown = { ok: true }) => new Response(JSON.stringify(body), { status: 200 });
+const pair = (access: string, refresh: string) =>
+  new Response(JSON.stringify({ access_token: access, refresh_token: refresh }), { status: 200 });
+
+/**
+ * Mock API: requests with a bearer in `validTokens` succeed, others get 401.
+ * /auth/refresh answers with `refresh()`.
+ */
+function mockServer(validTokens: string[], refresh: () => Promise<Response>) {
+  return vi.spyOn(global, "fetch").mockImplementation((input, init) => {
+    const url = String(input);
+    if (url.endsWith("/auth/refresh")) return refresh();
+    const bearer = bearerOf(init);
+    const valid = validTokens.some((token) => bearer === `Bearer ${token}`);
+    return Promise.resolve(valid ? ok({ url }) : unauthorized());
+  });
+}
+
+describe("refresh and session changes", () => {
+  beforeEach(() => {
+    tokens.saveTokens({ access_token: "A-acc", refresh_token: "A-ref" });
+  });
+
+  it("keeps the session the user switched to during a refresh", async () => {
+    const refresh = deferred<Response>();
+    const spy = mockServer(["A2-acc", "B-acc"], () => refresh.promise);
+
+    const request = api.get("/climber/me", true);
+    await vi.waitFor(() => expect(refreshCalls(spy)).toBe(1));
+
+    switchSession("B-acc", "B-ref");
+    refresh.resolve(pair("A2-acc", "A2-ref"));
+
+    await expect(request).resolves.toBeTruthy();
+    expect(getAccessToken()).toBe("B-acc");
+    expect(sessionStorage.getItem("refresh_token")).toBe("B-ref");
+    expect(bearerOf(spy.mock.calls.at(-1)?.[1])).toBe("Bearer B-acc");
+  });
+
+  it("keeps a login that happened during a refresh", async () => {
+    const refresh = deferred<Response>();
+    const spy = mockServer(["B-acc"], () => refresh.promise);
+
+    const request = api.get("/climber/me", true);
+    await vi.waitFor(() => expect(refreshCalls(spy)).toBe(1));
+
+    tokens.saveTokens({ access_token: "B-acc", refresh_token: "B-ref" });
+    refresh.resolve(pair("A2-acc", "A2-ref"));
+
+    await expect(request).resolves.toBeTruthy();
+    expect(getAccessToken()).toBe("B-acc");
+    expect(sessionStorage.getItem("refresh_token")).toBe("B-ref");
+  });
+
+  it("does not bring tokens back after a logout during a refresh", async () => {
+    const refresh = deferred<Response>();
+    const spy = mockServer(["A2-acc"], () => refresh.promise);
+
+    const request = api.get("/climber/me", true);
+    await vi.waitFor(() => expect(refreshCalls(spy)).toBe(1));
+
+    clearTokens();
+    refresh.resolve(pair("A2-acc", "A2-ref"));
+
+    await expect(request).rejects.toMatchObject({ status: 401 });
+    expect(getAccessToken()).toBeNull();
+    expect(isLoggedIn()).toBe(false);
+  });
+
+  it("does not clear the switched-to session when the old refresh is rejected", async () => {
+    const refresh = deferred<Response>();
+    const spy = mockServer(["B-acc"], () => refresh.promise);
+
+    const request = api.get("/climber/me", true);
+    await vi.waitFor(() => expect(refreshCalls(spy)).toBe(1));
+
+    switchSession("B-acc", "B-ref");
+    refresh.resolve(unauthorized());
+
+    await expect(request).resolves.toBeTruthy();
+    expect(getAccessToken()).toBe("B-acc");
+    expect(sessionStorage.getItem("refresh_token")).toBe("B-ref");
+  });
+
+  it("does not let an old 429 block refreshes of the new session", async () => {
+    const refresh = deferred<Response>();
+    const spy = mockServer([], () => refresh.promise);
+
+    const request = api.get("/climber/me", true);
+    await vi.waitFor(() => expect(refreshCalls(spy)).toBe(1));
+    switchSession("B-acc", "B-ref");
+    refresh.resolve(tooManyRequests("600"));
+    await request.catch(() => undefined);
+
+    spy.mockRestore();
+    const next = mockServer(["B2-acc"], () => Promise.resolve(pair("B2-acc", "B2-ref")));
+    tokens.saveTokens({ access_token: "B-acc", refresh_token: "B-ref" });
+
+    await expect(api.get("/climber/me", true)).resolves.toBeTruthy();
+    expect(refreshCalls(next)).toBe(1);
+  });
+
+  it("shares one refresh between concurrent 401s and retries all with the new token", async () => {
+    const refresh = deferred<Response>();
+    const spy = mockServer(["new-acc"], () => refresh.promise);
+
+    const requests = [api.get("/a", true), api.get("/b", true), api.get("/c", true)];
+    await vi.waitFor(() => expect(refreshCalls(spy)).toBe(1));
+    // All three have had their 401 before the refresh finishes.
+    expect(spy.mock.calls.filter(([, init]) => bearerOf(init) === "Bearer A-acc")).toHaveLength(3);
+
+    refresh.resolve(pair("new-acc", "new-ref"));
+
+    await expect(Promise.all(requests)).resolves.toHaveLength(3);
     expect(refreshCalls(spy)).toBe(1);
+    expect(spy.mock.calls.filter(([, init]) => bearerOf(init) === "Bearer new-acc")).toHaveLength(
+      3
+    );
+  });
+
+  it("retries a late 401 for an already replaced token without a second refresh", async () => {
+    const lateResponse = deferred<Response>();
+    const spy = vi.spyOn(global, "fetch").mockImplementation((input, init) => {
+      const url = String(input);
+      if (url.endsWith("/auth/refresh")) return Promise.resolve(pair("T2", "R2"));
+      const bearer = bearerOf(init);
+      if (bearer === "Bearer T2") return Promise.resolve(ok({ url }));
+      if (url.endsWith("/slow")) return lateResponse.promise;
+      return Promise.resolve(unauthorized());
+    });
+    tokens.saveTokens({ access_token: "T1", refresh_token: "R1" });
+
+    const fast = api.get("/fast", true);
+    const slow = api.get("/slow", true);
+    await expect(fast).resolves.toBeTruthy();
+    expect(getAccessToken()).toBe("T2");
+
+    lateResponse.resolve(unauthorized()); // the 401 for T1 arrives after the refresh
+    await expect(slow).resolves.toBeTruthy();
+
+    expect(refreshCalls(spy)).toBe(1);
+    const slowCalls = spy.mock.calls.filter(([input]) => String(input).endsWith("/slow"));
+    expect(slowCalls.map(([, init]) => bearerOf(init))).toEqual(["Bearer T1", "Bearer T2"]);
   });
 });
 
@@ -372,6 +557,37 @@ describe("initializeAuth", () => {
     vi.spyOn(global, "fetch").mockRejectedValue(new TypeError("Failed to fetch"));
 
     await expect(initializeAuth()).resolves.toBeUndefined();
+    expect(isLoggedIn()).toBe(true);
+  });
+});
+
+describe("initializeAuth timeout", () => {
+  beforeEach(() => {
+    sessionStorage.setItem("refresh_token", "stored-ref");
+  });
+
+  it("gives up on a hanging refresh and keeps the session", async () => {
+    vi.useFakeTimers();
+    vi.spyOn(global, "fetch").mockImplementation(
+      (_input, init) =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () =>
+            reject(new DOMException("Aborted", "AbortError"))
+          );
+        })
+    );
+
+    let settled = false;
+    const startup = initializeAuth().then(() => {
+      settled = true;
+    });
+
+    await vi.advanceTimersByTimeAsync(STARTUP_REFRESH_TIMEOUT_MS - 1);
+    expect(settled).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(1);
+    await startup;
+    expect(settled).toBe(true);
     expect(isLoggedIn()).toBe(true);
   });
 });

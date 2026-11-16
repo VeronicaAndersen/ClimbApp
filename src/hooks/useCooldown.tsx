@@ -1,12 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import { isRateLimitError } from "@/lib/apiError";
+import { MAX_RETRY_AFTER_SECONDS, isRateLimitError } from "@/lib/apiError";
 
-/**
- * Longest time a form stays disabled. A server can ask for more (failed
- * logins are counted over 15 minutes), but past this the user may try again
- * and simply gets a new 429 with a fresh wait.
- */
-export const MAX_COOLDOWN_SECONDS = 60 * 60;
+/** Longest time a form stays disabled; see MAX_RETRY_AFTER_SECONDS. */
+export const MAX_COOLDOWN_SECONDS = MAX_RETRY_AFTER_SECONDS;
 
 /**
  * Disables an action for a while, e.g. a submit button after a 429.

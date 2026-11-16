@@ -9,6 +9,13 @@
 export const SERVER_ERROR_MESSAGE = "Ett serverfel uppstod. Försök igen senare.";
 export const RATE_LIMIT_GENERIC_MESSAGE = "För många försök. Vänta en stund och försök igen.";
 
+/**
+ * Longest Retry-After the client acts on or shows (1 hour). A server or proxy
+ * can ask for more (failed logins are counted over 15 minutes, so this is
+ * generous); past it the user may try again and gets a fresh wait.
+ */
+export const MAX_RETRY_AFTER_SECONDS = 60 * 60;
+
 /** One entry of a 422 `detail` list; the API no longer sends `input` or `ctx`. */
 export type ValidationIssue = {
   loc: (string | number)[];
@@ -88,16 +95,20 @@ export function parseRetryAfter(value: string | null, now: number = Date.now()):
   return null;
 }
 
-/** "Too many attempts" text in Swedish, with the wait rounded up when known. */
+/**
+ * "Too many attempts" text in Swedish, with the wait rounded up when known
+ * and capped at MAX_RETRY_AFTER_SECONDS.
+ */
 export function formatRateLimitMessage(retryAfterSeconds: number | null): string {
   if (retryAfterSeconds === null || retryAfterSeconds <= 0) return RATE_LIMIT_GENERIC_MESSAGE;
+  const seconds = Math.min(retryAfterSeconds, MAX_RETRY_AFTER_SECONDS);
 
-  if (retryAfterSeconds < 60) {
-    const unit = retryAfterSeconds === 1 ? "sekund" : "sekunder";
-    return `För många försök. Försök igen om ${retryAfterSeconds} ${unit}.`;
+  if (seconds < 60) {
+    const unit = seconds === 1 ? "sekund" : "sekunder";
+    return `För många försök. Försök igen om ${seconds} ${unit}.`;
   }
 
-  const minutes = Math.ceil(retryAfterSeconds / 60);
+  const minutes = Math.ceil(seconds / 60);
   const unit = minutes === 1 ? "minut" : "minuter";
   return `För många försök. Försök igen om ungefär ${minutes} ${unit}.`;
 }

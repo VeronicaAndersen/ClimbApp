@@ -64,6 +64,14 @@ describe("formatRateLimitMessage", () => {
   });
 });
 
+describe("formatRateLimitMessage cap", () => {
+  it("never shows more than an hour", () => {
+    expect(formatRateLimitMessage(10 * 60 * 60)).toBe(
+      "För många försök. Försök igen om ungefär 60 minuter."
+    );
+  });
+});
+
 describe("toApiError", () => {
   it("parses a 429 with Retry-After into the error", async () => {
     const error = await toApiError(
