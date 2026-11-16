@@ -57,6 +57,86 @@ export function validateUsername(value: string): string | null {
   return null;
 }
 
+// ----------------------------------------------------------
+// New usernames (signup and username changes) follow a stricter rule than
+// the lenient one above, which login keeps so legacy names (with emoji,
+// for example) still work. Mirrors the API's rule for new usernames.
+// ----------------------------------------------------------
+
+export const NEW_USERNAME_EMPTY_MESSAGE = "Användarnamnet får inte vara tomt.";
+export const NEW_USERNAME_SPACES_MESSAGE =
+  "Användarnamnet får inte börja eller sluta med mellanslag eller ha två mellanslag i rad.";
+export const NEW_USERNAME_CHARACTERS_MESSAGE =
+  "Användarnamn får bara innehålla bokstäver, siffror, mellanslag och . _ - @";
+
+/** Default_Ignorable code points, rejected even when they are letters or marks. */
+const DEFAULT_IGNORABLE_RANGES: ReadonlyArray<readonly [number, number]> = [
+  [0x00ad, 0x00ad],
+  [0x034f, 0x034f],
+  [0x061c, 0x061c],
+  [0x115f, 0x1160],
+  [0x17b4, 0x17b5],
+  [0x180b, 0x180f],
+  [0x200b, 0x200f],
+  [0x202a, 0x202e],
+  [0x2060, 0x206f],
+  [0x3164, 0x3164],
+  [0xfe00, 0xfe0f],
+  [0xfeff, 0xfeff],
+  [0xffa0, 0xffa0],
+  [0xfff0, 0xfff8],
+  [0x1bca0, 0x1bca3],
+  [0x1d173, 0x1d17a],
+  [0xe0000, 0xe0fff],
+];
+
+function isDefaultIgnorable(char: string): boolean {
+  const codePoint = char.codePointAt(0) ?? 0;
+  return DEFAULT_IGNORABLE_RANGES.some(([from, to]) => codePoint >= from && codePoint <= to);
+}
+const LETTER = /^\p{L}$/u;
+const MARK = /^\p{M}$/u;
+const DIGIT = /^\p{Nd}$/u;
+const NEW_USERNAME_PUNCTUATION = new Set([".", "_", "-", "@", " "]);
+
+/** The form a new username is stored in: stripped, NFKC-normalized, lowercased. */
+export function normalizeNewUsername(value: string): string {
+  return stripLikePython(value).normalize("NFKC").toLowerCase();
+}
+
+function hasOnlyAllowedCharacters(normalized: string): boolean {
+  // True while the previous character is a letter, or a mark that follows one.
+  let afterLetter = false;
+  for (const char of normalized) {
+    if (isDefaultIgnorable(char)) return false;
+    if (LETTER.test(char)) {
+      afterLetter = true;
+    } else if (MARK.test(char)) {
+      if (!afterLetter) return false;
+    } else if (DIGIT.test(char) || NEW_USERNAME_PUNCTUATION.has(char)) {
+      afterLetter = false;
+    } else {
+      return false;
+    }
+  }
+  return true;
+}
+
+/** Validate a username being created or changed. Empty input returns null. */
+export function validateNewUsername(value: string): string | null {
+  if (value === "") return null;
+
+  const normalized = normalizeNewUsername(value);
+  if (normalized === "") return NEW_USERNAME_EMPTY_MESSAGE;
+  if (lengthOf(normalized) > USERNAME_MAX_LENGTH) return USERNAME_TOO_LONG_MESSAGE;
+  // NFKC can turn a character into a space (e.g. "¨" into space + mark).
+  if (normalized.startsWith(" ") || normalized.endsWith(" ") || normalized.includes("  ")) {
+    return NEW_USERNAME_SPACES_MESSAGE;
+  }
+  if (!hasOnlyAllowedCharacters(normalized)) return NEW_USERNAME_CHARACTERS_MESSAGE;
+  return null;
+}
+
 export type PasswordRules = {
   /** Enforce the minimum length (signup and reset), not at login. */
   requireMinLength: boolean;

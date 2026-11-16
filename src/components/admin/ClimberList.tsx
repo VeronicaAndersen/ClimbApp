@@ -5,6 +5,11 @@ import { useClimbers } from "@/hooks/useClimbers";
 import { updateClimberById, deleteClimberById } from "@/services/api";
 import { ClimberResponse, ClimberUpdateRequest } from "@/types";
 import {
+  normalizeNewUsername,
+  normalizeUsername,
+  validateNewUsername,
+} from "@/utils/inputValidation";
+import {
   Pencil,
   Trash2,
   Check,
@@ -138,9 +143,19 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
     try {
       const payload: ClimberUpdateRequest = {};
 
-      // Only include fields that have been changed
-      if (editValues.username && editValues.username.trim()) {
-        payload.username = editValues.username.trim();
+      // Only include fields that have been changed. An unchanged username is
+      // neither validated nor sent: legacy names may break the new-name rule.
+      const currentClimber = (climberList ?? []).find((c) => c.id === climberId);
+      const usernameChanged =
+        normalizeUsername(editValues.username ?? "") !==
+        normalizeUsername(currentClimber?.username ?? "");
+      if (usernameChanged && editValues.username && editValues.username.trim()) {
+        const usernameError = validateNewUsername(editValues.username);
+        if (usernameError) {
+          setRowError({ id: climberId, message: usernameError });
+          return;
+        }
+        payload.username = normalizeNewUsername(editValues.username);
       }
       if (editValues.password && editValues.password.trim()) {
         payload.password = editValues.password.trim();
@@ -396,6 +411,7 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
                             <>
                               <Button
                                 onClick={() => handleSave(climber.id)}
+                                aria-label="Spara ändringar"
                                 disabled={isSavingRow}
                                 className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded disabled:opacity-50"
                                 size="1"
@@ -405,6 +421,7 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
 
                               <Button
                                 onClick={resetState}
+                                aria-label="Avbryt redigering"
                                 disabled={isSavingRow}
                                 className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded disabled:opacity-50"
                                 size="1"
@@ -426,6 +443,7 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
 
                               <Button
                                 onClick={() => startEdit(climber)}
+                                aria-label={`Redigera ${climber.username}`}
                                 disabled={isSavingRow || isDeletingRow || editingId !== null}
                                 className="bg-[--secondary-color] hover:bg-[--secondary-color-hover] text-white px-3 py-1 rounded disabled:opacity-50"
                                 size="1"

@@ -76,9 +76,49 @@ describe("RegistrationForm — input rules", () => {
     await fillValidForm(user, { username: "ali\u202Ece" });
 
     expect(
-      screen.getByText("Användarnamnet får inte innehålla kontrolltecken eller osynliga tecken.")
+      screen.getByText("Användarnamn får bara innehålla bokstäver, siffror, mellanslag och . _ - @")
     ).toBeInTheDocument();
     expect(submitButton()).toBeDisabled();
+  });
+
+  it("rejects emoji in a new username", async () => {
+    const user = userEvent.setup();
+    renderRegistrationForm();
+
+    await fillValidForm(user, { username: "blomma\u{1F338}" });
+
+    expect(screen.getByLabelText("Användarnamn")).toHaveAccessibleDescription(
+      "Användarnamn får bara innehålla bokstäver, siffror, mellanslag och . _ - @"
+    );
+    expect(submitButton()).toBeDisabled();
+  });
+
+  it("rejects a double space", async () => {
+    const user = userEvent.setup();
+    renderRegistrationForm();
+
+    await fillValidForm(user, { username: "anna  karin" });
+
+    expect(screen.getByLabelText("Användarnamn")).toHaveAccessibleDescription(
+      "Användarnamnet får inte börja eller sluta med mellanslag eller ha två mellanslag i rad."
+    );
+    expect(submitButton()).toBeDisabled();
+  });
+
+  it.each([
+    ["Åsa Öberg", "åsa öberg"],
+    ["Jörgen.Ø@example.com", "jörgen.ø@example.com"],
+    ["José_ä-1", "josé_ä-1"],
+    ["\uFF41dmin", "admin"],
+  ])("sends %j as the normalized %j", async (typed, sent) => {
+    const signup = vi.spyOn(api, "signupClimber").mockResolvedValue(null);
+    const user = userEvent.setup();
+    renderRegistrationForm();
+
+    await fillValidForm(user, { username: typed });
+    await user.click(submitButton());
+
+    expect(signup).toHaveBeenCalledWith(expect.objectContaining({ username: sent }));
   });
 
   it("blocks control characters in the club", async () => {

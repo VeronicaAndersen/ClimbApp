@@ -8,11 +8,11 @@ import CalloutMessage from "../feedback/CalloutMessage";
 import { getUserFriendlyError } from "@/utils/errorMessages";
 import { useCooldown } from "@/hooks/useCooldown";
 import {
-  normalizeUsername,
+  normalizeNewUsername,
+  validateNewUsername,
   validatePassword,
   validatePersonName,
   validatePlainText,
-  validateUsername,
 } from "@/utils/inputValidation";
 import { useServerFieldErrors } from "@/hooks/useServerFieldErrors";
 import { FieldError } from "./FieldError";
@@ -38,7 +38,7 @@ export function RegistrationForm() {
   const { serverErrorFor, recordServerErrors } = useServerFieldErrors(registerClimberData);
 
   const clientErrors = {
-    username: validateUsername(registerClimberData.username),
+    username: validateNewUsername(registerClimberData.username),
     password: validatePassword(registerClimberData.password, { requireMinLength: true }),
     email: validatePlainText(registerClimberData.email, "E-post"),
     firstname: validatePersonName(registerClimberData.firstname, "Förnamn"),
@@ -64,7 +64,7 @@ export function RegistrationForm() {
     try {
       const result = await signupClimber({
         ...registerClimberData,
-        username: normalizeUsername(registerClimberData.username),
+        username: normalizeNewUsername(registerClimberData.username),
         email: registerClimberData.email.trim().toLowerCase(),
       });
       if (result) {

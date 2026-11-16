@@ -2,7 +2,12 @@ import { describe, it, expect } from "vitest";
 import {
   PASSWORD_MAX_LENGTH,
   USERNAME_MAX_LENGTH,
+  NEW_USERNAME_CHARACTERS_MESSAGE,
+  NEW_USERNAME_EMPTY_MESSAGE,
+  NEW_USERNAME_SPACES_MESSAGE,
+  normalizeNewUsername,
   normalizeUsername,
+  validateNewUsername,
   validatePassword,
   validatePersonName,
   validatePlainText,
@@ -150,5 +155,87 @@ describe("validatePersonName (first and last name)", () => {
     expect(validatePersonName(value, "Efternamn")).toBe(
       "Efternamn får inte innehålla kontrolltecken eller tecken som ändrar textriktningen."
     );
+  });
+});
+
+describe("normalizeNewUsername", () => {
+  it("strips, applies NFKC and lowercases", () => {
+    expect(normalizeNewUsername("  Anna ")).toBe("anna");
+    expect(normalizeNewUsername("\uFF41dmin")).toBe("admin"); // fullwidth "ａdmin"
+    expect(normalizeNewUsername("\uFF21DMIN")).toBe("admin"); // fullwidth "ＡDMIN"
+  });
+});
+
+describe("validateNewUsername (signup and username changes)", () => {
+  it.each([
+    "åsa",
+    "Märta",
+    "björn",
+    "josé",
+    "søren",
+    "anna karin",
+    "anna@example.com",
+    "a.b_c-d",
+    "klättrare99",
+  ])("accepts %j", (value) => {
+    expect(validateNewUsername(value)).toBeNull();
+  });
+
+  it("accepts a fullwidth name, which normalizes to ASCII", () => {
+    expect(validateNewUsername("\uFF41dmin")).toBeNull();
+  });
+
+  it("accepts a combining mark after a letter, and after a mark after a letter", () => {
+    expect(validateNewUsername("a\u0332")).toBeNull();
+    expect(validateNewUsername("a\u0332\u0333")).toBeNull();
+  });
+
+  it("leaves empty input to the form's required check", () => {
+    expect(validateNewUsername("")).toBeNull();
+  });
+
+  it("rejects a name that is only whitespace", () => {
+    expect(validateNewUsername("   ")).toBe(NEW_USERNAME_EMPTY_MESSAGE);
+  });
+
+  it("counts length after NFKC", () => {
+    expect(validateNewUsername("a".repeat(200))).toBeNull();
+    expect(validateNewUsername("a".repeat(201))).toBe("Användarnamnet får vara högst 200 tecken.");
+    // U+FB00 "ﬀ" becomes "ff" under NFKC.
+    expect(validateNewUsername("\uFB00".repeat(101))).toBe(
+      "Användarnamnet får vara högst 200 tecken."
+    );
+  });
+
+  it.each([
+    ["two spaces in a row", "anna  karin"],
+    ["NBSP next to a space", "anna \u00A0karin"],
+    ["a space created by NFKC at the start", "\u00A8anna"],
+  ])("rejects %s", (_name, value) => {
+    expect(validateNewUsername(value)).toBe(NEW_USERNAME_SPACES_MESSAGE);
+  });
+
+  it.each([
+    ["emoji", "blomma\u{1F338}"],
+    ["symbol", "anna+karin"],
+    ["slash", "anna/karin"],
+    ["mark at the start", "\u0301anna"],
+    ["mark after a digit", "anna1\u0301"],
+    ["mark after a space", "anna \u0301b"],
+    ["zero-width joiner", "an\u200Dna"],
+    ["soft hyphen", "an\u00ADna"],
+    ["Hangul filler (a letter)", "an\u3164na"],
+    ["Mongolian variation selector (a mark)", "a\u180Bnna"],
+    ["variation selector after a letter", "a\uFE0Fnna"],
+    ["tag character", "anna\u{E0041}"],
+    ["leading BOM", "\uFEFFanna"],
+    ["control character", "an\u0000na"],
+  ])("rejects a %s", (_name, value) => {
+    expect(validateNewUsername(value)).toBe(NEW_USERNAME_CHARACTERS_MESSAGE);
+  });
+
+  it("stays lenient at login: emoji are still accepted there", () => {
+    expect(validateNewUsername("blomma\u{1F338}")).toBe(NEW_USERNAME_CHARACTERS_MESSAGE);
+    expect(validateUsername("blomma\u{1F338}")).toBeNull();
   });
 });

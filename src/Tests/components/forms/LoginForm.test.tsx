@@ -262,6 +262,22 @@ describe("LoginForm — input rules", () => {
     expect(screen.getByRole("button", { name: "Logga in" })).toBeDisabled();
   });
 
+  it("still accepts legacy usernames with emoji, spaces and @", async () => {
+    const spy = vi.spyOn(api, "loginClimber").mockResolvedValue(null);
+    const user = userEvent.setup();
+    renderLoginForm();
+
+    await user.click(screen.getByLabelText("Användarnamn"));
+    await user.paste("  Blomma \u{1F338} @gym ");
+    await user.type(screen.getByLabelText("Lösenord"), "secret123");
+    await user.click(screen.getByRole("button", { name: "Logga in" }));
+
+    expect(spy).toHaveBeenCalledWith({
+      username: "blomma \u{1F338} @gym",
+      password: "secret123",
+    });
+  });
+
   it("does not cut a long non-BMP username short", async () => {
     const user = userEvent.setup();
     renderLoginForm();
