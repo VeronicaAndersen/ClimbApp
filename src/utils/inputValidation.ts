@@ -3,6 +3,11 @@
 // The API still validates everything; keep these in step with
 // ClimbAPI schema/auth.py and schema/climber.py.
 //
+// The server's rule decides. \p{L}, \p{M}, NFKC and lowercasing depend on
+// the Unicode version of the browser and of the server's Python, so a newer
+// browser may accept a letter the server rejects. The server then answers
+// 422, and the form shows that error on the field (useServerFieldErrors).
+//
 // Each validator returns a Swedish message, or null when the value is fine.
 // Empty values return null: forms handle "required" themselves.
 // ----------------------------------------------------------
