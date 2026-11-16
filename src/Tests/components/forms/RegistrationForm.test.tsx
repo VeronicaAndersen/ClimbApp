@@ -35,6 +35,18 @@ beforeEach(() => {
 });
 
 describe("RegistrationForm — input rules", () => {
+  it("lowercases a Greek name as a whole, keeping the inner sigma", async () => {
+    const signup = vi.spyOn(api, "signupClimber").mockResolvedValue(null);
+    const user = userEvent.setup();
+    renderRegistrationForm();
+
+    await fillValidForm(user, { username: "ΌΣΟΣ" });
+    expect(screen.getByLabelText("Användarnamn")).toHaveValue("ΌΣΟΣ");
+    await user.click(submitButton());
+
+    expect(signup).toHaveBeenCalledWith(expect.objectContaining({ username: "όσος" }));
+  });
+
   it("shows a message for a too long password instead of truncating it", async () => {
     const user = userEvent.setup();
     renderRegistrationForm();

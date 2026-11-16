@@ -63,7 +63,9 @@ export function LoginForm() {
               placeholder="Användarnamn"
               value={loginData.username}
               onChange={(e) =>
-                setLoginData({ ...loginData, username: e.target.value.toLowerCase() })
+                // Kept as typed; normalizeUsername lowercases the whole name on
+                // submit (per-keystroke lowercasing breaks Greek final sigma).
+                setLoginData({ ...loginData, username: e.target.value })
               }
               required
               aria-invalid={usernameError !== null}

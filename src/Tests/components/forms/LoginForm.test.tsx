@@ -262,6 +262,21 @@ describe("LoginForm — input rules", () => {
     expect(screen.getByRole("button", { name: "Logga in" })).toBeDisabled();
   });
 
+  it("keeps the username as typed and lowercases the whole name on submit", async () => {
+    const spy = vi.spyOn(api, "loginClimber").mockResolvedValue(null);
+    const user = userEvent.setup();
+    renderLoginForm();
+
+    // Lowercasing per keystroke made the middle sigma final: "όςος".
+    await user.type(screen.getByLabelText("Användarnamn"), "ΌΣΟΣ");
+    await user.type(screen.getByLabelText("Lösenord"), "secret123");
+
+    expect(screen.getByLabelText("Användarnamn")).toHaveValue("ΌΣΟΣ");
+    await user.click(screen.getByRole("button", { name: "Logga in" }));
+
+    expect(spy).toHaveBeenCalledWith({ username: "όσος", password: "secret123" });
+  });
+
   it("still accepts legacy usernames with emoji, spaces and @", async () => {
     const spy = vi.spyOn(api, "loginClimber").mockResolvedValue(null);
     const user = userEvent.setup();

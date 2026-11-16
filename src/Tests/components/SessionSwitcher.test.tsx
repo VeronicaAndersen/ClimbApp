@@ -27,6 +27,20 @@ async function submitAddLogin(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe("SessionSwitcher login errors", () => {
+  it("lowercases a Greek name as a whole, keeping the inner sigma", async () => {
+    loginClimberMock.mockReturnValue(new Promise(() => {}));
+    const user = userEvent.setup();
+    render(<SessionSwitcher onSwitch={vi.fn()} />);
+
+    await user.click(screen.getByRole("button", { name: "Lägg till" }));
+    await user.type(screen.getByLabelText("Användarnamn"), "ΌΣΟΣ");
+    await user.type(screen.getByLabelText("Lösenord"), "secret123");
+    expect(screen.getByLabelText("Användarnamn")).toHaveValue("ΌΣΟΣ");
+    await user.click(screen.getByRole("button", { name: "Logga in" }));
+
+    expect(loginClimberMock).toHaveBeenCalledWith({ username: "όσος", password: "secret123" });
+  });
+
   it("announces the error as an alert linked to the inputs", async () => {
     loginClimberMock.mockRejectedValue(
       new ApiError({ status: 401, message: "Invalid credentials", detail: "Invalid credentials" })

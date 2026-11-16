@@ -112,6 +112,18 @@ describe("ForgotPasswordForm — rate limiting", () => {
 });
 
 describe("ForgotPasswordForm — input rules", () => {
+  it("lowercases a Greek name as a whole, keeping the inner sigma", async () => {
+    const request = vi.spyOn(api, "requestPasswordReset").mockResolvedValue({ message: "ok" });
+    const user = userEvent.setup();
+    renderForgotPasswordForm();
+
+    await user.type(screen.getByLabelText("Användarnamn"), "ΌΣΟΣ");
+    expect(screen.getByLabelText("Användarnamn")).toHaveValue("ΌΣΟΣ");
+    await user.click(screen.getByRole("button", { name: "Skicka återställningslänk" }));
+
+    expect(request).toHaveBeenCalledWith({ username: "όσος" });
+  });
+
   it("sends the trimmed, lowercased username", async () => {
     const request = vi.spyOn(api, "requestPasswordReset").mockResolvedValue({ message: "ok" });
     const user = userEvent.setup();
