@@ -5,6 +5,7 @@ import {
   NEW_USERNAME_CHARACTERS_MESSAGE,
   NEW_USERNAME_EMPTY_MESSAGE,
   NEW_USERNAME_SPACES_MESSAGE,
+  NEW_USERNAME_TOO_MANY_MARKS_MESSAGE,
   normalizeNewUsername,
   normalizeUsername,
   validateNewUsername,
@@ -237,5 +238,46 @@ describe("validateNewUsername (signup and username changes)", () => {
   it("stays lenient at login: emoji are still accepted there", () => {
     expect(validateNewUsername("blomma\u{1F338}")).toBe(NEW_USERNAME_CHARACTERS_MESSAGE);
     expect(validateUsername("blomma\u{1F338}")).toBeNull();
+  });
+});
+
+describe("validateNewUsername — accent marks and stretching letters", () => {
+  it("accepts decomposed Vietnamese, which NFKC composes", () => {
+    // "Nguyễn" with e + circumflex + tilde typed as combining marks.
+    const decomposed = "Nguye\u0302\u0303n";
+    expect(decomposed.normalize("NFKC")).toBe("Nguy\u1EC5n");
+    expect(validateNewUsername(decomposed)).toBeNull();
+  });
+
+  it("accepts three marks that do not compose", () => {
+    expect(validateNewUsername("a\u0332\u0333\u0334b")).toBeNull();
+  });
+
+  it("rejects four marks on one letter", () => {
+    expect(validateNewUsername("a\u0332\u0333\u0334\u0335b")).toBe(
+      NEW_USERNAME_TOO_MANY_MARKS_MESSAGE
+    );
+  });
+
+  it("rejects a + five acutes: one composes into á, four stay", () => {
+    const value = "a" + "\u0301".repeat(5);
+    expect(value.normalize("NFKC")).toBe("\u00E1" + "\u0301".repeat(4));
+    expect(validateNewUsername(value)).toBe(NEW_USERNAME_TOO_MANY_MARKS_MESSAGE);
+  });
+
+  it("counts marks per letter, not per name", () => {
+    expect(validateNewUsername("a\u0332\u0333\u0334b\u0332\u0333\u0334")).toBeNull();
+  });
+
+  it.each([
+    ["Arabic tatweel", "\u0645\u062D\u0640\u0645\u062F", "\u0645\u062D\u0645\u062F"],
+    ["NKo lajanyalan", "\u07CA\u07FA\u07CB", "\u07CA\u07CB"],
+  ])("rejects %s and accepts the same name without it", (_name, withIt, without) => {
+    expect(validateNewUsername(withIt)).toBe(NEW_USERNAME_CHARACTERS_MESSAGE);
+    expect(validateNewUsername(without)).toBeNull();
+  });
+
+  it("stays lenient at login for these characters", () => {
+    expect(validateUsername("\u0645\u062D\u0640\u0645\u062F")).toBeNull();
   });
 });

@@ -73,6 +73,9 @@ export const NEW_USERNAME_SPACES_MESSAGE =
   "Användarnamnet får inte börja eller sluta med mellanslag eller ha två mellanslag i rad.";
 export const NEW_USERNAME_CHARACTERS_MESSAGE =
   "Användarnamn får bara innehålla bokstäver, siffror, mellanslag och . _ - @";
+/** Same limit as the API: enough for real text, too few for "zalgo" names. */
+export const MAX_MARKS_PER_LETTER = 3;
+export const NEW_USERNAME_TOO_MANY_MARKS_MESSAGE = `Högst ${MAX_MARKS_PER_LETTER} accenttecken på en bokstav.`;
 
 /** Default_Ignorable code points, rejected even when they are letters or marks. */
 const DEFAULT_IGNORABLE_RANGES: ReadonlyArray<readonly [number, number]> = [
@@ -109,22 +112,36 @@ export function normalizeNewUsername(value: string): string {
   return stripLikePython(value).normalize("NFKC").toLowerCase();
 }
 
-function hasOnlyAllowedCharacters(normalized: string): boolean {
+/**
+ * Letters (Lm) that only stretch the line between letters and are nearly
+ * invisible, so two names could look the same: ARABIC TATWEEL (U+0640) and
+ * NKO LAJANYALAN (U+07FA).
+ */
+const STRETCHING_LETTERS = new Set(["\u0640", "\u07FA"]);
+
+/** Character check for a normalized new username, in the API's order. */
+function characterError(normalized: string): string | null {
   // True while the previous character is a letter, or a mark that follows one.
   let afterLetter = false;
+  let marksInRow = 0;
   for (const char of normalized) {
-    if (isDefaultIgnorable(char)) return false;
+    if (isDefaultIgnorable(char) || STRETCHING_LETTERS.has(char)) {
+      return NEW_USERNAME_CHARACTERS_MESSAGE;
+    }
     if (LETTER.test(char)) {
       afterLetter = true;
+      marksInRow = 0;
     } else if (MARK.test(char)) {
-      if (!afterLetter) return false;
+      marksInRow += 1;
+      if (!afterLetter) return NEW_USERNAME_CHARACTERS_MESSAGE;
+      if (marksInRow > MAX_MARKS_PER_LETTER) return NEW_USERNAME_TOO_MANY_MARKS_MESSAGE;
     } else if (DIGIT.test(char) || NEW_USERNAME_PUNCTUATION.has(char)) {
       afterLetter = false;
     } else {
-      return false;
+      return NEW_USERNAME_CHARACTERS_MESSAGE;
     }
   }
-  return true;
+  return null;
 }
 
 /** Validate a username being created or changed. Empty input returns null. */
@@ -138,8 +155,7 @@ export function validateNewUsername(value: string): string | null {
   if (normalized.startsWith(" ") || normalized.endsWith(" ") || normalized.includes("  ")) {
     return NEW_USERNAME_SPACES_MESSAGE;
   }
-  if (!hasOnlyAllowedCharacters(normalized)) return NEW_USERNAME_CHARACTERS_MESSAGE;
-  return null;
+  return characterError(normalized);
 }
 
 export type PasswordRules = {
