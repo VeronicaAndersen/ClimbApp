@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { confirmPasswordReset } from "@/services/api";
 import { Button, Card, TextField, Spinner } from "@radix-ui/themes";
@@ -10,7 +10,13 @@ import { validatePassword } from "@/utils/inputValidation";
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const token = searchParams.get("token");
+  // Read the token once, then drop it from the address bar and history so it
+  // can't leak through screenshots, shared URLs or the browser history.
+  const [token] = useState(() => searchParams.get("token"));
+
+  useEffect(() => {
+    if (searchParams.has("token")) navigate("/reset-password", { replace: true });
+  }, [searchParams, navigate]);
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");

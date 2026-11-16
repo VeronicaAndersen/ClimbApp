@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
+import { BrowserRouter, MemoryRouter, Route, Routes } from "react-router-dom";
 import { Theme } from "@radix-ui/themes";
 import * as api from "@/services/api";
 import { ApiError } from "@/lib/apiError";
@@ -61,5 +61,44 @@ describe("ResetPassword", () => {
       await screen.findByText("För många försök. Försök igen om ungefär 2 minuter.")
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Spara nytt lösenord" })).toBeDisabled();
+  });
+});
+
+describe("ResetPassword — token in the URL", () => {
+  function renderInBrowser(url: string) {
+    window.history.replaceState(null, "", url);
+    return render(
+      <BrowserRouter>
+        <Theme>
+          <Routes>
+            <Route path="/reset-password" element={<ResetPassword />} />
+          </Routes>
+        </Theme>
+      </BrowserRouter>
+    );
+  }
+
+  it("removes the token from the address bar without a new history entry", async () => {
+    const historyLength = window.history.length;
+    const confirm = vi.spyOn(api, "confirmPasswordReset").mockResolvedValue({ message: "ok" });
+    const user = userEvent.setup();
+
+    renderInBrowser("/reset-password?token=secret-token");
+
+    expect(window.location.pathname).toBe("/reset-password");
+    expect(window.location.search).toBe("");
+    expect(window.location.href).not.toContain("secret-token");
+    expect(window.history.length).toBe(historyLength);
+
+    // The form still uses the token it read before the URL was cleaned.
+    await submitNewPassword(user, "secret123");
+    expect(confirm).toHaveBeenCalledWith({ token: "secret-token", new_password: "secret123" });
+  });
+
+  it("still reports a missing token", () => {
+    renderInBrowser("/reset-password");
+
+    expect(screen.getByText("Ogiltig återställningslänk")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Spara nytt lösenord" })).not.toBeInTheDocument();
   });
 });
