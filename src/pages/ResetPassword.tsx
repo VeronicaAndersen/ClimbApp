@@ -17,7 +17,9 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const { isCoolingDown, startCooldownFor } = useCooldown();
+  const { isCoolingDown, startCooldownFor } = useCooldown({
+    onExpire: () => setErrorMessage(null),
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

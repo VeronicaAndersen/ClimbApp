@@ -21,7 +21,9 @@ export function RegistrationForm() {
   const navigate = useNavigate();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
-  const { isCoolingDown, startCooldownFor } = useCooldown();
+  const { isCoolingDown, startCooldownFor } = useCooldown({
+    onExpire: () => setErrorMessage(null),
+  });
 
   const [registerClimberData, setRegisterClimberData] = useState<RegistrationRequest>({
     username: "",

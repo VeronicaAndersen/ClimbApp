@@ -14,7 +14,9 @@ export function ForgotPasswordForm() {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const { isCoolingDown, startCooldownFor } = useCooldown();
+  const { isCoolingDown, startCooldownFor } = useCooldown({
+    onExpire: () => setErrorMessage(null),
+  });
   const { serverErrorFor, recordServerErrors } = useServerFieldErrors({ username });
   const usernameError = validateUsername(username) ?? serverErrorFor("username");
 

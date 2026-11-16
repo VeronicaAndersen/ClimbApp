@@ -5,6 +5,7 @@ import { loginClimber, getMyInfo } from "@/services/api";
 import { getAccessToken, switchSession } from "@/lib/apiClient";
 import { getUserFriendlyError } from "@/utils/errorMessages";
 import { useCooldown } from "@/hooks/useCooldown";
+import { cn } from "@/lib/utils";
 import { normalizeUsername, validatePassword, validateUsername } from "@/utils/inputValidation";
 
 interface Props {
@@ -18,7 +19,9 @@ export function SessionSwitcher({ onSwitch }: Props) {
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginLoading, setLoginLoading] = useState(false);
-  const { isCoolingDown, startCooldownFor } = useCooldown();
+  const { isCoolingDown, startCooldownFor } = useCooldown({
+    onExpire: () => setLoginError(null),
+  });
   const bootstrapped = useRef(false);
 
   // Bootstrap: seed the sessions list on first mount.
@@ -149,10 +152,19 @@ export function SessionSwitcher({ onSwitch }: Props) {
           className="mt-3 p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-2"
         >
           <p className="text-sm font-medium text-gray-700">Logga in som en annan klättrare</p>
-          {loginError && <p className="text-xs text-red-500">{loginError}</p>}
+          <p
+            id="session-login-error"
+            role="alert"
+            className={cn("text-xs text-red-700", !loginError && "sr-only")}
+          >
+            {loginError}
+          </p>
           <input
             type="text"
             placeholder="Användarnamn"
+            aria-label="Användarnamn"
+            aria-invalid={loginError !== null}
+            aria-describedby={loginError ? "session-login-error" : undefined}
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             className="w-full px-3 py-2 text-base rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[--secondary-color]"
@@ -161,6 +173,9 @@ export function SessionSwitcher({ onSwitch }: Props) {
           <input
             type="password"
             placeholder="Lösenord"
+            aria-label="Lösenord"
+            aria-invalid={loginError !== null}
+            aria-describedby={loginError ? "session-login-error" : undefined}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="w-full px-3 py-2 text-base rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[--secondary-color]"

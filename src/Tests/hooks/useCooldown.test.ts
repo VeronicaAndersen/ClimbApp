@@ -64,6 +64,18 @@ describe("useCooldown", () => {
     expect(result.current.isCoolingDown).toBe(false);
   });
 
+  it("calls onExpire when the cooldown runs out", () => {
+    const onExpire = vi.fn();
+    const { result } = renderHook(() => useCooldown({ onExpire }));
+
+    act(() => result.current.startCooldown(3));
+    act(() => vi.advanceTimersByTime(2_999));
+    expect(onExpire).not.toHaveBeenCalled();
+
+    act(() => vi.advanceTimersByTime(1));
+    expect(onExpire).toHaveBeenCalledTimes(1);
+  });
+
   it("clears its timer on unmount", () => {
     const { result, unmount } = renderHook(() => useCooldown());
 

@@ -133,7 +133,7 @@ describe("LoginForm — API integration", () => {
 
     await waitFor(() => {
       // CalloutMessage should appear with an error
-      expect(screen.getByRole("paragraph")).toBeInTheDocument();
+      expect(screen.getByText("Din session har gått ut. Logga in igen.")).toBeInTheDocument();
     });
   });
 
@@ -162,7 +162,7 @@ describe("LoginForm — API integration", () => {
     await user.click(btn());
     await waitFor(() => expect(spy).toHaveBeenCalledTimes(2));
     // The error callout should be gone
-    expect(screen.queryByRole("paragraph")).not.toBeInTheDocument();
+    expect(screen.queryByText("Din session har gått ut. Logga in igen.")).not.toBeInTheDocument();
   });
 });
 
@@ -196,6 +196,7 @@ describe("LoginForm — rate limiting and server errors", () => {
       vi.advanceTimersByTime(300_000);
     });
     expect(screen.getByRole("button", { name: "Logga in" })).toBeEnabled();
+    expect(screen.queryByText(/För många försök/)).not.toBeInTheDocument();
   });
 
   it("shows a generic message when the 429 has no Retry-After", async () => {
@@ -228,6 +229,20 @@ describe("LoginForm — rate limiting and server errors", () => {
 });
 
 describe("LoginForm — input rules", () => {
+  it("keeps a polite live region for each field error, even when empty", async () => {
+    const user = userEvent.setup();
+    renderLoginForm();
+
+    const region = document.getElementById("username-error");
+    expect(region).toHaveAttribute("aria-live", "polite");
+    expect(region).toBeEmptyDOMElement();
+
+    await user.type(screen.getByLabelText("Användarnamn"), "   ");
+
+    expect(document.getElementById("username-error")).toBe(region);
+    expect(region).toHaveTextContent("Användarnamnet får inte bara innehålla mellanslag.");
+  });
+
   it("never truncates input; too long values get a message instead", async () => {
     const user = userEvent.setup();
     renderLoginForm();
