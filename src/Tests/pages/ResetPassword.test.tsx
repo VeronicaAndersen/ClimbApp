@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { BrowserRouter, MemoryRouter, Route, Routes } from "react-router-dom";
 import { Theme } from "@radix-ui/themes";
@@ -100,5 +100,64 @@ describe("ResetPassword — token in the URL", () => {
 
     expect(screen.getByText("Ogiltig återställningslänk")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Spara nytt lösenord" })).not.toBeInTheDocument();
+  });
+});
+
+describe("ResetPassword — redirect after success", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  function renderWithLoginRoute() {
+    return render(
+      <MemoryRouter initialEntries={["/reset-password?token=abc123"]}>
+        <Theme>
+          <Routes>
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/" element={<p>Inloggningssidan</p>} />
+          </Routes>
+        </Theme>
+      </MemoryRouter>
+    );
+  }
+
+  async function resetWithFakeTimers() {
+    vi.useFakeTimers();
+    vi.spyOn(api, "confirmPasswordReset").mockResolvedValue({ message: "ok" });
+    const view = renderWithLoginRoute();
+    fireEvent.change(screen.getByLabelText("Nytt lösenord"), { target: { value: "secret123" } });
+    fireEvent.change(screen.getByLabelText("Bekräfta lösenord"), {
+      target: { value: "secret123" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Spara nytt lösenord" }));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(
+      screen.getByText("Lösenordet har ändrats! Du skickas till inloggningssidan...")
+    ).toBeInTheDocument();
+    return view;
+  }
+
+  it("goes to the login page after 3 seconds", async () => {
+    await resetWithFakeTimers();
+
+    act(() => {
+      vi.advanceTimersByTime(2_999);
+    });
+    expect(screen.queryByText("Inloggningssidan")).not.toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(screen.getByText("Inloggningssidan")).toBeInTheDocument();
+  });
+
+  it("cancels the redirect when the page unmounts", async () => {
+    const { unmount } = await resetWithFakeTimers();
+
+    unmount();
+
+    expect(vi.getTimerCount()).toBe(0);
   });
 });

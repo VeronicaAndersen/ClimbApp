@@ -7,6 +7,8 @@ import { getUserFriendlyError } from "@/utils/errorMessages";
 import { useCooldown } from "@/hooks/useCooldown";
 import { validatePassword } from "@/utils/inputValidation";
 
+const REDIRECT_AFTER_RESET_MS = 3000;
+
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -26,6 +28,13 @@ export default function ResetPassword() {
   const { isCoolingDown, startCooldownFor } = useCooldown({
     onExpire: () => setErrorMessage(null),
   });
+
+  // After a successful reset, go to the login page; cancelled on unmount.
+  useEffect(() => {
+    if (!success) return;
+    const timer = setTimeout(() => navigate("/"), REDIRECT_AFTER_RESET_MS);
+    return () => clearTimeout(timer);
+  }, [success, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,9 +61,6 @@ export default function ResetPassword() {
     try {
       await confirmPasswordReset({ token, new_password: password });
       setSuccess(true);
-      setTimeout(() => {
-        navigate("/");
-      }, 3000);
     } catch (error) {
       setErrorMessage(getUserFriendlyError(error));
       startCooldownFor(error);
