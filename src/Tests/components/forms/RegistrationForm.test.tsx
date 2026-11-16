@@ -35,10 +35,16 @@ beforeEach(() => {
 });
 
 describe("RegistrationForm — input rules", () => {
-  it("limits username and password length", () => {
+  it("shows a message for a too long password instead of truncating it", async () => {
+    const user = userEvent.setup();
     renderRegistrationForm();
-    expect(screen.getByLabelText("Användarnamn")).toHaveAttribute("maxLength", "200");
-    expect(screen.getByLabelText("Lösenord")).toHaveAttribute("maxLength", "1024");
+    const password = screen.getByLabelText("Lösenord");
+    expect(password).not.toHaveAttribute("maxLength");
+
+    await user.click(password);
+    await user.paste("x".repeat(1025));
+
+    expect(password).toHaveAccessibleDescription("Lösenordet får vara högst 1024 tecken.");
   });
 
   it("explains a too short password", async () => {

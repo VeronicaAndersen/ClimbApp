@@ -228,10 +228,36 @@ describe("LoginForm — rate limiting and server errors", () => {
 });
 
 describe("LoginForm — input rules", () => {
-  it("limits username and password length", () => {
+  it("never truncates input; too long values get a message instead", async () => {
+    const user = userEvent.setup();
     renderLoginForm();
-    expect(screen.getByLabelText("Användarnamn")).toHaveAttribute("maxLength", "200");
-    expect(screen.getByLabelText("Lösenord")).toHaveAttribute("maxLength", "1024");
+    const username = screen.getByLabelText("Användarnamn");
+    const password = screen.getByLabelText("Lösenord");
+    expect(username).not.toHaveAttribute("maxLength");
+    expect(password).not.toHaveAttribute("maxLength");
+
+    await user.click(username);
+    await user.paste("a".repeat(201));
+    await user.click(password);
+    await user.paste("x".repeat(1025));
+
+    expect(username).toHaveValue("a".repeat(201));
+    expect(username).toHaveAccessibleDescription("Användarnamnet får vara högst 200 tecken.");
+    expect(password).toHaveAccessibleDescription("Lösenordet får vara högst 1024 tecken.");
+    expect(screen.getByRole("button", { name: "Logga in" })).toBeDisabled();
+  });
+
+  it("does not cut a long non-BMP username short", async () => {
+    const user = userEvent.setup();
+    renderLoginForm();
+    const username = screen.getByLabelText("Användarnamn");
+
+    // 150 code points but 300 UTF-16 units: maxLength=200 used to cut it.
+    await user.click(username);
+    await user.paste("🌸".repeat(150));
+
+    expect(username).toHaveValue("🌸".repeat(150));
+    expect(username).toHaveAttribute("aria-invalid", "false");
   });
 
   it("flags a whitespace-only username and keeps submit disabled", async () => {

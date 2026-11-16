@@ -117,7 +117,7 @@ describe("ForgotPasswordForm — input rules", () => {
     const user = userEvent.setup();
     renderForgotPasswordForm();
 
-    expect(screen.getByLabelText("Användarnamn")).toHaveAttribute("maxLength", "200");
+    expect(screen.getByLabelText("Användarnamn")).not.toHaveAttribute("maxLength");
     await user.type(screen.getByLabelText("Användarnamn"), "  Alice ");
     await user.click(screen.getByRole("button", { name: "Skicka återställningslänk" }));
 

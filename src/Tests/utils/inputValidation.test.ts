@@ -13,6 +13,23 @@ describe("normalizeUsername", () => {
   it("trims and lowercases", () => {
     expect(normalizeUsername("  Alice ")).toBe("alice");
   });
+
+  it("strips what Python's str.strip() strips", () => {
+    expect(normalizeUsername("alice\u0085")).toBe("alice");
+    expect(normalizeUsername("\u001Calice\u001F")).toBe("alice");
+    expect(normalizeUsername("\u3000alice\u00A0")).toBe("alice");
+  });
+
+  it("keeps a leading BOM, which Python does not strip", () => {
+    expect(normalizeUsername("\uFEFFalice")).toBe("\uFEFFalice");
+    expect(validateUsername("\uFEFFalice")).toBe(
+      "Användarnamnet får inte innehålla kontrolltecken eller osynliga tecken."
+    );
+  });
+
+  it("accepts a name that only has U+0085 at the end", () => {
+    expect(validateUsername("alice\u0085")).toBeNull();
+  });
 });
 
 describe("validateUsername", () => {
