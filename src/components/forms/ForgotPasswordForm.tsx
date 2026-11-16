@@ -17,7 +17,9 @@ export function ForgotPasswordForm() {
   const { isCoolingDown, startCooldownFor } = useCooldown({
     onExpire: () => setErrorMessage(null),
   });
-  const { serverErrorFor, recordServerErrors } = useServerFieldErrors({ username });
+  const { serverErrorFor, recordServerErrors, clearServerErrors } = useServerFieldErrors({
+    username,
+  });
   const usernameError = validateUsername(username) ?? serverErrorFor("username");
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,6 +32,7 @@ export function ForgotPasswordForm() {
       await requestPasswordReset({ username: normalizeUsername(username) });
       setSuccess(true);
       setUsername("");
+      clearServerErrors();
     } catch (error) {
       setErrorMessage(getUserFriendlyError(error));
       recordServerErrors(error, { username });

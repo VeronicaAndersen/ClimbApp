@@ -16,10 +16,13 @@ export function useServerFieldErrors<T extends object>(values: T) {
     setSnapshot(Object.keys(errors).length > 0 ? { values: submitted, errors } : null);
   }, []);
 
+  /** Forget recorded errors, e.g. after a successful submit. */
+  const clearServerErrors = useCallback(() => setSnapshot(null), []);
+
   const serverErrorFor = (field: keyof T & string): string | null => {
     if (!snapshot || !Object.is(snapshot.values[field], values[field])) return null;
     return snapshot.errors[field] ?? null;
   };
 
-  return { serverErrorFor, recordServerErrors };
+  return { serverErrorFor, recordServerErrors, clearServerErrors };
 }
