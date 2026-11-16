@@ -60,23 +60,32 @@ let _refreshBlockedUntil: number | null = null;
  * is no longer active and must neither save nor clear tokens.
  */
 let _sessionGeneration = 0;
+/**
+ * Bumped when the account in use may change (login, switch, logout), but not
+ * on a refresh. A request is only retried after a 401 if this is unchanged,
+ * so a write sent for one account can never be replayed as another.
+ */
+let _accountGeneration = 0;
 
 type TokenPair = { access_token: string; refresh_token: string };
 
-function startNewSession(accessToken: string | null, refreshToken: string | null): void {
+/** Store tokens. `newAccount` is false only for a refresh of the same account. */
+function storeTokens(accessToken: string | null, refreshToken: string | null, newAccount: boolean) {
   _accessToken = accessToken;
   if (refreshToken === null) sessionStorage.removeItem("refresh_token");
   else sessionStorage.setItem("refresh_token", refreshToken);
   _refreshBlockedUntil = null;
   _sessionGeneration += 1;
+  if (newAccount) _accountGeneration += 1;
 }
 
+/** Save tokens from a login or signup. */
 function saveTokens(newTokens: TokenPair) {
-  startNewSession(newTokens.access_token, newTokens.refresh_token);
+  storeTokens(newTokens.access_token, newTokens.refresh_token, true);
 }
 
 export function clearTokens(): void {
-  startNewSession(null, null);
+  storeTokens(null, null, true);
 }
 
 export function getAccessToken(): string | null {
@@ -85,7 +94,7 @@ export function getAccessToken(): string | null {
 
 /** Switch the active session without going through the login endpoint. */
 export function switchSession(accessToken: string, refreshToken: string): void {
-  startNewSession(accessToken, refreshToken);
+  storeTokens(accessToken, refreshToken, true);
   clearCache();
 }
 
@@ -108,12 +117,16 @@ export const STARTUP_REFRESH_TIMEOUT_MS = 10_000;
 export async function initializeAuth(): Promise<void> {
   if (_accessToken || !sessionStorage.getItem("refresh_token")) return;
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), STARTUP_REFRESH_TIMEOUT_MS);
+  // The refresh itself is not aborted: other requests may share it. Startup
+  // just stops waiting for it; if it finishes later its tokens are still saved.
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<void>((resolve) => {
+    timer = setTimeout(resolve, STARTUP_REFRESH_TIMEOUT_MS);
+  });
   try {
-    await attemptRefresh(controller.signal);
+    await Promise.race([attemptRefresh(), timeout]);
   } catch {
-    // Network failure or timeout: keep the session; requests will report it.
+    // Network failure: keep the session; requests will report it.
   } finally {
     clearTimeout(timer);
   }
@@ -152,7 +165,15 @@ function authFailedError(): ApiError {
   return new ApiError({ status: 401, message: AUTH_FAILED_MESSAGE });
 }
 
-async function refreshOnce(generation: number, signal?: AbortSignal): Promise<RefreshResult> {
+export const SESSION_CHANGED_MESSAGE =
+  "Du bytte konto eller loggade ut medan begäran pågick. Försök igen.";
+
+/** A request got a 401 after the account changed; it is not retried. */
+function sessionChangedError(): ApiError {
+  return new ApiError({ status: 401, message: SESSION_CHANGED_MESSAGE });
+}
+
+async function refreshOnce(generation: number): Promise<RefreshResult> {
   const rt = sessionStorage.getItem("refresh_token");
   if (!rt) return { kind: "failed", error: authFailedError() };
 
@@ -174,7 +195,6 @@ async function refreshOnce(generation: number, signal?: AbortSignal): Promise<Re
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ refresh_token: rt }),
-    signal,
   });
   const isStillCurrent = () => generation === _sessionGeneration;
 
@@ -198,16 +218,16 @@ async function refreshOnce(generation: number, signal?: AbortSignal): Promise<Re
   if (!isTokenPair(data)) {
     return { kind: "failed", error: new ApiError({ status: 500, message: SERVER_ERROR_MESSAGE }) };
   }
-  saveTokens(data);
+  storeTokens(data.access_token, data.refresh_token, false); // same account
   return { kind: "refreshed", tokens: data };
 }
 
 /** Refresh the active session, sharing one request between concurrent callers. */
-function attemptRefresh(signal?: AbortSignal): Promise<RefreshResult> {
+function attemptRefresh(): Promise<RefreshResult> {
   const generation = _sessionGeneration;
   if (_refresh && _refresh.generation === generation) return _refresh.promise;
 
-  const promise = refreshOnce(generation, signal).finally(() => {
+  const promise = refreshOnce(generation).finally(() => {
     if (_refresh?.promise === promise) _refresh = null;
   });
   _refresh = { generation, promise };
@@ -215,22 +235,33 @@ function attemptRefresh(signal?: AbortSignal): Promise<RefreshResult> {
 }
 
 /**
- * Access token to retry a request with after it got a 401 for `sentToken`.
- * If the token has changed since the request was sent (another request
- * refreshed it, or the user switched session), that newer token is used
- * without starting another refresh.
+ * Access token to retry a request with after it got a 401 for `sentToken`,
+ * which was sent while `sentAccount` was the account generation.
+ *
+ * If the account has changed (login, switch, logout) the request is rejected,
+ * never replayed as another account. If only the token has changed (another
+ * request refreshed it), the newer token is used without a second refresh.
  */
-async function tokenAfterUnauthorized(sentToken: string | null): Promise<string> {
+async function tokenAfterUnauthorized(
+  sentToken: string | null,
+  sentAccount: number
+): Promise<string> {
+  if (_accountGeneration !== sentAccount) throw sessionChangedError();
+
   const current = getAccessToken();
   if (current !== null && current !== sentToken) return current;
 
   const refreshed = await attemptRefresh();
   switch (refreshed.kind) {
     case "refreshed":
+      // Saved only if nothing changed meanwhile, so this is still sentAccount.
       return refreshed.tokens.access_token;
     case "superseded": {
+      // The session changed during the refresh: by a login, switch or logout
+      // (reject), or else by a newer refresh of the same account (use it).
+      if (_accountGeneration !== sentAccount) throw sessionChangedError();
       const now = getAccessToken();
-      if (now === null) throw authFailedError(); // logged out meanwhile
+      if (now === null) throw authFailedError();
       return now;
     }
     case "failed":
@@ -284,11 +315,12 @@ async function apiRequest<T>(
   };
 
   const sentToken = requiresAuth ? getAccessToken() : null;
+  const sentAccount = _accountGeneration;
   let response = await fetchWithToken(sentToken ?? undefined);
 
-  // One retry at most: a second 401 is thrown below.
+  // One retry at most, and only for the same account: a second 401 is thrown below.
   if (requiresAuth && response.status === 401) {
-    response = await fetchWithToken(await tokenAfterUnauthorized(sentToken));
+    response = await fetchWithToken(await tokenAfterUnauthorized(sentToken, sentAccount));
   }
 
   if (!response.ok) {

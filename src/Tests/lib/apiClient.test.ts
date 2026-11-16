@@ -4,6 +4,7 @@ import {
   getAccessToken,
   initializeAuth,
   isLoggedIn,
+  SESSION_CHANGED_MESSAGE,
   STARTUP_REFRESH_TIMEOUT_MS,
   switchSession,
   clearCache,
@@ -394,6 +395,12 @@ function bearerOf(init: RequestInit | undefined): string | null {
   return headers.Authorization ?? null;
 }
 
+/** Authorization headers of all non-refresh requests, in order. */
+const usedBearers = (spy: { mock: { calls: [RequestInfo | URL, RequestInit?][] } }) =>
+  spy.mock.calls
+    .filter(([input]) => !String(input).endsWith("/auth/refresh"))
+    .map(([, init]) => bearerOf(init));
+
 const ok = (body: unknown = { ok: true }) => new Response(JSON.stringify(body), { status: 200 });
 const pair = (access: string, refresh: string) =>
   new Response(JSON.stringify({ access_token: access, refresh_token: refresh }), { status: 200 });
@@ -427,10 +434,14 @@ describe("refresh and session changes", () => {
     switchSession("B-acc", "B-ref");
     refresh.resolve(pair("A2-acc", "A2-ref"));
 
-    await expect(request).resolves.toBeTruthy();
+    // A's request is rejected, not replayed as B.
+    await expect(request).rejects.toMatchObject({
+      status: 401,
+      message: SESSION_CHANGED_MESSAGE,
+    });
     expect(getAccessToken()).toBe("B-acc");
     expect(sessionStorage.getItem("refresh_token")).toBe("B-ref");
-    expect(bearerOf(spy.mock.calls.at(-1)?.[1])).toBe("Bearer B-acc");
+    expect(usedBearers(spy)).not.toContain("Bearer B-acc");
   });
 
   it("keeps a login that happened during a refresh", async () => {
@@ -443,7 +454,8 @@ describe("refresh and session changes", () => {
     tokens.saveTokens({ access_token: "B-acc", refresh_token: "B-ref" });
     refresh.resolve(pair("A2-acc", "A2-ref"));
 
-    await expect(request).resolves.toBeTruthy();
+    await expect(request).rejects.toMatchObject({ message: SESSION_CHANGED_MESSAGE });
+    expect(usedBearers(spy)).not.toContain("Bearer B-acc");
     expect(getAccessToken()).toBe("B-acc");
     expect(sessionStorage.getItem("refresh_token")).toBe("B-ref");
   });
@@ -473,7 +485,8 @@ describe("refresh and session changes", () => {
     switchSession("B-acc", "B-ref");
     refresh.resolve(unauthorized());
 
-    await expect(request).resolves.toBeTruthy();
+    await expect(request).rejects.toMatchObject({ status: 401 });
+    expect(usedBearers(spy)).not.toContain("Bearer B-acc");
     expect(getAccessToken()).toBe("B-acc");
     expect(sessionStorage.getItem("refresh_token")).toBe("B-ref");
   });
@@ -494,6 +507,49 @@ describe("refresh and session changes", () => {
 
     await expect(api.get("/climber/me", true)).resolves.toBeTruthy();
     expect(refreshCalls(next)).toBe(1);
+  });
+
+  it("never replays a write for A as B when the user switches before the 401", async () => {
+    const response = deferred<Response>();
+    const spy = vi
+      .spyOn(global, "fetch")
+      .mockImplementation((input) =>
+        String(input).endsWith("/auth/refresh")
+          ? Promise.resolve(pair("A2-acc", "A2-ref"))
+          : response.promise
+      );
+
+    const write = api.patch("/climber/me", { firstname: "Anna" }, true);
+    await vi.waitFor(() => expect(spy).toHaveBeenCalledTimes(1));
+
+    switchSession("B-acc", "B-ref");
+    response.resolve(unauthorized()); // A's 401 arrives after the switch
+
+    await expect(write).rejects.toMatchObject({ status: 401, message: SESSION_CHANGED_MESSAGE });
+    expect(spy).toHaveBeenCalledTimes(1); // no refresh, no retry
+    expect(usedBearers(spy)).toEqual(["Bearer A-acc"]);
+  });
+
+  it("does not retry a request when the user logs out before its 401", async () => {
+    const response = deferred<Response>();
+    const spy = vi
+      .spyOn(global, "fetch")
+      .mockImplementation((input) =>
+        String(input).endsWith("/auth/refresh")
+          ? Promise.resolve(pair("A2-acc", "A2-ref"))
+          : response.promise
+      );
+
+    const request = api.get("/climber/me", true);
+    await vi.waitFor(() => expect(spy).toHaveBeenCalledTimes(1));
+
+    clearTokens();
+    response.resolve(unauthorized());
+
+    await expect(request).rejects.toMatchObject({ status: 401, message: SESSION_CHANGED_MESSAGE });
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(isLoggedIn()).toBe(false);
+    expect(getAccessToken()).toBeNull();
   });
 
   it("shares one refresh between concurrent 401s and retries all with the new token", async () => {
@@ -589,5 +645,30 @@ describe("initializeAuth timeout", () => {
     await startup;
     expect(settled).toBe(true);
     expect(isLoggedIn()).toBe(true);
+  });
+});
+
+describe("initializeAuth timeout and the shared refresh", () => {
+  beforeEach(() => {
+    sessionStorage.setItem("refresh_token", "stored-ref");
+  });
+
+  it("stops waiting without aborting a refresh that other requests share", async () => {
+    vi.useFakeTimers();
+    const refresh = deferred<Response>();
+    const spy = mockServer(["fresh-acc"], () => refresh.promise);
+
+    const startup = initializeAuth();
+    const request = api.get("/climber/me", true); // 401, then joins the same refresh
+    await vi.advanceTimersByTimeAsync(0);
+    expect(refreshCalls(spy)).toBe(1);
+
+    await vi.advanceTimersByTimeAsync(STARTUP_REFRESH_TIMEOUT_MS);
+    await expect(startup).resolves.toBeUndefined();
+
+    refresh.resolve(pair("fresh-acc", "fresh-ref"));
+    await expect(request).resolves.toBeTruthy(); // not an AbortError
+    expect(refreshCalls(spy)).toBe(1);
+    expect(getAccessToken()).toBe("fresh-acc");
   });
 });
