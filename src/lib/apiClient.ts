@@ -102,33 +102,21 @@ export function isLoggedIn(): boolean {
   return sessionStorage.getItem("refresh_token") !== null;
 }
 
-/** How long the startup refresh may take before the app renders without it. */
-export const STARTUP_REFRESH_TIMEOUT_MS = 10_000;
-
 /**
  * Call once at app startup. If a refresh token exists in sessionStorage but
  * the access token is gone (page reload), eagerly exchange it so the first
  * authenticated requests don't hit a 401.
  *
- * Never rejects and gives up after STARTUP_REFRESH_TIMEOUT_MS, so the app
- * always renders: a network error, timeout or 429/5xx leaves the refresh
+ * Never rejects, and the refresh settles within REFRESH_TIMEOUT_MS, so the
+ * app always renders: a network error, timeout or 429/5xx leaves the refresh
  * token in place and surfaces on the first real request.
  */
 export async function initializeAuth(): Promise<void> {
   if (_accessToken || !sessionStorage.getItem("refresh_token")) return;
-
-  // The refresh itself is not aborted: other requests may share it. Startup
-  // just stops waiting for it; if it finishes later its tokens are still saved.
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const timeout = new Promise<void>((resolve) => {
-    timer = setTimeout(resolve, STARTUP_REFRESH_TIMEOUT_MS);
-  });
   try {
-    await Promise.race([attemptRefresh(), timeout]);
+    await attemptRefresh();
   } catch {
     // Network failure: keep the session; requests will report it.
-  } finally {
-    clearTimeout(timer);
   }
 }
 
@@ -146,6 +134,18 @@ export type RefreshResult =
   | { kind: "failed"; error: ApiError }
   /** The session changed while the refresh was in flight; its result was dropped. */
   | { kind: "superseded" };
+
+/**
+ * Longest a refresh may take. The refresh owns this timeout, not a caller,
+ * so every request sharing it is settled and the next 401 can start a fresh
+ * one; a hung refresh can't block the app after the network recovers.
+ */
+export const REFRESH_TIMEOUT_MS = 10_000;
+
+export const REFRESH_TIMEOUT_MESSAGE = "Servern svarade inte i tid. Försök igen om en stund.";
+
+/** Status of an ApiError for a request that got no HTTP response (timeout). */
+const NO_RESPONSE_STATUS = 0;
 
 /** Wait used when a 429 from /auth/refresh has no readable Retry-After. */
 const DEFAULT_REFRESH_BACKOFF_SECONDS = 30;
@@ -191,12 +191,46 @@ async function refreshOnce(generation: number): Promise<RefreshResult> {
     _refreshBlockedUntil = null;
   }
 
+  // Bound the whole exchange. On timeout every waiter gets a timeout error
+  // and the session is kept, as for a network error; a response that still
+  // arrives later is ignored because isStillCurrent() is then false.
+  const controller = new AbortController();
+  let timedOut = false;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<RefreshResult>((resolve) => {
+    timer = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+      const error = new ApiError({ status: NO_RESPONSE_STATUS, message: REFRESH_TIMEOUT_MESSAGE });
+      resolve({ kind: "failed", error });
+    }, REFRESH_TIMEOUT_MS);
+  });
+  const isStillCurrent = () => !timedOut && generation === _sessionGeneration;
+  try {
+    return await Promise.race([
+      exchangeRefreshToken(rt, controller.signal, isStillCurrent),
+      timeout,
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * POST /auth/refresh and apply the result. Nothing is saved or cleared once
+ * `isStillCurrent()` is false (the refresh timed out or the session changed).
+ */
+async function exchangeRefreshToken(
+  refreshToken: string,
+  signal: AbortSignal,
+  isStillCurrent: () => boolean
+): Promise<RefreshResult> {
   const response = await fetch(`${apiUrl}/auth/refresh`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refresh_token: rt }),
+    body: JSON.stringify({ refresh_token: refreshToken }),
+    signal,
   });
-  const isStillCurrent = () => generation === _sessionGeneration;
 
   if (!response.ok) {
     const error = await toApiError(response);
@@ -265,9 +299,15 @@ async function tokenAfterUnauthorized(
       return now;
     }
     case "failed":
-      // A 429 or 5xx from /auth/refresh is passed on as is so the UI can say
-      // "try again later" instead of "session expired".
-      if (refreshed.error.isRateLimited || refreshed.error.status >= 500) throw refreshed.error;
+      // A 429, 5xx or timeout from /auth/refresh is passed on as is so the UI
+      // can say "try again later" instead of "session expired".
+      if (
+        refreshed.error.isRateLimited ||
+        refreshed.error.status >= 500 ||
+        refreshed.error.status === NO_RESPONSE_STATUS
+      ) {
+        throw refreshed.error;
+      }
       throw authFailedError();
   }
 }

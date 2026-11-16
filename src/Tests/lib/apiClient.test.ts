@@ -5,7 +5,8 @@ import {
   initializeAuth,
   isLoggedIn,
   SESSION_CHANGED_MESSAGE,
-  STARTUP_REFRESH_TIMEOUT_MS,
+  REFRESH_TIMEOUT_MESSAGE,
+  REFRESH_TIMEOUT_MS,
   switchSession,
   clearCache,
   tokens,
@@ -617,58 +618,112 @@ describe("initializeAuth", () => {
   });
 });
 
-describe("initializeAuth timeout", () => {
+// ----------------------------------------------------------------
+// Refresh timeout — the shared refresh always settles
+// ----------------------------------------------------------------
+
+/** A fetch that never answers, but rejects like a real fetch when aborted. */
+function hangingFetch(init: RequestInit | undefined): Promise<Response> {
+  return new Promise<Response>((_resolve, reject) => {
+    init?.signal?.addEventListener("abort", () =>
+      reject(new DOMException("Aborted", "AbortError"))
+    );
+  });
+}
+
+describe("refresh timeout", () => {
   beforeEach(() => {
+    vi.useFakeTimers();
     sessionStorage.setItem("refresh_token", "stored-ref");
   });
 
-  it("gives up on a hanging refresh and keeps the session", async () => {
-    vi.useFakeTimers();
-    vi.spyOn(global, "fetch").mockImplementation(
-      (_input, init) =>
-        new Promise<Response>((_resolve, reject) => {
-          init?.signal?.addEventListener("abort", () =>
-            reject(new DOMException("Aborted", "AbortError"))
-          );
-        })
-    );
-
-    let settled = false;
-    const startup = initializeAuth().then(() => {
-      settled = true;
+  it("lets startup render, and a later 401 starts a new refresh that succeeds", async () => {
+    let refreshNo = 0;
+    const spy = vi.spyOn(global, "fetch").mockImplementation((input, init) => {
+      const url = String(input);
+      if (url.endsWith("/auth/refresh")) {
+        refreshNo += 1;
+        return refreshNo === 1 ? hangingFetch(init) : Promise.resolve(pair("new-acc", "new-ref"));
+      }
+      const valid = bearerOf(init) === "Bearer new-acc";
+      return Promise.resolve(valid ? ok({ url }) : unauthorized());
     });
 
-    await vi.advanceTimersByTimeAsync(STARTUP_REFRESH_TIMEOUT_MS - 1);
-    expect(settled).toBe(false);
+    const startup = initializeAuth();
+    await vi.advanceTimersByTimeAsync(REFRESH_TIMEOUT_MS - 1);
+    expect(refreshCalls(spy)).toBe(1);
 
     await vi.advanceTimersByTimeAsync(1);
-    await startup;
-    expect(settled).toBe(true);
-    expect(isLoggedIn()).toBe(true);
-  });
-});
-
-describe("initializeAuth timeout and the shared refresh", () => {
-  beforeEach(() => {
-    sessionStorage.setItem("refresh_token", "stored-ref");
-  });
-
-  it("stops waiting without aborting a refresh that other requests share", async () => {
-    vi.useFakeTimers();
-    const refresh = deferred<Response>();
-    const spy = mockServer(["fresh-acc"], () => refresh.promise);
-
-    const startup = initializeAuth();
-    const request = api.get("/climber/me", true); // 401, then joins the same refresh
-    await vi.advanceTimersByTimeAsync(0);
-    expect(refreshCalls(spy)).toBe(1);
-
-    await vi.advanceTimersByTimeAsync(STARTUP_REFRESH_TIMEOUT_MS);
     await expect(startup).resolves.toBeUndefined();
+    expect(isLoggedIn()).toBe(true);
+    expect(sessionStorage.getItem("refresh_token")).toBe("stored-ref");
 
-    refresh.resolve(pair("fresh-acc", "fresh-ref"));
-    await expect(request).resolves.toBeTruthy(); // not an AbortError
+    // The network is back: the next 401 must not join the hung refresh.
+    await expect(api.get("/climber/me", true)).resolves.toBeTruthy();
+    expect(refreshCalls(spy)).toBe(2);
+    expect(getAccessToken()).toBe("new-acc");
+  });
+
+  it("settles every waiting request with a timeout error and keeps the session", async () => {
+    const spy = vi
+      .spyOn(global, "fetch")
+      .mockImplementation((input, init) =>
+        String(input).endsWith("/auth/refresh")
+          ? hangingFetch(init)
+          : Promise.resolve(unauthorized())
+      );
+    tokens.saveTokens({ access_token: "old-acc", refresh_token: "old-ref" });
+
+    const requests = [api.get("/a", true), api.get("/b", true), api.get("/c", true)].map((p) =>
+      p.catch((e: unknown) => e)
+    );
+    await vi.advanceTimersByTimeAsync(REFRESH_TIMEOUT_MS);
+
+    const errors = await Promise.all(requests);
+    for (const error of errors) {
+      expect(error).toBeInstanceOf(ApiError);
+      expect(error).toMatchObject({ status: 0, message: REFRESH_TIMEOUT_MESSAGE });
+    }
     expect(refreshCalls(spy)).toBe(1);
-    expect(getAccessToken()).toBe("fresh-acc");
+    expect(isLoggedIn()).toBe(true);
+    expect(getAccessToken()).toBe("old-acc");
+    expect(sessionStorage.getItem("refresh_token")).toBe("old-ref");
+  });
+
+  it("ignores a response that arrives after the timeout", async () => {
+    const late = deferred<Response>();
+    vi.spyOn(global, "fetch").mockImplementation((input) =>
+      // Ignores the abort signal, like a response already on its way.
+      String(input).endsWith("/auth/refresh") ? late.promise : Promise.resolve(unauthorized())
+    );
+    tokens.saveTokens({ access_token: "old-acc", refresh_token: "old-ref" });
+
+    const request = api.get("/climber/me", true).catch((e: unknown) => e);
+    await vi.advanceTimersByTimeAsync(REFRESH_TIMEOUT_MS);
+    await expect(request).resolves.toMatchObject({ message: REFRESH_TIMEOUT_MESSAGE });
+
+    late.resolve(pair("late-acc", "late-ref"));
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(getAccessToken()).toBe("old-acc");
+    expect(sessionStorage.getItem("refresh_token")).toBe("old-ref");
+  });
+
+  it("does not log out when a 401 from refresh arrives after the timeout", async () => {
+    const late = deferred<Response>();
+    vi.spyOn(global, "fetch").mockImplementation((input) =>
+      String(input).endsWith("/auth/refresh") ? late.promise : Promise.resolve(unauthorized())
+    );
+    tokens.saveTokens({ access_token: "old-acc", refresh_token: "old-ref" });
+
+    const request = api.get("/climber/me", true).catch((e: unknown) => e);
+    await vi.advanceTimersByTimeAsync(REFRESH_TIMEOUT_MS);
+    await request;
+
+    late.resolve(unauthorized());
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(isLoggedIn()).toBe(true);
+    expect(getAccessToken()).toBe("old-acc");
   });
 });
