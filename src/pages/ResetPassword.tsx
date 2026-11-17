@@ -1,20 +1,40 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { confirmPasswordReset } from "@/services/api";
 import { Button, Card, TextField, Spinner } from "@radix-ui/themes";
 import CalloutMessage from "@/components/feedback/CalloutMessage";
 import { getUserFriendlyError } from "@/utils/errorMessages";
+import { useCooldown } from "@/hooks/useCooldown";
+import { validatePassword } from "@/utils/inputValidation";
+
+const REDIRECT_AFTER_RESET_MS = 3000;
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const token = searchParams.get("token");
+  // Read the token once, then drop it from the address bar and history so it
+  // can't leak through screenshots, shared URLs or the browser history.
+  const [token] = useState(() => searchParams.get("token"));
+
+  useEffect(() => {
+    if (searchParams.has("token")) navigate("/reset-password", { replace: true });
+  }, [searchParams, navigate]);
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const { isCoolingDown, startCooldownFor } = useCooldown({
+    onExpire: () => setErrorMessage(null),
+  });
+
+  // After a successful reset, go to the login page; cancelled on unmount.
+  useEffect(() => {
+    if (!success) return;
+    const timer = setTimeout(() => navigate("/"), REDIRECT_AFTER_RESET_MS);
+    return () => clearTimeout(timer);
+  }, [success, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,8 +45,9 @@ export default function ResetPassword() {
       return;
     }
 
-    if (password.length < 6) {
-      setErrorMessage("Lösenordet måste vara minst 6 tecken");
+    const passwordError = validatePassword(password, { requireMinLength: true });
+    if (passwordError) {
+      setErrorMessage(passwordError);
       return;
     }
 
@@ -40,11 +61,9 @@ export default function ResetPassword() {
     try {
       await confirmPasswordReset({ token, new_password: password });
       setSuccess(true);
-      setTimeout(() => {
-        navigate("/");
-      }, 3000);
     } catch (error) {
       setErrorMessage(getUserFriendlyError(error));
+      startCooldownFor(error);
     } finally {
       setLoading(false);
     }
@@ -81,7 +100,9 @@ export default function ResetPassword() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <h1 className="text-2xl font-semibold text-center mb-4">Nytt lösenord</h1>
           <div className="space-y-2">
-            <label htmlFor="password" className="text-sm font-medium">Nytt lösenord</label>
+            <label htmlFor="password" className="text-sm font-medium">
+              Nytt lösenord
+            </label>
             <TextField.Root
               id="password"
               type="password"
@@ -96,7 +117,9 @@ export default function ResetPassword() {
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="confirmPassword" className="text-sm font-medium">Bekräfta lösenord</label>
+            <label htmlFor="confirmPassword" className="text-sm font-medium">
+              Bekräfta lösenord
+            </label>
             <TextField.Root
               id="confirmPassword"
               type="password"
@@ -113,7 +136,7 @@ export default function ResetPassword() {
           <Button
             type="submit"
             className="w-full cursor-pointer rounded-full bg-[--secondary-color] hover:bg-[--secondary-color-hover] disabled:bg-[--secondary-color]/50 disabled:cursor-not-allowed flex items-center justify-center"
-            disabled={!password || !confirmPassword || loading || success}
+            disabled={!password || !confirmPassword || loading || success || isCoolingDown}
           >
             {loading ? (
               <>

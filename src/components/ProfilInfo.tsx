@@ -9,6 +9,7 @@ import CompetitionSummaryCard from "./CompetitionSummaryCard";
 import { CompleteProfileForm } from "./forms/CompleteProfileForm";
 import { updateMyInfo } from "@/services/api";
 import { getUserFriendlyError } from "@/utils/errorMessages";
+import { validatePersonName } from "@/utils/inputValidation";
 
 export default function ProfilInfo() {
   const { userInfo, messageInfo, loading, refetch } = useGetUserInfo();
@@ -43,6 +44,13 @@ export default function ProfilInfo() {
 
     if (!firstname || !lastname) {
       setNameError("Förnamn och efternamn kan inte vara tomma.");
+      return;
+    }
+
+    const invalidName =
+      validatePersonName(firstname, "Förnamn") ?? validatePersonName(lastname, "Efternamn");
+    if (invalidName) {
+      setNameError(invalidName);
       return;
     }
 

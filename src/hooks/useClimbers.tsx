@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { getAllClimbers } from "@/services/api";
 import { ClimberResponse } from "@/types";
+import { getUserFriendlyError } from "@/utils/errorMessages";
 
 export function useClimbers(refreshKey?: number) {
   const [climbers, setClimbers] = useState<ClimberResponse[]>([]);
@@ -14,7 +15,8 @@ export function useClimbers(refreshKey?: number) {
       const data = await getAllClimbers();
       setClimbers(data || []);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Kunde inte hämta klättrare.";
+      const message =
+        err instanceof Error ? getUserFriendlyError(err) : "Kunde inte hämta klättrare.";
       setError(message);
     } finally {
       setLoading(false);

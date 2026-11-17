@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { getUserFriendlyError } from "@/utils/errorMessages";
 
 export interface UseMutationOptions<TData, TVariables> {
   mutationFn: (variables: TVariables) => Promise<TData>;
@@ -71,7 +72,8 @@ export function useMutation<TData = unknown, TVariables = void>({
 
         return result;
       } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : errorMessage || "Ett fel uppstod";
+        const errorMsg =
+          err instanceof Error ? getUserFriendlyError(err) : errorMessage || "Ett fel uppstod";
         setError(errorMsg);
         setSuccess(false);
 

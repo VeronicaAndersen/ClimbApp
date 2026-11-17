@@ -1,6 +1,7 @@
 import { checkRegistration, getCompetitions } from "@/services/api";
 import { CompetitionResponse } from "@/types";
 import { useCallback, useEffect, useState } from "react";
+import { getUserFriendlyError } from "@/utils/errorMessages";
 
 interface UseCompetitionsResult {
   competitions: CompetitionResponse[];
@@ -67,7 +68,9 @@ export function useCompetitions(refreshKey?: number): UseCompetitionsResult {
       }
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Ett fel uppstod vid hämtning av tävlingar.";
+        err instanceof Error
+          ? getUserFriendlyError(err)
+          : "Ett fel uppstod vid hämtning av tävlingar.";
       setError(message);
       console.error("Error fetching competitions:", err);
     } finally {

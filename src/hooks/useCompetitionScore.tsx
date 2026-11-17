@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getCompRegistrationInfo, getMyInfo, getScoresBatch } from "@/services/api";
 import { ScoreBatchResponse } from "@/types";
+import { getUserFriendlyError } from "@/utils/errorMessages";
 
 interface UseCompetitionScoresResult {
   loading: boolean;
@@ -44,7 +45,7 @@ export function useCompetitionScores(competitionId: number): UseCompetitionScore
         setScores(result || []);
       } catch (err) {
         if (alive) {
-          setError(err instanceof Error ? err.message : "Kunde inte hämta data.");
+          setError(err instanceof Error ? getUserFriendlyError(err) : "Kunde inte hämta data.");
         }
       } finally {
         if (alive) setLoading(false);

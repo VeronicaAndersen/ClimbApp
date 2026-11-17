@@ -5,6 +5,9 @@ import CalloutMessage from "../feedback/CalloutMessage";
 import { updateMyInfo } from "@/services/api";
 import { MyInfoResponse, ClimberUpdateRequest } from "@/types";
 import { getUserFriendlyError } from "@/utils/errorMessages";
+import { validatePersonName, validatePlainText } from "@/utils/inputValidation";
+import { useServerFieldErrors } from "@/hooks/useServerFieldErrors";
+import { FieldError } from "./FieldError";
 
 interface CompleteProfileFormProps {
   userInfo: MyInfoResponse;
@@ -31,10 +34,29 @@ export function CompleteProfileForm({ userInfo, onComplete }: CompleteProfileFor
 
   const hasMissingFields = missingFields.email || missingFields.firstname || missingFields.lastname;
 
+  const { serverErrorFor, recordServerErrors } = useServerFieldErrors(formData);
+
+  // Only fields shown in the form (and so sent) are checked.
+  const clientErrors = {
+    email: missingFields.email ? validatePlainText(formData.email, "E-post") : null,
+    firstname: missingFields.firstname ? validatePersonName(formData.firstname, "Förnamn") : null,
+    lastname: missingFields.lastname ? validatePersonName(formData.lastname, "Efternamn") : null,
+    club: validatePlainText(formData.club, "Klubb"),
+  };
+  const hasFieldErrors = Object.values(clientErrors).some((message) => message !== null);
+  // A 422 from the API is shown on its field until that field is edited.
+  const fieldErrors = {
+    email: clientErrors.email ?? serverErrorFor("email"),
+    firstname: clientErrors.firstname ?? serverErrorFor("firstname"),
+    lastname: clientErrors.lastname ?? serverErrorFor("lastname"),
+    club: clientErrors.club ?? serverErrorFor("club"),
+  };
+
   const isSubmitDisabled =
     (missingFields.email && !formData.email) ||
     (missingFields.firstname && !formData.firstname) ||
     (missingFields.lastname && !formData.lastname) ||
+    hasFieldErrors ||
     !gdprConsent ||
     loading;
 
@@ -63,6 +85,7 @@ export function CompleteProfileForm({ userInfo, onComplete }: CompleteProfileFor
       onComplete();
     } catch (error) {
       setErrorMessage(getUserFriendlyError(error));
+      recordServerErrors(error, formData);
     } finally {
       setLoading(false);
     }
@@ -95,9 +118,12 @@ export function CompleteProfileForm({ userInfo, onComplete }: CompleteProfileFor
                 setFormData({ ...formData, email: e.target.value.trim().toLowerCase() })
               }
               required
+              aria-invalid={fieldErrors.email !== null}
+              aria-describedby={fieldErrors.email ? "email-error" : undefined}
               className="w-full text-base"
               disabled={loading}
             />
+            <FieldError id="email-error" message={fieldErrors.email} />
           </div>
         )}
 
@@ -112,9 +138,12 @@ export function CompleteProfileForm({ userInfo, onComplete }: CompleteProfileFor
               value={formData.firstname}
               onChange={(e) => setFormData({ ...formData, firstname: e.target.value })}
               required
+              aria-invalid={fieldErrors.firstname !== null}
+              aria-describedby={fieldErrors.firstname ? "firstname-error" : undefined}
               className="w-full text-base"
               disabled={loading}
             />
+            <FieldError id="firstname-error" message={fieldErrors.firstname} />
           </div>
         )}
 
@@ -129,9 +158,12 @@ export function CompleteProfileForm({ userInfo, onComplete }: CompleteProfileFor
               value={formData.lastname}
               onChange={(e) => setFormData({ ...formData, lastname: e.target.value })}
               required
+              aria-invalid={fieldErrors.lastname !== null}
+              aria-describedby={fieldErrors.lastname ? "lastname-error" : undefined}
               className="w-full text-base"
               disabled={loading}
             />
+            <FieldError id="lastname-error" message={fieldErrors.lastname} />
           </div>
         )}
 
@@ -144,9 +176,12 @@ export function CompleteProfileForm({ userInfo, onComplete }: CompleteProfileFor
             placeholder="Klubb"
             value={formData.club}
             onChange={(e) => setFormData({ ...formData, club: e.target.value })}
+            aria-invalid={fieldErrors.club !== null}
+            aria-describedby={fieldErrors.club ? "club-error" : undefined}
             className="w-full text-base"
             disabled={loading}
           />
+          <FieldError id="club-error" message={fieldErrors.club} />
         </div>
 
         <div className="flex items-start gap-2">

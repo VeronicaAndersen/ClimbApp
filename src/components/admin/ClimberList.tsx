@@ -5,6 +5,11 @@ import { useClimbers } from "@/hooks/useClimbers";
 import { updateClimberById, deleteClimberById } from "@/services/api";
 import { ClimberResponse, ClimberUpdateRequest } from "@/types";
 import {
+  normalizeNewUsername,
+  normalizeUsername,
+  validateNewUsername,
+} from "@/utils/inputValidation";
+import {
   Pencil,
   Trash2,
   Check,
@@ -16,6 +21,7 @@ import {
   ArrowUpDown,
 } from "lucide-react";
 import { ClimberStatsModal } from "./ClimberStatsModal";
+import { getUserFriendlyError } from "@/utils/errorMessages";
 
 interface ClimberListProps {
   refreshKey?: number;
@@ -138,9 +144,19 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
     try {
       const payload: ClimberUpdateRequest = {};
 
-      // Only include fields that have been changed
-      if (editValues.username && editValues.username.trim()) {
-        payload.username = editValues.username.trim();
+      // Only include fields that have been changed. An unchanged username is
+      // neither validated nor sent: legacy names may break the new-name rule.
+      const currentClimber = (climberList ?? []).find((c) => c.id === climberId);
+      const usernameChanged =
+        normalizeUsername(editValues.username ?? "") !==
+        normalizeUsername(currentClimber?.username ?? "");
+      if (usernameChanged && editValues.username && editValues.username.trim()) {
+        const usernameError = validateNewUsername(editValues.username);
+        if (usernameError) {
+          setRowError({ id: climberId, message: usernameError });
+          return;
+        }
+        payload.username = normalizeNewUsername(editValues.username);
       }
       if (editValues.password && editValues.password.trim()) {
         payload.password = editValues.password.trim();
@@ -171,7 +187,8 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
       resetState();
       await refetch();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Misslyckades att uppdatera klättrare.";
+      const message =
+        err instanceof Error ? getUserFriendlyError(err) : "Misslyckades att uppdatera klättrare.";
       setRowError({ id: climberId, message });
     } finally {
       setSaving(null);
@@ -187,7 +204,8 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
       await deleteClimberById(climberId);
       await refetch();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Misslyckades att radera klättrare.";
+      const message =
+        err instanceof Error ? getUserFriendlyError(err) : "Misslyckades att radera klättrare.";
       setRowError({ id: climberId, message });
     } finally {
       setDeleting(null);
@@ -396,6 +414,7 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
                             <>
                               <Button
                                 onClick={() => handleSave(climber.id)}
+                                aria-label="Spara ändringar"
                                 disabled={isSavingRow}
                                 className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded disabled:opacity-50"
                                 size="1"
@@ -405,6 +424,7 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
 
                               <Button
                                 onClick={resetState}
+                                aria-label="Avbryt redigering"
                                 disabled={isSavingRow}
                                 className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded disabled:opacity-50"
                                 size="1"
@@ -426,6 +446,7 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
 
                               <Button
                                 onClick={() => startEdit(climber)}
+                                aria-label={`Redigera ${climber.username}`}
                                 disabled={isSavingRow || isDeletingRow || editingId !== null}
                                 className="bg-[--secondary-color] hover:bg-[--secondary-color-hover] text-white px-3 py-1 rounded disabled:opacity-50"
                                 size="1"

@@ -4,6 +4,7 @@ import { Spinner, Button } from "@radix-ui/themes";
 import { getCompetitions, updateCompetitionById, deleteCompetitionById } from "@/services/api";
 import { CompetitionResponse, CompetitionRequest } from "@/types";
 import { Pencil, Trash2, Check, X } from "lucide-react";
+import { getUserFriendlyError } from "@/utils/errorMessages";
 
 interface CompetitionListProps {
   refreshKey?: number;
@@ -39,7 +40,7 @@ export function CompetitionList({ refreshKey }: CompetitionListProps = {}) {
       const data = await getCompetitions();
       setCompList(data ?? []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Kunde inte hämta tävlingar.");
+      setError(err instanceof Error ? getUserFriendlyError(err) : "Kunde inte hämta tävlingar.");
     } finally {
       setLoading(false);
     }
@@ -94,7 +95,8 @@ export function CompetitionList({ refreshKey }: CompetitionListProps = {}) {
       resetState();
       await refetch();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Misslyckades att uppdatera.";
+      const message =
+        err instanceof Error ? getUserFriendlyError(err) : "Misslyckades att uppdatera.";
       setRowError({ id: competitionId, message });
     } finally {
       setSaving(null);
@@ -110,7 +112,7 @@ export function CompetitionList({ refreshKey }: CompetitionListProps = {}) {
       await deleteCompetitionById(competitionId);
       await refetch();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Misslyckades att radera.";
+      const message = err instanceof Error ? getUserFriendlyError(err) : "Misslyckades att radera.";
       setRowError({ id: competitionId, message });
     } finally {
       setDeleting(null);

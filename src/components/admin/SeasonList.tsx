@@ -5,6 +5,7 @@ import { updateSeasonById, deleteSeasonById } from "@/services/api";
 import { SeasonResponse, SeasonRequest } from "@/types";
 import { Pencil, Trash2, Check, X } from "lucide-react";
 import CalloutMessage from "../feedback/CalloutMessage";
+import { getUserFriendlyError } from "@/utils/errorMessages";
 
 interface SeasonListProps {
   refreshKey?: number;
@@ -51,7 +52,8 @@ export function SeasonList({ refreshKey }: SeasonListProps = {}) {
       resetState();
       await refetch();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Misslyckades att uppdatera säsong.";
+      const message =
+        err instanceof Error ? getUserFriendlyError(err) : "Misslyckades att uppdatera säsong.";
       setRowError({ id: seasonId, message });
     } finally {
       setSaving(null);
@@ -67,7 +69,8 @@ export function SeasonList({ refreshKey }: SeasonListProps = {}) {
       await deleteSeasonById(seasonId);
       await refetch();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Misslyckades att radera säsong.";
+      const message =
+        err instanceof Error ? getUserFriendlyError(err) : "Misslyckades att radera säsong.";
       setRowError({ id: seasonId, message });
     } finally {
       setDeleting(null);
