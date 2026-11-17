@@ -109,8 +109,8 @@ export function LoginForm() {
             }
           >
             {loading ? (
-              <span>
-                <Spinner size="2" className="mr-2" aria-hidden="true" />
+              <span className="inline-flex items-center gap-2 whitespace-nowrap">
+                <Spinner size="2" aria-hidden="true" />
                 Loggar in...
               </span>
             ) : (
