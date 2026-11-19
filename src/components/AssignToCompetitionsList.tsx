@@ -114,13 +114,13 @@ export function AssignToCompetitionsList() {
       return (
         <div>
           {regDetails?.approved ? (
-            <div className="flex items-center gap-2 text-sm text-green-600 mb-2">
+            <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 mb-2">
               <span>✓ Registrerad och godkänd</span>
               {levelName && levelColor && (
-                <span className="flex items-center gap-1.5 text-gray-600">
+                <span className="flex items-center gap-1.5 text-muted-foreground">
                   —
                   <span
-                    className="w-3 h-3 rounded-full border border-gray-300 shrink-0"
+                    className="w-3 h-3 rounded-full border border-foreground/25 shrink-0"
                     style={{ backgroundColor: levelColor }}
                   />
                   {levelName}
@@ -130,15 +130,17 @@ export function AssignToCompetitionsList() {
           ) : (
             <div className="mb-2">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-sm text-amber-600">⏳ Väntar på godkännande</p>
+                <p className="text-sm text-amber-600 dark:text-amber-400">
+                  ⏳ Väntar på godkännande
+                </p>
 
                 {withdrawConfirm === comp.id ? (
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-xs text-gray-500">Säker?</span>
+                    <span className="text-xs text-muted-foreground">Säker?</span>
                     <button
                       onClick={() => handleWithdraw(comp.id)}
                       disabled={withdrawing === comp.id}
-                      className="flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
+                      className="flex items-center gap-1 text-xs font-medium text-red-600 dark:text-red-400 hover:text-red-700 disabled:opacity-50"
                     >
                       {withdrawing === comp.id ? <Spinner size="1" /> : "Ja, dra tillbaka"}
                     </button>
@@ -146,7 +148,7 @@ export function AssignToCompetitionsList() {
                     <button
                       onClick={() => setWithdrawConfirm(null)}
                       disabled={withdrawing === comp.id}
-                      className="text-xs font-medium text-gray-500 hover:text-gray-700 disabled:opacity-50"
+                      className="text-xs font-medium text-muted-foreground hover:text-muted-foreground disabled:opacity-50"
                     >
                       Avbryt
                     </button>
@@ -154,7 +156,7 @@ export function AssignToCompetitionsList() {
                 ) : (
                   <button
                     onClick={() => setWithdrawConfirm(comp.id)}
-                    className="flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700 hover:underline shrink-0"
+                    className="flex items-center gap-1 text-xs font-medium text-red-600 dark:text-red-400 hover:text-red-700 hover:underline shrink-0"
                   >
                     <X className="w-3.5 h-3.5" />
                     Dra tillbaka anmälan
@@ -182,7 +184,7 @@ export function AssignToCompetitionsList() {
   };
 
   const renderCompetition = (comp: CompetitionResponse) => (
-    <li key={comp.id} className="m-2 p-4 border border-gray-300 rounded-lg flex flex-col">
+    <li key={comp.id} className="m-2 p-4 border border-border rounded-lg flex flex-col">
       <p>
         <b>{comp.name}</b> — {comp.comp_date}
       </p>
@@ -192,7 +194,7 @@ export function AssignToCompetitionsList() {
 
   if (loading) {
     return (
-      <div className="mb-6 flex flex-col bg-white/90 backdrop-blur p-4 rounded-lg shadow-md">
+      <div className="mb-6 flex flex-col bg-card/90 backdrop-blur p-4 rounded-lg shadow-soft">
         <h2 className="text-xl font-semibold mb-4">Tävlingar</h2>
         <div className="flex items-center justify-center py-8">
           <Spinner size="3" />
@@ -203,7 +205,7 @@ export function AssignToCompetitionsList() {
   }
 
   return (
-    <div className="mb-6 flex flex-col bg-white/90 backdrop-blur p-4 rounded-lg shadow-md">
+    <div className="mb-6 flex flex-col bg-card/90 backdrop-blur p-4 rounded-lg shadow-soft">
       <h2 className="text-xl font-semibold mb-4">Tävlingar</h2>
       <SessionSwitcher
         onSwitch={() => {
@@ -216,7 +218,7 @@ export function AssignToCompetitionsList() {
       {error && <CalloutMessage message={error} color="red" />}
 
       {hasPendingRegistrations && (
-        <div className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
+        <div className="text-sm text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-lg px-3 py-2 mb-3">
           En eller flera anmälningar väntar på godkännande. Kontakta receptionen för att godkänna
           din registrering och betalning.
         </div>
@@ -229,12 +231,12 @@ export function AssignToCompetitionsList() {
           {upcomingCompetitions.length > 0 ? (
             <ul className="space-y-4">{upcomingCompetitions.map(renderCompetition)}</ul>
           ) : (
-            <p className="text-gray-600 mb-4">Inga kommande tävlingar.</p>
+            <p className="text-muted-foreground mb-4">Inga kommande tävlingar.</p>
           )}
 
           {pastCompetitions.length > 0 && (
             <details className="mt-4">
-              <summary className="cursor-pointer text-lg font-semibold text-gray-700 hover:text-gray-900 p-2 bg-gray-100 rounded">
+              <summary className="cursor-pointer text-lg font-semibold text-muted-foreground hover:text-foreground p-2 bg-muted rounded">
                 Visa tidigare tävlingar ({pastCompetitions.length})
               </summary>
               <ul className="space-y-4 mt-2">{pastCompetitions.map(renderCompetition)}</ul>

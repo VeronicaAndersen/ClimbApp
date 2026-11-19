@@ -96,9 +96,9 @@ export function CompleteProfileForm({ userInfo, onComplete }: CompleteProfileFor
   }
 
   return (
-    <div className="flex flex-col bg-white/90 backdrop-blur p-6 rounded-lg shadow-md mb-6">
+    <div className="flex flex-col bg-card/90 backdrop-blur p-6 rounded-lg shadow-soft mb-6">
       <h2 className="text-xl font-semibold mb-2">Komplettera din profil</h2>
-      <p className="text-gray-600 mb-4">
+      <p className="text-muted-foreground mb-4">
         Vänligen fyll i följande uppgifter för att slutföra din profil.
       </p>
 
@@ -193,7 +193,10 @@ export function CompleteProfileForm({ userInfo, onComplete }: CompleteProfileFor
             disabled={loading}
             className="mt-1 h-4 w-4 cursor-pointer disabled:cursor-not-allowed text-base"
           />
-          <Label.Root htmlFor="gdpr-consent" className="text-xs text-gray-700 leading-tight">
+          <Label.Root
+            htmlFor="gdpr-consent"
+            className="text-xs text-muted-foreground leading-tight"
+          >
             Jag godkänner att mina personuppgifter (namn, e-post, klubb och lösenord) lagras för att
             kunna använda tjänsten. Uppgifterna används endast för inloggning och tävlingshantering.
           </Label.Root>
@@ -201,7 +204,7 @@ export function CompleteProfileForm({ userInfo, onComplete }: CompleteProfileFor
 
         <Button
           type="submit"
-          className="w-full cursor-pointer rounded-full bg-[--secondary-color] hover:bg-[--secondary-color-hover] disabled:bg-[--secondary-color]/50 disabled:cursor-not-allowed flex items-center justify-center"
+          className="w-full cursor-pointer rounded-full bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
           disabled={isSubmitDisabled}
         >
           {loading ? (

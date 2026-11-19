@@ -60,7 +60,7 @@ export default function RegisterToCompForm({
   return (
     <Dialog.Root open={open} onOpenChange={handleOpenChange}>
       <Dialog.Trigger>
-        <Button className="bg-[--secondary-color] hover:bg-[--secondary-color-hover] cursor-pointer rounded-full my-2">
+        <Button className="bg-primary hover:bg-primary-hover cursor-pointer rounded-full my-2">
           Anmäl dig
         </Button>
       </Dialog.Trigger>
@@ -73,8 +73,10 @@ export default function RegisterToCompForm({
         {success ? (
           <div className="flex flex-col items-center py-8 gap-3">
             <span className="text-5xl">✓</span>
-            <p className="text-green-700 font-semibold text-lg text-center">Du är nu anmäld!</p>
-            <p className="text-sm text-gray-500 text-center">
+            <p className="text-green-700 dark:text-green-300 font-semibold text-lg text-center">
+              Du är nu anmäld!
+            </p>
+            <p className="text-sm text-muted-foreground text-center">
               Väntar på godkännande av receptionen.
             </p>
           </div>
@@ -85,7 +87,7 @@ export default function RegisterToCompForm({
             </Dialog.Description>
 
             {errorMessage && (
-              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">
+              <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-lg px-3 py-2 mb-3">
                 {errorMessage}
               </p>
             )}
@@ -104,7 +106,7 @@ export default function RegisterToCompForm({
                       <Select.Item key={value} value={value}>
                         <span className="flex items-center gap-2">
                           <span
-                            className="w-3 h-3 rounded-full shrink-0 border border-gray-300"
+                            className="w-3 h-3 rounded-full shrink-0 border border-foreground/25"
                             style={{ backgroundColor: getGradeColor(Number(value)) }}
                           />
                           {label}
@@ -115,7 +117,7 @@ export default function RegisterToCompForm({
                 </Select.Root>
 
                 <span
-                  className="w-9 h-9 rounded-full border-2 border-gray-300 shrink-0"
+                  className="w-9 h-9 rounded-full border-2 border-foreground/25 shrink-0"
                   style={{ backgroundColor: selectedColor }}
                   title={selectedName}
                 />
@@ -135,7 +137,7 @@ export default function RegisterToCompForm({
               </Dialog.Close>
               <Button
                 onClick={handleRegistration}
-                className="bg-[--secondary-color] hover:bg-[--secondary-color-hover] text-white cursor-pointer rounded-full flex items-center justify-center gap-2"
+                className="bg-primary hover:bg-primary-hover text-primary-foreground cursor-pointer rounded-full flex items-center justify-center gap-2"
                 disabled={loading}
               >
                 {loading ? (
