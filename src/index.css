@@ -14,7 +14,7 @@
     --charcoal: 120 4% 23%;
     --sage: 86 21% 77%;
 
-    --background: 90 20% 96%;
+    --background: 88 22% 93%;
     --foreground: 120 5% 15%;
 
     --card: 0 0% 100%;
@@ -103,8 +103,8 @@
     @apply bg-background text-foreground antialiased;
     min-height: 100vh;
     background-image:
-      radial-gradient(60rem 30rem at 0% -10%, hsl(var(--sage) / 0.55), transparent 60%),
-      radial-gradient(50rem 30rem at 110% 110%, hsl(var(--sage) / 0.35), transparent 60%);
+      radial-gradient(60rem 30rem at 0% -10%, hsl(var(--sage) / 0.9), transparent 65%),
+      radial-gradient(50rem 30rem at 110% 110%, hsl(var(--sage) / 0.6), transparent 65%);
     background-attachment: fixed;
   }
 
@@ -136,4 +136,27 @@
   --accent-contrast: hsl(120 4% 16%);
   --accent-indicator: hsl(var(--sage));
   --focus-8: hsl(var(--sage) / 0.6);
+}
+
+/* Shared building blocks for native elements (Radix components theme themselves). */
+@layer components {
+  .surface {
+    @apply rounded-2xl border border-border bg-card text-card-foreground shadow-soft;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-2 font-medium text-primary-foreground transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-secondary px-5 py-2 font-medium text-secondary-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  .input-base {
+    @apply w-full rounded-lg border border-input bg-card px-3 py-2 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .text-link {
+    @apply rounded-sm text-sm font-medium text-foreground underline decoration-foreground/30 underline-offset-4 transition-colors hover:decoration-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
+  }
 }

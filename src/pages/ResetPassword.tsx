@@ -1,3 +1,4 @@
+import { AuthLayout } from "@/components/AppHeader";
 import { useEffect, useState } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { confirmPasswordReset } from "@/services/api";
@@ -71,25 +72,20 @@ export default function ResetPassword() {
 
   if (!token) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-4">
-        <img src="./grepp.svg" alt="grepp logo" className="w-28 absolute top-8 left-5" />
-        <Card className="w-80 h-fit max-w-md p-6 bg-white/95 backdrop-blur shadow-xl">
+      <AuthLayout>
+        <Card className="w-full max-w-sm h-fit p-6 sm:p-8 shadow-soft">
           <CalloutMessage message="Ogiltig återställningslänk" color="red" />
-          <Link
-            to="/"
-            className="w-fit text-sm text-center text-[--secondary-color] underline flex justify-center mx-auto mt-4"
-          >
+          <Link to="/" className="text-link w-fit flex justify-center mx-auto mt-4">
             Tillbaka till inloggning
           </Link>
         </Card>
-      </div>
+      </AuthLayout>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4">
-      <img src="./grepp.svg" alt="grepp logo" className="w-28 absolute top-8 left-5" />
-      <Card className="w-80 h-fit max-w-md p-6 bg-white/95 backdrop-blur shadow-xl">
+    <AuthLayout>
+      <Card className="w-full max-w-sm h-fit p-6 sm:p-8 shadow-soft">
         {errorMessage && <CalloutMessage message={errorMessage} color="red" />}
         {success && (
           <CalloutMessage
@@ -98,7 +94,7 @@ export default function ResetPassword() {
           />
         )}
         <form onSubmit={handleSubmit} className="space-y-6">
-          <h1 className="text-2xl font-semibold text-center mb-4">Nytt lösenord</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-center mb-2">Nytt lösenord</h1>
           <div className="space-y-2">
             <label htmlFor="password" className="text-sm font-medium">
               Nytt lösenord
@@ -135,7 +131,8 @@ export default function ResetPassword() {
 
           <Button
             type="submit"
-            className="w-full cursor-pointer rounded-full bg-[--secondary-color] hover:bg-[--secondary-color-hover] disabled:bg-[--secondary-color]/50 disabled:cursor-not-allowed flex items-center justify-center"
+            size="3"
+            className="w-full cursor-pointer rounded-full disabled:cursor-not-allowed"
             disabled={!password || !confirmPassword || loading || success || isCoolingDown}
           >
             {loading ? (
@@ -147,14 +144,11 @@ export default function ResetPassword() {
             )}
           </Button>
 
-          <Link
-            to="/"
-            className="w-fit text-sm text-center text-[--secondary-color] underline flex justify-center mx-auto"
-          >
+          <Link to="/" className="text-link w-fit flex justify-center mx-auto">
             Tillbaka till inloggning
           </Link>
         </form>
       </Card>
-    </div>
+    </AuthLayout>
   );
 }
