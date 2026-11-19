@@ -17,6 +17,8 @@ import {
   BarChart3,
 } from "lucide-react";
 import useGetUserInfo from "@/hooks/useGetUserInfo";
+import { AppHeader } from "@/components/AppHeader";
+import { LightScope } from "@/components/LightScope";
 import CalloutMessage from "@/components/feedback/CalloutMessage";
 import ProfilInfo from "@/components/ProfilInfo";
 import { AssignToCompetitionsList } from "@/components/AssignToCompetitionsList";
@@ -220,17 +222,23 @@ export default function Profile() {
   };
 
   const getMenuItemClass = (itemValue: NavigationView) =>
-    `px-4 py-2 rounded cursor-pointer select-none outline-none transition-colors ${
+    `px-4 py-2 rounded-full font-medium cursor-pointer select-none outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring ${
       activeView === itemValue
-        ? "bg-[--secondary-color] text-white"
-        : "text-gray-700 hover:bg-gray-100"
+        ? "bg-primary text-primary-foreground shadow-sm"
+        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
     }`;
+
+  const logoutButton = (
+    <Button size="2" className="max-w-[45vw] cursor-pointer rounded-full" onClick={handleLogout}>
+      <span className="truncate">Logga ut{userInfo?.username ? ` ${userInfo.username}` : ""}</span>
+    </Button>
+  );
 
   // Show loading state while fetching user info
   if (userLoading) {
     return (
       <div className="h-screen flex flex-col items-center justify-center">
-        <img src="./grepp.svg" alt="grepp logo" className="w-28 absolute top-8 left-5" />
+        <AppHeader />
         <div className="flex items-center justify-center py-8">
           <Spinner size="3" />
           <span className="ml-2">Laddar...</span>
@@ -242,32 +250,26 @@ export default function Profile() {
   // Show profile completion form if required fields are missing
   if (isProfileIncomplete && userInfo) {
     return (
-      <div className="h-fit flex flex-col items-center justify-center">
-        <img src="./grepp.svg" alt="grepp logo" className="w-28 absolute top-8 left-5" />
-        <div className="flex flex-col items-center my-24 mx-4 p-4 shadow-md rounded-lg bg-[--primary-color] backdrop-blur max-w-md w-full">
+      <div className="min-h-screen flex flex-col items-center justify-center">
+        <AppHeader actions={logoutButton} />
+        <div className="surface flex flex-col items-center my-24 mx-4 p-6 max-w-md w-full">
           <h1 className="text-2xl font-semibold mb-2 text-center">
             Välkommen, {userInfo.username}!
           </h1>
           <CompleteProfileForm userInfo={userInfo} onComplete={refetch} />
         </div>
-        <Button
-          className="absolute cursor-pointer bg-[--secondary-color] hover:bg-[--secondary-color-hover] rounded-full px-4 py-2 mt-4 text-white top-4 right-4"
-          onClick={handleLogout}
-        >
-          Logga ut
-        </Button>
       </div>
     );
   }
 
   return (
-    <div className="h-fit flex flex-col items-center justify-center">
-      <img src="./grepp.svg" alt="grepp logo" className="w-28 absolute top-8 left-5" />
-      <div className="flex flex-col items-center mt-24 mb-20 md:my-24 mx-4 p-4 shadow-md rounded-lg bg-[--primary-color] backdrop-blur max-w-6xl w-full overflow-y-auto">
+    <div className="min-h-screen flex flex-col items-center">
+      <AppHeader actions={logoutButton} />
+      <div className="flex flex-col items-center mt-24 mb-20 md:my-24 mx-auto px-4 py-5 sm:p-6 rounded-3xl border border-border/60 bg-sage/30 dark:bg-card/40 backdrop-blur max-w-6xl w-[calc(100%-2rem)] overflow-y-auto">
         {messageInfo && <CalloutMessage message={messageInfo.message} color={messageInfo.color} />}
 
         {/* Navigation Menubar — desktop only */}
-        <Menubar.Root className="w-full mb-6 hidden md:flex justify-center bg-white rounded-md shadow-sm text-sm">
+        <Menubar.Root className="mb-6 hidden md:flex justify-center gap-1 self-center rounded-full border border-border bg-card/90 p-1 shadow-soft text-sm">
           {MENU_ITEMS.filter((item) => !item.requiresAdmin || isAdmin).map((item) => (
             <Menubar.Menu key={item.value} value={item.value}>
               <Menubar.Trigger
@@ -293,7 +295,7 @@ export default function Profile() {
           {activeView === "profile" && (
             <div>
               {sessions.length > 1 && (
-                <div className="mb-4 p-4 bg-white/90 backdrop-blur rounded-lg shadow-md">
+                <div className="mb-4 p-4 bg-card/90 backdrop-blur rounded-lg shadow-soft">
                   <SessionSwitcher onSwitch={refetch} />
                 </div>
               )}
@@ -303,35 +305,43 @@ export default function Profile() {
 
           {activeView === "users" && isAdmin && (
             <div>
-              <h3 className="text-xl font-semibold mt-4 mb-2 text-gray-800">Hantera klättrare</h3>
+              <h3 className="text-xl font-semibold mt-4 mb-2 text-foreground">Hantera klättrare</h3>
               <Suspense fallback={<LoadingFallback />}>
-                <ClimberList />
+                <LightScope>
+                  <ClimberList />
+                </LightScope>
               </Suspense>
             </div>
           )}
 
           {activeView === "leaderboard" && isAdmin && (
             <Suspense fallback={<LoadingFallback />}>
-              <Leaderboard />
+              <LightScope>
+                <Leaderboard />
+              </LightScope>
             </Suspense>
           )}
 
           {activeView === "admin" && isAdmin && (
             <Suspense fallback={<LoadingFallback />}>
               <div className="grid grid-cols-1 gap-2">
-                <h3 className="text-xl font-semibold mb-2 text-gray-800">Godkänn anmälda</h3>
-                <CompetitionListSection refreshKey={competitionRefreshKey} />
+                <h3 className="text-xl font-semibold mb-2 text-foreground">Godkänn anmälda</h3>
+                <LightScope>
+                  <CompetitionListSection refreshKey={competitionRefreshKey} />
+                </LightScope>
 
-                <h3 className="text-xl font-semibold mt-4 mb-2 text-gray-800">
+                <h3 className="text-xl font-semibold mt-4 mb-2 text-foreground">
                   Hantera säsonger och tävlingar
                 </h3>
-                <SeasonList refreshKey={seasonRefreshKey} />
-                <CompetitionList refreshKey={competitionRefreshKey} />
+                <LightScope className="grid grid-cols-1 gap-2">
+                  <SeasonList refreshKey={seasonRefreshKey} />
+                  <CompetitionList refreshKey={competitionRefreshKey} />
 
-                <SeasonForm onSeasonCreated={() => setSeasonRefreshKey((prev) => prev + 1)} />
-                <CompetitionForm
-                  onCompetitionCreated={() => setCompetitionRefreshKey((prev) => prev + 1)}
-                />
+                  <SeasonForm onSeasonCreated={() => setSeasonRefreshKey((prev) => prev + 1)} />
+                  <CompetitionForm
+                    onCompetitionCreated={() => setCompetitionRefreshKey((prev) => prev + 1)}
+                  />
+                </LightScope>
               </div>
             </Suspense>
           )}
@@ -339,26 +349,26 @@ export default function Profile() {
           {activeView === "statistics" && isAdmin && (
             <Suspense fallback={<LoadingFallback />}>
               <div className="grid grid-cols-1 gap-2">
-                <h3 className="text-xl font-semibold mb-2 text-gray-800">Statistik</h3>
-                <div className="mb-4 p-4 bg-white/90 backdrop-blur rounded-lg shadow-md flex flex-col md:flex-row gap-4">
+                <h3 className="text-xl font-semibold mb-2 text-foreground">Statistik</h3>
+                <div className="mb-4 p-4 bg-card/90 backdrop-blur rounded-lg shadow-soft flex flex-col md:flex-row gap-4">
                   <div className="flex-1">
-                    <label className="block text-sm font-semibold text-gray-600 mb-2 uppercase tracking-wide">
+                    <label className="block text-sm font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
                       Tävling
                     </label>
                     {competitionsLoading ? (
-                      <div className="flex items-center gap-2 text-gray-500 p-2.5">
+                      <div className="flex items-center gap-2 text-muted-foreground p-2.5">
                         <Spinner size="2" />
                         <span>Hämtar tävlingar...</span>
                       </div>
                     ) : competitions.length === 0 ? (
-                      <p className="text-gray-500 p-2.5">Inga tävlingar tillgängliga.</p>
+                      <p className="text-muted-foreground p-2.5">Inga tävlingar tillgängliga.</p>
                     ) : (
                       <select
                         value={selectedCompForStats ?? ""}
                         onChange={(e) =>
                           setSelectedCompForStats(e.target.value ? parseInt(e.target.value) : null)
                         }
-                        className="w-full p-2.5 rounded-lg border border-gray-300 text-base focus:outline-none focus:ring-2 focus:ring-[--secondary-color] bg-white text-gray-800"
+                        className="w-full p-2.5 rounded-lg border border-border text-base focus:outline-none focus:ring-2 focus:ring-ring bg-card text-foreground"
                       >
                         <option value="">Välj tävling...</option>
                         {competitions.map((comp) => (
@@ -372,7 +382,7 @@ export default function Profile() {
 
                   {selectedCompForStats !== null && (
                     <div className="flex-1">
-                      <label className="block text-sm font-semibold text-gray-600 mb-2 uppercase tracking-wide">
+                      <label className="block text-sm font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
                         Nivå
                       </label>
                       <div className="flex flex-wrap gap-2">
@@ -382,23 +392,21 @@ export default function Profile() {
                             onClick={() => setSelectedLevelForStats(level)}
                             className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all font-medium ${
                               selectedLevelForStats === level
-                                ? "border-gray-800 shadow-lg bg-opacity-100"
-                                : "border-gray-200 hover:border-gray-300"
+                                ? "shadow-soft"
+                                : "border-border text-muted-foreground hover:border-foreground/40"
                             }`}
                             style={{
                               backgroundColor:
                                 selectedLevelForStats === level
                                   ? getLevelColor(level)
                                   : "transparent",
-                              color: selectedLevelForStats === level ? "white" : "gray",
+                              color: selectedLevelForStats === level ? "white" : undefined,
                               borderColor:
-                                selectedLevelForStats === level
-                                  ? getLevelColor(level)
-                                  : "rgb(229, 231, 235)",
+                                selectedLevelForStats === level ? getLevelColor(level) : undefined,
                             }}
                           >
                             <span
-                              className="w-4 h-4 rounded-full border border-gray-300 shrink-0"
+                              className="w-4 h-4 rounded-full border border-foreground/25 shrink-0"
                               style={{ backgroundColor: getLevelColor(level) }}
                             />
                             Nivå {level}
@@ -410,19 +418,21 @@ export default function Profile() {
                 </div>
 
                 {selectedCompForStats !== null && selectedLevelForStats !== null ? (
-                  <ProblemStatsTable
-                    comp_id={selectedCompForStats}
-                    level={selectedLevelForStats}
-                    refreshKey={statsRefreshKey}
-                  />
+                  <LightScope>
+                    <ProblemStatsTable
+                      comp_id={selectedCompForStats}
+                      level={selectedLevelForStats}
+                      refreshKey={statsRefreshKey}
+                    />
+                  </LightScope>
                 ) : selectedCompForStats !== null ? (
-                  <p className="text-center text-gray-500 bg-white/90 backdrop-blur rounded-lg shadow-md py-6">
+                  <p className="text-center text-muted-foreground bg-card/90 backdrop-blur rounded-lg shadow-soft py-6">
                     Välj en nivå ovan för att visa statistik.
                   </p>
                 ) : (
                   !competitionsLoading &&
                   competitions.length > 0 && (
-                    <p className="text-center text-gray-500 bg-white/90 backdrop-blur rounded-lg shadow-md py-6">
+                    <p className="text-center text-muted-foreground bg-card/90 backdrop-blur rounded-lg shadow-soft py-6">
                       Välj en tävling ovan för att visa statistik.
                     </p>
                   )
@@ -433,12 +443,12 @@ export default function Profile() {
         </div>
       </div>
       {/* Mobile bottom navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-lg md:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur border-t border-border md:hidden">
         {/* Admin overflow panel */}
         {isAdmin && moreMenuOpen && (
           <>
             <div className="fixed inset-0 z-40" onClick={() => setMoreMenuOpen(false)} />
-            <div className="absolute bottom-16 right-0 z-50 bg-white border border-gray-200 rounded-tl-xl shadow-lg py-2 min-w-40">
+            <div className="absolute bottom-16 right-0 z-50 bg-card border border-border rounded-tl-xl shadow-lg py-2 min-w-40">
               {MENU_ITEMS.filter((item) => item.requiresAdmin).map((item) => {
                 const Icon = item.icon;
                 const isActive = !item.to && activeView === item.value;
@@ -448,8 +458,8 @@ export default function Profile() {
                     onClick={() => handleNavigate(item.value as NavigationView, item.to)}
                     className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-medium transition-colors ${
                       isActive
-                        ? "text-[--secondary-color] bg-gray-50"
-                        : "text-gray-700 hover:bg-gray-50"
+                        ? "text-foreground bg-muted/50"
+                        : "text-muted-foreground hover:bg-muted/50"
                     }`}
                   >
                     <Icon className="w-4 h-4" />
@@ -470,13 +480,13 @@ export default function Profile() {
                 key={item.value}
                 onClick={() => handleNavigate(item.value as NavigationView)}
                 className={`flex flex-col items-center justify-center flex-1 gap-1 text-xs font-medium transition-colors ${
-                  isActive ? "text-[--secondary-color]" : "text-gray-500 hover:text-gray-700"
+                  isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 <Icon className="w-5 h-5" />
                 <span>{item.mobileLabel}</span>
                 <span
-                  className={`w-1.5 h-1.5 rounded-full bg-[--secondary-color] transition-opacity ${
+                  className={`w-1.5 h-1.5 rounded-full bg-primary transition-opacity ${
                     isActive ? "opacity-100" : "opacity-0"
                   }`}
                 />
@@ -492,14 +502,14 @@ export default function Profile() {
                 MENU_ITEMS.filter((i) => i.requiresAdmin).some(
                   (i) => !i.to && activeView === i.value
                 )
-                  ? "text-[--secondary-color]"
-                  : "text-gray-500 hover:text-gray-700"
+                  ? "text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               <MoreHorizontal className="w-5 h-5" />
               <span>Mer</span>
               <span
-                className={`w-1.5 h-1.5 rounded-full bg-[--secondary-color] transition-opacity ${
+                className={`w-1.5 h-1.5 rounded-full bg-primary transition-opacity ${
                   MENU_ITEMS.filter((i) => i.requiresAdmin).some(
                     (i) => !i.to && activeView === i.value
                   )
@@ -511,13 +521,6 @@ export default function Profile() {
           )}
         </div>
       </nav>
-
-      <Button
-        className="absolute cursor-pointer bg-[--secondary-color] hover:bg-[--secondary-color-hover] rounded-full px-4 py-2 mt-4 text-white top-4 right-4"
-        onClick={handleLogout}
-      >
-        Logga ut {userInfo?.username}
-      </Button>
     </div>
   );
 }

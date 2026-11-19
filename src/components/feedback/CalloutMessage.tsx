@@ -9,7 +9,7 @@ export default function CalloutMessage({ message: message, color }: MessageProps
     <div
       className={`absolute top-0 left-0 right-0 flex justify-center z-50 pointer-events-none ${message ? "" : "sr-only"}`}
     >
-      <div className="mt-2 pointer-events-auto bg-white/90 backdrop-blur">
+      <div className="mt-2 pointer-events-auto bg-card/90 backdrop-blur">
         <Callout.Root
           color={color}
           role={isError ? "alert" : "status"}

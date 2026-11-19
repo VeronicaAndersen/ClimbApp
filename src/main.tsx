@@ -1,12 +1,13 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import "./store/theme";
 import { Theme } from "@radix-ui/themes";
 import { initializeAuth } from "./lib/apiClient";
 
 initializeAuth().then(() => {
   createRoot(document.getElementById("root")!).render(
-    <Theme>
+    <Theme accentColor="gray" grayColor="olive" radius="large" hasBackground={false}>
       <App />
     </Theme>
   );

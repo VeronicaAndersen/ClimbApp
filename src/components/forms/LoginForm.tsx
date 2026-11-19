@@ -47,11 +47,11 @@ export function LoginForm() {
   };
 
   return (
-    <div className="w-80 flex items-center justify-center">
-      <Card className="w-full h-fit max-w-md p-6 bg-white/95 backdrop-blur shadow-xl">
+    <div className="w-full max-w-sm flex items-center justify-center">
+      <Card className="w-full h-fit p-6 sm:p-8 shadow-soft">
         {errorMessage && <CalloutMessage message={errorMessage} color="red" />}
         <form onSubmit={handleLogin} className="space-y-6">
-          <h1 className="text-2xl font-semibold text-center mb-4">Logga in</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-center mb-2">Logga in</h1>
           <div className="space-y-2">
             <label htmlFor="username" className="text-sm font-medium">
               Användarnamn
@@ -98,7 +98,8 @@ export function LoginForm() {
 
           <Button
             type="submit"
-            className="w-full cursor-pointer rounded-full bg-[--secondary-color] hover:bg-[--secondary-color-hover] disabled:bg-[--secondary-color]/50 disabled:cursor-not-allowed flex items-center justify-center"
+            size="3"
+            className="w-full cursor-pointer rounded-full disabled:cursor-not-allowed"
             disabled={
               !loginData.username ||
               !loginData.password ||
@@ -122,13 +123,10 @@ export function LoginForm() {
           </span>
 
           <div className="flex flex-col items-center gap-2">
-            <Link
-              to="/forgot-password"
-              className="text-sm text-gray-600 hover:text-[--secondary-color] underline"
-            >
+            <Link to="/forgot-password" className="text-link text-muted-foreground">
               Glömt lösenord?
             </Link>
-            <Link to="/register" className="text-sm text-[--secondary-color] underline">
+            <Link to="/register" className="text-link">
               Registrera dig
             </Link>
           </div>

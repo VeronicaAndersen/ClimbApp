@@ -28,11 +28,15 @@ const getChangeIcon = (change: number): ReactNode => {
   const type = getChangeType(change);
   switch (type) {
     case "positive":
-      return <TrendingUp className="w-4 h-4 text-green-600" aria-label="Ökning" />;
+      return (
+        <TrendingUp className="w-4 h-4 text-green-600 dark:text-green-400" aria-label="Ökning" />
+      );
     case "negative":
-      return <TrendingDown className="w-4 h-4 text-red-600" aria-label="Minskning" />;
+      return (
+        <TrendingDown className="w-4 h-4 text-red-600 dark:text-red-400" aria-label="Minskning" />
+      );
     default:
-      return <Minus className="w-4 h-4 text-gray-400" aria-label="Oförändrad" />;
+      return <Minus className="w-4 h-4 text-muted-foreground/70" aria-label="Oförändrad" />;
   }
 };
 
@@ -40,11 +44,11 @@ const getChangeColor = (change: number): string => {
   const type = getChangeType(change);
   switch (type) {
     case "positive":
-      return "text-green-600";
+      return "text-green-600 dark:text-green-400";
     case "negative":
-      return "text-red-600";
+      return "text-red-600 dark:text-red-400";
     default:
-      return "text-gray-600";
+      return "text-muted-foreground";
   }
 };
 
@@ -127,10 +131,10 @@ export default function ScoreHistory({ currentProblems, initialProblems }: Score
   }
 
   return (
-    <div className="bg-white/90 backdrop-blur p-6 rounded-lg shadow-md mb-6">
+    <div className="bg-card/90 backdrop-blur p-6 rounded-lg shadow-soft mb-6">
       <header className="flex items-center justify-between mb-4">
-        <h3 className="text-xl font-semibold text-gray-800">Osparade ändringar</h3>
-        <span className="text-sm text-gray-600 bg-yellow-100 px-3 py-1 rounded-full">
+        <h3 className="text-xl font-semibold text-foreground">Osparade ändringar</h3>
+        <span className="text-sm text-muted-foreground bg-yellow-100 dark:bg-yellow-500/15 px-3 py-1 rounded-full">
           {changes.length} {changes.length === 1 ? "ändring" : "ändringar"}
         </span>
       </header>
@@ -139,15 +143,15 @@ export default function ScoreHistory({ currentProblems, initialProblems }: Score
         {changes.map((change) => (
           <div
             key={change.problemNo}
-            className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-yellow-50 border border-yellow-200 rounded-lg gap-2"
+            className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-200 dark:border-yellow-500/30 rounded-lg gap-2"
           >
-            <span className="font-semibold text-gray-800">Problem {change.problemNo}</span>
+            <span className="font-semibold text-foreground">Problem {change.problemNo}</span>
             <ChangeDetail change={change} />
           </div>
         ))}
       </div>
 
-      <p className="text-xs text-gray-500 mt-4 text-center">
+      <p className="text-xs text-muted-foreground mt-4 text-center">
         Dessa ändringar har inte sparats ännu. Klicka på &quot;Spara alla ändringar&quot; eller
         spara varje problem individuellt.
       </p>

@@ -43,8 +43,8 @@ export function ForgotPasswordForm() {
   };
 
   return (
-    <div className="w-80 flex items-center justify-center">
-      <Card className="w-full h-fit max-w-md p-6 bg-white/95 backdrop-blur shadow-xl">
+    <div className="w-full max-w-sm flex items-center justify-center">
+      <Card className="w-full h-fit p-6 sm:p-8 shadow-soft">
         <CalloutMessage message={errorMessage ?? ""} color="red" />
         <CalloutMessage
           message={
@@ -55,8 +55,8 @@ export function ForgotPasswordForm() {
           color="green"
         />
         <form onSubmit={handleSubmit} className="space-y-6">
-          <h1 className="text-2xl font-semibold text-center mb-4">Glömt lösenord</h1>
-          <p className="text-sm text-gray-600 text-center">
+          <h1 className="text-2xl font-semibold tracking-tight text-center mb-2">Glömt lösenord</h1>
+          <p className="text-sm text-muted-foreground text-center">
             Ange ditt användarnamn så skickar vi en länk för att återställa ditt lösenord.
           </p>
           <div className="space-y-2">
@@ -81,7 +81,8 @@ export function ForgotPasswordForm() {
 
           <Button
             type="submit"
-            className="w-full cursor-pointer rounded-full bg-[--secondary-color] hover:bg-[--secondary-color-hover] disabled:bg-[--secondary-color]/50 disabled:cursor-not-allowed flex items-center justify-center"
+            size="3"
+            className="w-full cursor-pointer rounded-full disabled:cursor-not-allowed"
             disabled={!username || usernameError !== null || loading || success || isCoolingDown}
           >
             {loading ? (
@@ -93,10 +94,7 @@ export function ForgotPasswordForm() {
             )}
           </Button>
 
-          <Link
-            to="/"
-            className="w-fit text-sm text-center text-[--secondary-color] underline flex justify-center mx-auto"
-          >
+          <Link to="/" className="text-link w-fit flex justify-center mx-auto">
             Tillbaka till inloggning
           </Link>
         </form>

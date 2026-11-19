@@ -76,7 +76,7 @@ export default function ProfilInfo() {
       )}
 
       {/* User Info Section */}
-      <div className="flex flex-col bg-white/90 backdrop-blur p-4 rounded-lg shadow-md">
+      <div className="flex flex-col bg-card/90 backdrop-blur p-4 rounded-lg shadow-soft">
         <h2 className="text-xl font-semibold mb-4">Min Profil</h2>
         {messageInfo && <CalloutMessage message={messageInfo.message} color={messageInfo.color} />}
         {loading ? (
@@ -117,7 +117,7 @@ export default function ProfilInfo() {
                   <Button
                     onClick={handleSaveName}
                     disabled={savingName}
-                    className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded disabled:opacity-50"
+                    className="btn-primary px-4 py-1.5 text-sm"
                     size="1"
                   >
                     {savingName ? <Spinner size="1" /> : <Check className="w-4 h-4" />}
@@ -126,7 +126,7 @@ export default function ProfilInfo() {
                   <Button
                     onClick={cancelEditName}
                     disabled={savingName}
-                    className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded disabled:opacity-50"
+                    className="btn-secondary px-4 py-1.5 text-sm"
                     size="1"
                   >
                     <X className="w-4 h-4" />
@@ -141,25 +141,25 @@ export default function ProfilInfo() {
                   type="button"
                   onClick={startEditName}
                   aria-label="Ändra namn"
-                  className="rounded-sm text-gray-400 hover:text-[--secondary-color] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--secondary-color] focus-visible:ring-offset-2"
+                  className="rounded-sm text-muted-foreground/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <Pencil className="w-4 h-4" aria-hidden="true" />
                 </button>
               </p>
             )}
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               <strong>Användarnamn:</strong> {userInfo.username}
             </p>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               <strong>E-post:</strong> {userInfo.email}
             </p>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               <strong>Klubb:</strong> {userInfo.club}
             </p>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               <strong>Klättrar-ID:</strong> {userInfo.id}
             </p>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               Medlem sedan: {new Date(userInfo.created_at).toLocaleDateString("sv-SE")}
             </p>
           </div>
@@ -169,7 +169,7 @@ export default function ProfilInfo() {
       </div>
 
       {/* Competition History Section */}
-      <div className="flex flex-col bg-white/90 backdrop-blur p-4 rounded-lg shadow-md">
+      <div className="flex flex-col bg-card/90 backdrop-blur p-4 rounded-lg shadow-soft">
         <h2 className="text-xl font-semibold mb-4">Mina Tävlingar</h2>
 
         {competitionsError && <CalloutMessage message={competitionsError} color="red" />}
@@ -186,7 +186,7 @@ export default function ProfilInfo() {
             ))}
           </div>
         ) : (
-          <p className="text-center text-gray-600 py-8">
+          <p className="text-center text-muted-foreground py-8">
             Du har inte deltagit i några tävlingar ännu.
           </p>
         )}

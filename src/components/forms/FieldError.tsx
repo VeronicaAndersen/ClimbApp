@@ -16,7 +16,7 @@ export function FieldError({ id, message }: FieldErrorProps) {
     <p
       id={id}
       aria-live="polite"
-      className={cn("text-xs italic text-red-700", !message && "sr-only")}
+      className={cn("text-xs italic text-red-700 dark:text-red-400", !message && "sr-only")}
     >
       {message}
     </p>

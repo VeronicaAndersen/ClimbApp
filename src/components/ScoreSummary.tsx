@@ -51,7 +51,7 @@ const createStatCards = (summary: SummaryStats): StatCardConfig[] => [
     value: summary.problemsWithTop,
     total: summary.totalProblems,
     color: "text-amber-500",
-    bgColor: "bg-amber-50",
+    bgColor: "bg-amber-50 dark:bg-amber-500/10",
   },
   {
     icon: Star,
@@ -59,14 +59,14 @@ const createStatCards = (summary: SummaryStats): StatCardConfig[] => [
     value: summary.problemsWithBonus,
     total: summary.totalProblems,
     color: "text-green-500",
-    bgColor: "bg-green-50",
+    bgColor: "bg-green-50 dark:bg-green-500/10",
   },
   {
     icon: Target,
     label: "Totala försök",
     value: summary.totalAttempts,
     color: "text-blue-500",
-    bgColor: "bg-blue-50",
+    bgColor: "bg-blue-50 dark:bg-blue-500/10",
   },
   {
     icon: Medal,
@@ -86,15 +86,15 @@ function StatCard({ config }: StatCardProps) {
 
   return (
     <div
-      className={`${bgColor} p-4 rounded-lg border border-gray-200 transition-transform hover:scale-105`}
+      className={`${bgColor} p-4 rounded-lg border border-border transition-transform hover:scale-105`}
     >
       <div className="flex items-center gap-2 mb-2">
         <Icon className={`w-5 h-5 ${color}`} aria-hidden="true" />
-        <span className="text-sm text-gray-600 font-medium">{label}</span>
+        <span className="text-sm text-muted-foreground font-medium">{label}</span>
       </div>
       <div className="flex items-baseline gap-1">
         <span className={`text-2xl font-bold ${color}`}>{value}</span>
-        {total !== undefined && <span className="text-sm text-gray-500">/ {total}</span>}
+        {total !== undefined && <span className="text-sm text-muted-foreground">/ {total}</span>}
       </div>
     </div>
   );
@@ -108,14 +108,14 @@ export default function ScoreSummary({ problems, gradeLevel }: ScoreSummaryProps
   const gradeLabel = gradeLevel ? `Gradnivå: ${gradeLevel}` : "Gradnivå: ej tilldelad";
 
   return (
-    <div className="bg-white/90 backdrop-blur p-6 rounded-lg shadow-md mb-6 border border-gray-300">
+    <div className="bg-card/90 backdrop-blur p-6 rounded-lg shadow-soft mb-6 border border-border">
       <header className="flex items-center justify-between mb-4">
-        <h3 className="text-xl font-semibold text-gray-800">Sammanfattning</h3>
+        <h3 className="text-xl font-semibold text-foreground">Sammanfattning</h3>
         {gradeLevel && (
-          <span className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full flex items-center gap-2">
+          <span className="text-sm text-muted-foreground bg-muted px-3 py-1 rounded-full flex items-center gap-2">
             Nivå:
             <span
-              className="w-5 h-5 rounded-full border border-gray-300"
+              className="w-5 h-5 rounded-full border border-foreground/25"
               style={{ backgroundColor: gradeColor }}
               title={gradeLabel}
             />

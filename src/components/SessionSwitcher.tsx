@@ -119,16 +119,16 @@ export function SessionSwitcher({ onSwitch }: Props) {
             onClick={() => handleSwitch(s)}
             className={`flex items-center gap-1.5 py-1 rounded-full text-sm font-medium transition-colors ${sessions.length > 1 ? "pl-3 pr-1" : "px-3"} ${
               s.id === activeId
-                ? "bg-[--secondary-color] text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             }`}
           >
             {s.name}
             {sessions.length > 1 && (
               <span
                 onClick={(e) => handleRemove(e, s.id)}
-                className={`ml-0.5 w-5 h-5 rounded-full flex items-center justify-center hover:bg-black/15 transition-colors ${
-                  s.id === activeId ? "text-white/80" : "text-gray-400"
+                className={`ml-0.5 w-5 h-5 rounded-full flex items-center justify-center hover:bg-foreground/15 transition-colors ${
+                  s.id === activeId ? "text-primary-foreground/80" : "text-muted-foreground/70"
                 }`}
               >
                 <X className="w-3 h-3" />
@@ -139,7 +139,7 @@ export function SessionSwitcher({ onSwitch }: Props) {
 
         <button
           onClick={() => setShowLogin((v) => !v)}
-          className="flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-white text-gray-600 hover:bg-gray-50 transition-colors border border-dashed border-gray-300"
+          className="flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-card text-muted-foreground hover:bg-muted/50 transition-colors border border-dashed border-border"
         >
           <Plus className="w-3.5 h-3.5" />
           Lägg till
@@ -149,13 +149,15 @@ export function SessionSwitcher({ onSwitch }: Props) {
       {showLogin && (
         <form
           onSubmit={handleAddLogin}
-          className="mt-3 p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-2"
+          className="mt-3 p-4 bg-muted/50 rounded-xl border border-border space-y-2"
         >
-          <p className="text-sm font-medium text-gray-700">Logga in som en annan klättrare</p>
+          <p className="text-sm font-medium text-muted-foreground">
+            Logga in som en annan klättrare
+          </p>
           <p
             id="session-login-error"
             role="alert"
-            className={cn("text-xs text-red-700", !loginError && "sr-only")}
+            className={cn("text-xs text-red-700 dark:text-red-300", !loginError && "sr-only")}
           >
             {loginError}
           </p>
@@ -167,7 +169,7 @@ export function SessionSwitcher({ onSwitch }: Props) {
             aria-describedby={loginError ? "session-login-error" : undefined}
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="w-full px-3 py-2 text-base rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[--secondary-color]"
+            className="w-full px-3 py-2 text-base rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-ring"
             required
           />
           <input
@@ -178,14 +180,14 @@ export function SessionSwitcher({ onSwitch }: Props) {
             aria-describedby={loginError ? "session-login-error" : undefined}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-3 py-2 text-base rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[--secondary-color]"
+            className="w-full px-3 py-2 text-base rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-ring"
             required
           />
           <div className="flex gap-2 pt-1">
             <button
               type="submit"
               disabled={loginLoading || isCoolingDown}
-              className="flex-1 py-2 text-sm font-medium rounded-lg bg-[--secondary-color] hover:bg-[--secondary-color-hover] text-white disabled:opacity-50 transition-colors"
+              className="flex-1 py-2 text-sm font-medium rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground disabled:opacity-50 transition-colors"
             >
               {loginLoading ? "Loggar in..." : "Logga in"}
             </button>
@@ -195,7 +197,7 @@ export function SessionSwitcher({ onSwitch }: Props) {
                 setShowLogin(false);
                 setLoginError(null);
               }}
-              className="px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
+              className="px-4 py-2 text-sm font-medium rounded-lg bg-muted text-muted-foreground hover:bg-accent transition-colors"
             >
               Avbryt
             </button>

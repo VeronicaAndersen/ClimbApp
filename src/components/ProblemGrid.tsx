@@ -177,11 +177,11 @@ export default function ProblemGrid({
 
       {/* Edit status and admin controls */}
       {!canEdit && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+        <div className="bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-200 dark:border-yellow-500/30 rounded-lg p-4 mb-4">
           <div className="flex items-start gap-3">
-            <Lock className="w-5 h-5 text-yellow-700 mt-0.5" />
+            <Lock className="w-5 h-5 text-yellow-700 dark:text-yellow-300 mt-0.5" />
             <div className="flex-1">
-              <p className="text-sm font-medium text-yellow-800">
+              <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
                 {isCompetitionToday
                   ? "Redigering är aktiverad för tävlingsdagen"
                   : "Tävlingen har inte öppnat ännu."}
@@ -193,16 +193,16 @@ export default function ProblemGrid({
 
       {/* Admin override toggle */}
       {userIsAdmin && !isCompetitionToday && (
-        <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+        <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 rounded-lg p-4 mb-4">
           <div className="flex items-center gap-3">
             {adminOverride ? (
-              <Unlock className="w-5 h-5 text-blue-700" />
+              <Unlock className="w-5 h-5 text-blue-700 dark:text-blue-300" />
             ) : (
-              <Lock className="w-5 h-5 text-blue-700" />
+              <Lock className="w-5 h-5 text-blue-700 dark:text-blue-300" />
             )}
             <div>
-              <p className="text-sm font-medium text-blue-800">Admin</p>
-              <p className="text-xs text-blue-700">
+              <p className="text-sm font-medium text-blue-800 dark:text-blue-200">Admin</p>
+              <p className="text-xs text-blue-700 dark:text-blue-300">
                 Aktivera för att redigera utanför tävlingsdagen
               </p>
             </div>
@@ -212,7 +212,7 @@ export default function ProblemGrid({
             className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
               adminOverride
                 ? "bg-blue-600 hover:bg-blue-700 text-white"
-                : "bg-white hover:bg-blue-100 text-blue-700 border border-blue-300"
+                : "bg-card hover:bg-blue-100 dark:hover:bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-500/30"
             }`}
           >
             {adminOverride ? "Inaktivera" : "Aktivera"}
@@ -225,7 +225,7 @@ export default function ProblemGrid({
           <Button
             onClick={handleSaveAll}
             disabled={batchSaving || !gradeLevel || !hasAnyChanges}
-            className={`bg-[--secondary-color] hover:bg-[--primary-color-hover] text-white px-6 py-2 rounded-full
+            className={`bg-primary hover:bg-primary-hover text-primary-foreground px-6 py-2 rounded-full
               shadow font-medium cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed`}
           >
             {batchSaving ? "Sparar alla..." : "Spara alla ändringar"}
@@ -234,7 +234,7 @@ export default function ProblemGrid({
       )}
 
       {!problems.length && (
-        <p className="text-center text-sm text-gray-500">
+        <p className="text-center text-sm text-muted-foreground">
           Inga problem att visa ännu. Försök uppdatera sidan eller välj en annan tävling.
         </p>
       )}
@@ -256,7 +256,7 @@ export default function ProblemGrid({
             <div
               key={problem.problem_no}
               className={`relative p-4 rounded-xl shadow-sm flex flex-col border transition-all
-                ${isChanged ? "border-yellow-500" : "border-gray-300"}
+                ${isChanged ? "border-yellow-500" : "border-border"}
               `}
             >
               {isSaved && <CalloutMessage message={saveMessage} color="green" />}
@@ -264,8 +264,8 @@ export default function ProblemGrid({
 
               {isChanged && !isSaved && (
                 <span
-                  className={`absolute top-2 right-2 text-xs font-medium text-yellow-700
-                      bg-yellow-100 border border-yellow-300 rounded-md px-2 py-0.5`}
+                  className={`absolute top-2 right-2 text-xs font-medium text-yellow-700 dark:text-yellow-300
+                      bg-yellow-100 dark:bg-yellow-500/15 border border-yellow-300 dark:border-yellow-500/30 rounded-md px-2 py-0.5`}
                 >
                   Ej sparad
                 </span>
@@ -276,29 +276,29 @@ export default function ProblemGrid({
                 onClick={() => toggleCollapse(problem.problem_no)}
               >
                 <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-semibold text-gray-800">
+                  <h3 className="text-lg font-semibold text-foreground">
                     Problem {problem.problem_no}
                   </h3>
                   <span
-                    className="w-5 h-5 rounded-full border border-gray-300"
+                    className="w-5 h-5 rounded-full border border-foreground/25"
                     style={{ backgroundColor: gradeColor }}
                     title={gradeLabel}
                   />
                 </div>
-                <p className="text-sm text-[--primary-color-hover]">
+                <p className="text-sm text-muted-foreground">
                   B{problem.score.attempts_to_bonus}T{problem.score.attempts_to_top}
                 </p>
                 <div className="flex gap-1 items-center">
                   {problem.score.attempts_to_bonus > 0 && (
-                    <Star className="w-5 h-5 text-[--primary-color]" aria-hidden />
+                    <Star className="w-5 h-5 text-primary" aria-hidden />
                   )}
                   {problem.score.attempts_to_top > 0 && (
                     <Medal className="w-5 h-5 text-amber-300" aria-hidden />
                   )}
                   {isCollapsed ? (
-                    <ChevronDown className="w-5 h-5 text-gray-600" aria-hidden />
+                    <ChevronDown className="w-5 h-5 text-muted-foreground" aria-hidden />
                   ) : (
-                    <ChevronUp className="w-5 h-5 text-gray-600" aria-hidden />
+                    <ChevronUp className="w-5 h-5 text-muted-foreground" aria-hidden />
                   )}
                 </div>
               </div>
@@ -309,7 +309,7 @@ export default function ProblemGrid({
                     <div key={key} className="flex flex-row justify-between m-2">
                       <label
                         htmlFor={`problem-${problem.problem_no}-${key}`}
-                        className="block text-sm text-[--primary-color-hover] font-medium capitalize mb-1"
+                        className="block text-sm text-muted-foreground font-medium capitalize mb-1"
                       >
                         {SCORE_FIELD_LABELS[key]}
                       </label>
@@ -318,8 +318,8 @@ export default function ProblemGrid({
                         <Button
                           onClick={() => dec(problem, key)}
                           disabled={saving || batchSaving || !canEdit}
-                          className={`w-8 h-8 rounded-full bg-[--secondary-color] hover:bg-[--primary-color-hover]
-                                    text-white font-bold text-lg cursor-pointer`}
+                          className={`w-8 h-8 rounded-full bg-primary hover:bg-primary-hover
+                                    text-primary-foreground font-bold text-lg cursor-pointer`}
                           aria-label={`Minska ${SCORE_FIELD_LABELS[key]}`}
                         >
                           −
@@ -334,13 +334,13 @@ export default function ProblemGrid({
                           onChange={(event) =>
                             updateField(problem.problem_no, key, Number(event.target.value))
                           }
-                          className="w-14 text-center border border-gray-300 rounded-full px-2 py-1 text-base"
+                          className="w-14 text-center border border-input bg-card text-foreground rounded-full px-2 py-1 text-base focus:outline-none focus:ring-2 focus:ring-ring"
                         />
                         <Button
                           onClick={() => inc(problem, key)}
                           disabled={saving || batchSaving || !canEdit}
-                          className={`w-8 h-8 rounded-full bg-[--secondary-color] hover:bg-[--primary-color-hover]
-                                    text-white font-bold text-lg cursor-pointer`}
+                          className={`w-8 h-8 rounded-full bg-primary hover:bg-primary-hover
+                                    text-primary-foreground font-bold text-lg cursor-pointer`}
                           aria-label={`Öka ${SCORE_FIELD_LABELS[key]}`}
                         >
                           +
@@ -393,7 +393,7 @@ export default function ProblemGrid({
                         }
                       }}
                       disabled={saving || batchSaving || !gradeLevel || !canEdit}
-                      className={`bg-[--secondary-color] hover:bg-[--primary-color-hover] text-white px-6 py-2 mt-4 rounded-full
+                      className={`bg-primary hover:bg-primary-hover text-primary-foreground px-6 py-2 mt-4 rounded-full
                         shadow font-medium cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed w-full`}
                     >
                       {saving
