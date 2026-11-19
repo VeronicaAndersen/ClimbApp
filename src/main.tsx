@@ -6,7 +6,7 @@ import { initializeAuth } from "./lib/apiClient";
 
 initializeAuth().then(() => {
   createRoot(document.getElementById("root")!).render(
-    <Theme>
+    <Theme accentColor="gray" grayColor="olive" radius="large" hasBackground={false}>
       <App />
     </Theme>
   );
