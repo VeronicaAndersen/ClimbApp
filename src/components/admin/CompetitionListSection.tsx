@@ -51,10 +51,10 @@ export function CompetitionListSection({ refreshKey }: CompetitionListSectionPro
   if (error) {
     return (
       <div role="alert" className="mb-4">
-        <p className="text-red-600 mb-2">Det gick inte att hämta tävlingar.</p>
+        <p className="text-red-600 dark:text-red-400 mb-2">Det gick inte att hämta tävlingar.</p>
         <button
           type="button"
-          className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 text-sm"
+          className="px-3 py-1 rounded bg-muted hover:bg-accent text-sm"
           onClick={() => setRetryCount((c) => c + 1)}
         >
           Försök igen
@@ -64,7 +64,7 @@ export function CompetitionListSection({ refreshKey }: CompetitionListSectionPro
   }
 
   if (competitions.length === 0) {
-    return <p className="text-gray-600 mb-4">Inga tävlingar tillgängliga.</p>;
+    return <p className="text-muted-foreground mb-4">Inga tävlingar tillgängliga.</p>;
   }
 
   return (
@@ -74,12 +74,12 @@ export function CompetitionListSection({ refreshKey }: CompetitionListSectionPro
           <CompetitionRegistrations key={comp.id} competition={comp} refreshKey={refreshKey} />
         ))
       ) : (
-        <p className="text-gray-600 mb-4">Inga kommande tävlingar.</p>
+        <p className="text-muted-foreground mb-4">Inga kommande tävlingar.</p>
       )}
 
       {past.length > 0 && (
         <details className="mt-4">
-          <summary className="cursor-pointer text-lg font-semibold text-gray-700 hover:text-gray-900 p-2 bg-gray-100 rounded">
+          <summary className="cursor-pointer text-lg font-semibold text-muted-foreground hover:text-foreground p-2 bg-muted rounded">
             Visa tidigare tävlingar ({past.length})
           </summary>
           <div className="mt-2">
