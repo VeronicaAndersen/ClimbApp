@@ -12,6 +12,17 @@
     <meta property="og:type" content="website" />
     <meta property="og:image" content="https://grepp.vercel.app/" />
 
+    <meta name="theme-color" content="#f4f6f1" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#161a16" media="(prefers-color-scheme: dark)" />
+    <script>
+      // Apply the saved or system theme before first paint (see src/store/theme.ts).
+      try {
+        var t = localStorage.getItem("theme");
+        if (t === "dark" || (t !== "light" && matchMedia("(prefers-color-scheme: dark)").matches)) {
+          document.documentElement.classList.add("dark");
+        }
+      } catch (e) {}
+    </script>
   </head>
 
   <body>
