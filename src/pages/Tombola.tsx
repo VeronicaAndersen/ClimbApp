@@ -192,7 +192,7 @@ export default function Tombola() {
             <Button
               onClick={resetTombola}
               disabled={winners.length === 0}
-              className="flex items-center gap-2 bg-[--primary-color] hover:bg-[--primary-color-hover] text-white px-4 py-2 rounded-xl shadow hover:shadow-md transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer text-sm font-medium"
+              className="flex items-center gap-2 bg-[--primary-color] hover:bg-[--primary-color-hover] text-secondary-foreground hover:text-white px-4 py-2 rounded-xl shadow hover:shadow-md transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer text-sm font-medium"
             >
               <RotateCcw className="w-4 h-4" />
               Återställ
