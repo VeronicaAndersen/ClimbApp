@@ -140,7 +140,7 @@ export function AssignToCompetitionsList() {
                     <button
                       onClick={() => handleWithdraw(comp.id)}
                       disabled={withdrawing === comp.id}
-                      className="flex items-center gap-1 text-xs font-medium text-red-600 dark:text-red-400 hover:text-red-700 disabled:opacity-50"
+                      className="flex items-center gap-1 text-xs font-medium text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 disabled:opacity-50"
                     >
                       {withdrawing === comp.id ? <Spinner size="1" /> : "Ja, dra tillbaka"}
                     </button>
@@ -148,7 +148,7 @@ export function AssignToCompetitionsList() {
                     <button
                       onClick={() => setWithdrawConfirm(null)}
                       disabled={withdrawing === comp.id}
-                      className="text-xs font-medium text-muted-foreground hover:text-muted-foreground disabled:opacity-50"
+                      className="text-xs font-medium text-muted-foreground hover:text-foreground disabled:opacity-50"
                     >
                       Avbryt
                     </button>
@@ -156,7 +156,7 @@ export function AssignToCompetitionsList() {
                 ) : (
                   <button
                     onClick={() => setWithdrawConfirm(comp.id)}
-                    className="flex items-center gap-1 text-xs font-medium text-red-600 dark:text-red-400 hover:text-red-700 hover:underline shrink-0"
+                    className="flex items-center gap-1 text-xs font-medium text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:underline shrink-0"
                   >
                     <X className="w-3.5 h-3.5" />
                     Dra tillbaka anmälan

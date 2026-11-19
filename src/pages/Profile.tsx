@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import useGetUserInfo from "@/hooks/useGetUserInfo";
 import { AppHeader } from "@/components/AppHeader";
+import { LightScope } from "@/components/LightScope";
 import CalloutMessage from "@/components/feedback/CalloutMessage";
 import ProfilInfo from "@/components/ProfilInfo";
 import { AssignToCompetitionsList } from "@/components/AssignToCompetitionsList";
@@ -228,8 +229,8 @@ export default function Profile() {
     }`;
 
   const logoutButton = (
-    <Button size="2" className="cursor-pointer rounded-full" onClick={handleLogout}>
-      Logga ut{userInfo?.username ? ` ${userInfo.username}` : ""}
+    <Button size="2" className="max-w-[45vw] cursor-pointer rounded-full" onClick={handleLogout}>
+      <span className="truncate">Logga ut{userInfo?.username ? ` ${userInfo.username}` : ""}</span>
     </Button>
   );
 
@@ -306,14 +307,18 @@ export default function Profile() {
             <div>
               <h3 className="text-xl font-semibold mt-4 mb-2 text-foreground">Hantera klättrare</h3>
               <Suspense fallback={<LoadingFallback />}>
-                <ClimberList />
+                <LightScope>
+                  <ClimberList />
+                </LightScope>
               </Suspense>
             </div>
           )}
 
           {activeView === "leaderboard" && isAdmin && (
             <Suspense fallback={<LoadingFallback />}>
-              <Leaderboard />
+              <LightScope>
+                <Leaderboard />
+              </LightScope>
             </Suspense>
           )}
 
@@ -321,18 +326,22 @@ export default function Profile() {
             <Suspense fallback={<LoadingFallback />}>
               <div className="grid grid-cols-1 gap-2">
                 <h3 className="text-xl font-semibold mb-2 text-foreground">Godkänn anmälda</h3>
-                <CompetitionListSection refreshKey={competitionRefreshKey} />
+                <LightScope>
+                  <CompetitionListSection refreshKey={competitionRefreshKey} />
+                </LightScope>
 
                 <h3 className="text-xl font-semibold mt-4 mb-2 text-foreground">
                   Hantera säsonger och tävlingar
                 </h3>
-                <SeasonList refreshKey={seasonRefreshKey} />
-                <CompetitionList refreshKey={competitionRefreshKey} />
+                <LightScope className="grid grid-cols-1 gap-2">
+                  <SeasonList refreshKey={seasonRefreshKey} />
+                  <CompetitionList refreshKey={competitionRefreshKey} />
 
-                <SeasonForm onSeasonCreated={() => setSeasonRefreshKey((prev) => prev + 1)} />
-                <CompetitionForm
-                  onCompetitionCreated={() => setCompetitionRefreshKey((prev) => prev + 1)}
-                />
+                  <SeasonForm onSeasonCreated={() => setSeasonRefreshKey((prev) => prev + 1)} />
+                  <CompetitionForm
+                    onCompetitionCreated={() => setCompetitionRefreshKey((prev) => prev + 1)}
+                  />
+                </LightScope>
               </div>
             </Suspense>
           )}
@@ -409,11 +418,13 @@ export default function Profile() {
                 </div>
 
                 {selectedCompForStats !== null && selectedLevelForStats !== null ? (
-                  <ProblemStatsTable
-                    comp_id={selectedCompForStats}
-                    level={selectedLevelForStats}
-                    refreshKey={statsRefreshKey}
-                  />
+                  <LightScope>
+                    <ProblemStatsTable
+                      comp_id={selectedCompForStats}
+                      level={selectedLevelForStats}
+                      refreshKey={statsRefreshKey}
+                    />
+                  </LightScope>
                 ) : selectedCompForStats !== null ? (
                   <p className="text-center text-muted-foreground bg-card/90 backdrop-blur rounded-lg shadow-soft py-6">
                     Välj en nivå ovan för att visa statistik.

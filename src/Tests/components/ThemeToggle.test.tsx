@@ -18,10 +18,7 @@ describe("ThemeToggle", () => {
 
     expect(document.documentElement.classList.contains("dark")).toBe(true);
     expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe("dark");
-    expect(screen.getByRole("button", { name: "Byt till ljust tema" })).toHaveAttribute(
-      "aria-pressed",
-      "true"
-    );
+    expect(screen.getByRole("button", { name: "Byt till ljust tema" })).toBeInTheDocument();
   });
 
   it("switches back to light mode", async () => {

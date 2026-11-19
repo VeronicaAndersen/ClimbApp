@@ -7,10 +7,10 @@ export function Logo({ className = "" }: { className?: string }) {
     <span
       role="img"
       aria-label="grepp logo"
-      className={`block aspect-[189/54] bg-foreground ${className}`}
+      className={`block aspect-[189/54] bg-foreground [forced-color-adjust:none] ${className}`}
       style={{
-        maskImage: "url(./grepp.svg)",
-        WebkitMaskImage: "url(./grepp.svg)",
+        maskImage: "url(/grepp.svg)",
+        WebkitMaskImage: "url(/grepp.svg)",
         maskSize: "contain",
         WebkitMaskSize: "contain",
         maskRepeat: "no-repeat",
