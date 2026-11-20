@@ -27,7 +27,7 @@ export function SeasonForm({ onSeasonCreated }: SeasonFormProps = {}) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="mb-6 h-fit flex flex-col bg-white/90 backdrop-blur p-4 rounded-lg shadow-md"
+      className="mb-6 h-fit flex flex-col bg-card/90 backdrop-blur p-4 rounded-lg shadow-soft"
     >
       <h1 className="text-2xl font-semibold text-center mb-4">Skapa säsong</h1>
       {error && <CalloutMessage message={error} color="red" />}
@@ -59,7 +59,7 @@ export function SeasonForm({ onSeasonCreated }: SeasonFormProps = {}) {
       />
 
       <Button
-        className="mt-4 w-full cursor-pointer rounded-full bg-[--secondary-color] hover:bg-[--secondary-color-hover] disabled:bg-[--secondary-color]/50 disabled:cursor-not-allowed flex items-center justify-center"
+        className="mt-4 w-full cursor-pointer rounded-full bg-primary text-primary-foreground hover:bg-primary-hover disabled:bg-primary/50 disabled:cursor-not-allowed flex items-center justify-center"
         type="submit"
         disabled={loading}
       >

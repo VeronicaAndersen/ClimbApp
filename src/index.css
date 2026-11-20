@@ -10,9 +10,7 @@
  * Dark mode:  sage actions on a deep charcoal background.
  */
 @layer base {
-  /* .light-scope re-applies light tokens inside dark mode (see LightScope.tsx). */
-  :root,
-  .dark .light-scope {
+  :root {
     --charcoal: 120 4% 23%;
     --sage: 86 21% 77%;
 
@@ -117,10 +115,6 @@
   }
 }
 
-.light-scope {
-  color: hsl(var(--foreground));
-}
-
 /* Radix Themes: accent "gray" + gray "olive", with steps 9-11 pinned to the brand. */
 .radix-themes {
   --default-font-family: inherit;
@@ -135,7 +129,7 @@
   --focus-8: hsl(var(--charcoal) / 0.6);
 }
 
-.dark .radix-themes:not(.light)[data-accent-color="gray"] {
+.dark .radix-themes[data-accent-color="gray"] {
   --accent-9: hsl(var(--sage));
   --accent-10: hsl(86 24% 84%);
   --accent-11: hsl(var(--sage));

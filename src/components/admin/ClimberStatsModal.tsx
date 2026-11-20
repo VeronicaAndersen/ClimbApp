@@ -106,7 +106,7 @@ export function ClimberStatsModal({ climber, onClose }: ClimberStatsModalProps) 
             <span className="ml-2">Hämtar tävlingar...</span>
           </div>
         ) : registrations.length === 0 ? (
-          <p className="text-center text-gray-500 py-4">
+          <p className="text-center text-muted-foreground py-4">
             Klättraren är inte anmäld till några tävlingar.
           </p>
         ) : (
@@ -118,12 +118,12 @@ export function ClimberStatsModal({ climber, onClose }: ClimberStatsModalProps) 
                   onClick={() => setSelectedCompId(reg.comp_id)}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-full border-2 text-sm font-medium transition-all ${
                     selectedCompId === reg.comp_id
-                      ? "border-gray-800 bg-[--secondary-color] text-white"
-                      : "border-gray-200 text-gray-700 hover:border-gray-300"
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border text-muted-foreground hover:border-input"
                   }`}
                 >
                   <span
-                    className="w-3 h-3 rounded-full border border-gray-300 shrink-0"
+                    className="w-3 h-3 rounded-full border border-border shrink-0"
                     style={{ backgroundColor: getGradeColor(reg.level) }}
                   />
                   {reg.competition_name} ({formatDate(reg.comp_date)})
@@ -143,11 +143,19 @@ export function ClimberStatsModal({ climber, onClose }: ClimberStatsModalProps) 
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse">
                     <thead>
-                      <tr className="border-b border-gray-300">
-                        <th className="text-left p-2 font-semibold text-gray-700">Problem</th>
-                        <th className="text-center p-2 font-semibold text-gray-700">Försök</th>
-                        <th className="text-center p-2 font-semibold text-gray-700">Bonus</th>
-                        <th className="text-center p-2 font-semibold text-gray-700">Topp</th>
+                      <tr className="border-b border-border">
+                        <th className="text-left p-2 font-semibold text-muted-foreground">
+                          Problem
+                        </th>
+                        <th className="text-center p-2 font-semibold text-muted-foreground">
+                          Försök
+                        </th>
+                        <th className="text-center p-2 font-semibold text-muted-foreground">
+                          Bonus
+                        </th>
+                        <th className="text-center p-2 font-semibold text-muted-foreground">
+                          Topp
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -156,22 +164,22 @@ export function ClimberStatsModal({ climber, onClose }: ClimberStatsModalProps) 
                         .map((p) => (
                           <tr
                             key={p.problem_no}
-                            className="border-b border-gray-200 hover:bg-gray-50"
+                            className="border-b border-border hover:bg-muted/50"
                           >
-                            <td className="p-2 text-gray-800 font-medium">{p.problem_no}</td>
-                            <td className="p-2 text-center text-gray-800">
+                            <td className="p-2 text-foreground font-medium">{p.problem_no}</td>
+                            <td className="p-2 text-center text-foreground">
                               {p.score.attempts_total}
                             </td>
-                            <td className="p-2 text-center text-gray-800">
+                            <td className="p-2 text-center text-foreground">
                               {p.score.got_bonus ? (
-                                <span className="inline-flex items-center gap-1 text-green-600">
+                                <span className="inline-flex items-center gap-1 text-green-600 dark:text-green-400">
                                   <Star className="w-4 h-4" /> {p.score.attempts_to_bonus}
                                 </span>
                               ) : (
                                 "—"
                               )}
                             </td>
-                            <td className="p-2 text-center text-gray-800">
+                            <td className="p-2 text-center text-foreground">
                               {p.score.got_top ? (
                                 <span className="inline-flex items-center gap-1 text-amber-500">
                                   <Trophy className="w-4 h-4" /> {p.score.attempts_to_top}
@@ -186,7 +194,7 @@ export function ClimberStatsModal({ climber, onClose }: ClimberStatsModalProps) 
                   </table>
                 </div>
 
-                <p className="text-sm text-gray-500 mt-2">
+                <p className="text-sm text-muted-foreground mt-2">
                   Nivå: {LEVEL_NAMES[selectedRegistration.level] ?? selectedRegistration.level}
                   {selectedRegistration.approved ? "" : " (ej godkänd anmälan)"}
                 </p>

@@ -16,17 +16,17 @@ export function CompetitionRegistrations({
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="mb-4 bg-white/90 backdrop-blur p-4 rounded-lg shadow-md">
+    <div className="mb-4 bg-card/90 backdrop-blur p-4 rounded-lg shadow-soft">
       <div className="flex justify-between items-center">
         <div>
-          <h3 className="text-lg font-semibold text-gray-800">{competition.name}</h3>
-          <p className="text-sm text-gray-600">
+          <h3 className="text-lg font-semibold text-foreground">{competition.name}</h3>
+          <p className="text-sm text-muted-foreground">
             {competition.comp_date} • {competition.comp_type}
           </p>
         </div>
         <Button
           onClick={() => setIsOpen((prev) => !prev)}
-          className="bg-[--secondary-color] hover:bg-[--secondary-color-hover] text-white px-3 py-2 rounded cursor-pointer"
+          className="bg-primary hover:bg-primary-hover text-primary-foreground px-3 py-2 rounded cursor-pointer"
           size="2"
         >
           {isOpen ? (

@@ -84,9 +84,9 @@ export default function CompetitionSummaryCard({ competitionData }: CompetitionS
         icon: Medal,
         label: "Snitt försök",
         value: summary.averageAttempts,
-        bgColor: "bg-purple-50",
-        borderColor: "border-purple-100",
-        textColor: "text-purple-600",
+        bgColor: "bg-purple-50 dark:bg-purple-500/10",
+        borderColor: "border-purple-100 dark:border-purple-500/30",
+        textColor: "text-purple-600 dark:text-purple-400",
       },
     ],
     [summary]

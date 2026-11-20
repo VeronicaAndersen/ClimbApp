@@ -18,7 +18,6 @@ import {
 } from "lucide-react";
 import useGetUserInfo from "@/hooks/useGetUserInfo";
 import { AppHeader } from "@/components/AppHeader";
-import { LightScope } from "@/components/LightScope";
 import CalloutMessage from "@/components/feedback/CalloutMessage";
 import ProfilInfo from "@/components/ProfilInfo";
 import { AssignToCompetitionsList } from "@/components/AssignToCompetitionsList";
@@ -307,18 +306,14 @@ export default function Profile() {
             <div>
               <h3 className="text-xl font-semibold mt-4 mb-2 text-foreground">Hantera klättrare</h3>
               <Suspense fallback={<LoadingFallback />}>
-                <LightScope>
-                  <ClimberList />
-                </LightScope>
+                <ClimberList />
               </Suspense>
             </div>
           )}
 
           {activeView === "leaderboard" && isAdmin && (
             <Suspense fallback={<LoadingFallback />}>
-              <LightScope>
-                <Leaderboard />
-              </LightScope>
+              <Leaderboard />
             </Suspense>
           )}
 
@@ -326,14 +321,12 @@ export default function Profile() {
             <Suspense fallback={<LoadingFallback />}>
               <div className="grid grid-cols-1 gap-2">
                 <h3 className="text-xl font-semibold mb-2 text-foreground">Godkänn anmälda</h3>
-                <LightScope>
-                  <CompetitionListSection refreshKey={competitionRefreshKey} />
-                </LightScope>
+                <CompetitionListSection refreshKey={competitionRefreshKey} />
 
                 <h3 className="text-xl font-semibold mt-4 mb-2 text-foreground">
                   Hantera säsonger och tävlingar
                 </h3>
-                <LightScope className="grid grid-cols-1 gap-2">
+                <div className="grid grid-cols-1 gap-2">
                   <SeasonList refreshKey={seasonRefreshKey} />
                   <CompetitionList refreshKey={competitionRefreshKey} />
 
@@ -341,7 +334,7 @@ export default function Profile() {
                   <CompetitionForm
                     onCompetitionCreated={() => setCompetitionRefreshKey((prev) => prev + 1)}
                   />
-                </LightScope>
+                </div>
               </div>
             </Suspense>
           )}
@@ -418,13 +411,11 @@ export default function Profile() {
                 </div>
 
                 {selectedCompForStats !== null && selectedLevelForStats !== null ? (
-                  <LightScope>
-                    <ProblemStatsTable
-                      comp_id={selectedCompForStats}
-                      level={selectedLevelForStats}
-                      refreshKey={statsRefreshKey}
-                    />
-                  </LightScope>
+                  <ProblemStatsTable
+                    comp_id={selectedCompForStats}
+                    level={selectedLevelForStats}
+                    refreshKey={statsRefreshKey}
+                  />
                 ) : selectedCompForStats !== null ? (
                   <p className="text-center text-muted-foreground bg-card/90 backdrop-blur rounded-lg shadow-soft py-6">
                     Välj en nivå ovan för att visa statistik.

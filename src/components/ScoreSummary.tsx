@@ -73,7 +73,7 @@ const createStatCards = (summary: SummaryStats): StatCardConfig[] => [
     label: "Genomsnittliga försök",
     value: summary.averageAttempts,
     color: "text-purple-500",
-    bgColor: "bg-purple-50",
+    bgColor: "bg-purple-50 dark:bg-purple-500/10",
   },
 ];
 
