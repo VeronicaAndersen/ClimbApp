@@ -151,12 +151,9 @@ export default function Profile() {
   const isAdmin = userInfo?.user_scope === "admin";
   const [selectedCompForStats, setSelectedCompForStats] = useState<number | null>(null);
   const [selectedLevelForStats, setSelectedLevelForStats] = useState<number | null>(null);
-  const [statsRefreshKey] = useState(0);
   const [competitions, setCompetitions] = useState<CompetitionResponse[]>([]);
   const [competitionsLoading, setCompetitionsLoading] = useState(true);
   const LEVELS = [1, 2, 3, 4, 5, 6, 7];
-
-  const getLevelColor = (level: number): string => getGradeColor(level);
 
   // If a non-admin ended up on an admin-only view (e.g. after role change), fall back.
   useEffect(() => {
@@ -391,16 +388,16 @@ export default function Profile() {
                             style={{
                               backgroundColor:
                                 selectedLevelForStats === level
-                                  ? getLevelColor(level)
+                                  ? getGradeColor(level)
                                   : "transparent",
                               color: selectedLevelForStats === level ? "white" : undefined,
                               borderColor:
-                                selectedLevelForStats === level ? getLevelColor(level) : undefined,
+                                selectedLevelForStats === level ? getGradeColor(level) : undefined,
                             }}
                           >
                             <span
                               className="w-4 h-4 rounded-full border border-foreground/25 shrink-0"
-                              style={{ backgroundColor: getLevelColor(level) }}
+                              style={{ backgroundColor: getGradeColor(level) }}
                             />
                             Nivå {level}
                           </button>
@@ -411,11 +408,7 @@ export default function Profile() {
                 </div>
 
                 {selectedCompForStats !== null && selectedLevelForStats !== null ? (
-                  <ProblemStatsTable
-                    comp_id={selectedCompForStats}
-                    level={selectedLevelForStats}
-                    refreshKey={statsRefreshKey}
-                  />
+                  <ProblemStatsTable comp_id={selectedCompForStats} level={selectedLevelForStats} />
                 ) : selectedCompForStats !== null ? (
                   <p className="text-center text-muted-foreground bg-card/90 backdrop-blur rounded-lg shadow-soft py-6">
                     Välj en nivå ovan för att visa statistik.
