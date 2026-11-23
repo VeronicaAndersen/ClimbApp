@@ -1,28 +1,47 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Spinner } from "@radix-ui/themes";
-import { Trophy, RotateCcw, ArrowLeft, Sparkles, Users } from "lucide-react";
+import { Trophy, RotateCcw, ArrowLeft, Sparkles, Users, UserPlus, X } from "lucide-react";
 import { getAllRegistrations, getCompetitions, getClimberById } from "@/services/api";
-import { RegistrationWithClimber, CompetitionResponse } from "@/types";
+import { CompetitionResponse } from "@/types";
 import CalloutMessage from "@/components/feedback/CalloutMessage";
 import { getGradeColor } from "@/constants/gradeColors";
 import { getUserFriendlyError } from "@/utils/errorMessages";
-
-const storageKey = (compId: number) => `tombola_${compId}`;
+import {
+  GUEST_NAME_MAX_LENGTH,
+  climberKey,
+  newGuest,
+  parseSavedTombola,
+  tombolaStorageKey,
+  type TombolaParticipant,
+} from "@/utils/tombola";
 
 export default function Tombola() {
   const navigate = useNavigate();
   const [competitions, setCompetitions] = useState<CompetitionResponse[]>([]);
   const [selectedCompetitionId, setSelectedCompetitionId] = useState<number | null>(null);
-  const [allParticipants, setAllParticipants] = useState<RegistrationWithClimber[]>([]);
-  const [remainingParticipants, setRemainingParticipants] = useState<RegistrationWithClimber[]>([]);
-  const [winners, setWinners] = useState<RegistrationWithClimber[]>([]);
-  const [currentWinner, setCurrentWinner] = useState<RegistrationWithClimber | null>(null);
+  const [climbers, setClimbers] = useState<TombolaParticipant[]>([]);
+  // Guests live only in this device's localStorage; they are never sent to the API.
+  const [guests, setGuests] = useState<TombolaParticipant[]>([]);
+  const [guestName, setGuestName] = useState("");
+  const [winnerKeys, setWinnerKeys] = useState<string[]>([]);
+  const [currentWinner, setCurrentWinner] = useState<TombolaParticipant | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [climberNames, setClimberNames] = useState<Map<number, string>>(new Map());
   const loadedCompId = useRef<number | null>(null);
+
+  const allParticipants = useMemo(() => [...climbers, ...guests], [climbers, guests]);
+  const winners = useMemo(() => {
+    const byKey = new Map(allParticipants.map((p) => [p.key, p]));
+    return winnerKeys
+      .map((key) => byKey.get(key))
+      .filter((p): p is TombolaParticipant => p !== undefined);
+  }, [allParticipants, winnerKeys]);
+  const remainingParticipants = useMemo(() => {
+    const won = new Set(winnerKeys);
+    return allParticipants.filter((p) => !won.has(p.key));
+  }, [allParticipants, winnerKeys]);
 
   useEffect(() => {
     const fetchCompetitions = async () => {
@@ -49,30 +68,21 @@ export default function Tombola() {
         setError(null);
         const registrations = await getAllRegistrations(selectedCompetitionId);
         const approved = registrations.filter((reg) => reg.approved);
-        setAllParticipants(approved);
 
-        const climbers = await Promise.all(approved.map((r) => getClimberById(r.user_id)));
-        setClimberNames(
-          new Map(climbers.map((c, i) => [approved[i].user_id, `${c.firstname} ${c.lastname}`]))
+        const climberInfo = await Promise.all(approved.map((r) => getClimberById(r.user_id)));
+        setClimbers(
+          approved.map((reg, i) => ({
+            key: climberKey(reg.user_id),
+            name: `${climberInfo[i].firstname} ${climberInfo[i].lastname}`,
+            level: reg.level,
+          }))
         );
 
-        const savedRaw = localStorage.getItem(storageKey(selectedCompetitionId));
-        if (savedRaw) {
-          try {
-            const saved = JSON.parse(savedRaw) as {
-              winners: RegistrationWithClimber[];
-              remainingParticipants: RegistrationWithClimber[];
-            };
-            setWinners(saved.winners);
-            setRemainingParticipants(saved.remainingParticipants);
-          } catch {
-            setWinners([]);
-            setRemainingParticipants(approved);
-          }
-        } else {
-          setWinners([]);
-          setRemainingParticipants(approved);
-        }
+        const saved = parseSavedTombola(
+          localStorage.getItem(tombolaStorageKey(selectedCompetitionId))
+        );
+        setGuests(saved.guests);
+        setWinnerKeys(saved.winnerKeys);
         setCurrentWinner(null);
         loadedCompId.current = selectedCompetitionId;
       } catch (err) {
@@ -86,11 +96,15 @@ export default function Tombola() {
 
   useEffect(() => {
     if (!selectedCompetitionId || loadedCompId.current !== selectedCompetitionId) return;
-    localStorage.setItem(
-      storageKey(selectedCompetitionId),
-      JSON.stringify({ winners, remainingParticipants })
-    );
-  }, [winners, remainingParticipants, selectedCompetitionId]);
+    try {
+      localStorage.setItem(
+        tombolaStorageKey(selectedCompetitionId),
+        JSON.stringify({ guests, winnerKeys })
+      );
+    } catch {
+      // Storage blocked or full: the draw still works for this visit.
+    }
+  }, [guests, winnerKeys, selectedCompetitionId]);
 
   const spinTombola = useCallback(() => {
     const pool = remainingParticipants;
@@ -115,8 +129,7 @@ export default function Tombola() {
       } else {
         const winner = pool[Math.floor(Math.random() * pool.length)];
         setCurrentWinner(winner);
-        setWinners((prev) => [...prev, winner]);
-        setRemainingParticipants((prev) => prev.filter((p) => p.user_id !== winner.user_id));
+        setWinnerKeys((prev) => [...prev, winner.key]);
         setIsSpinning(false);
       }
     };
@@ -143,15 +156,23 @@ export default function Tombola() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isSpinning, remainingParticipants, spinTombola]);
 
+  // Starts a new draw; guests added on this device stay in the pool.
   const resetTombola = () => {
-    if (selectedCompetitionId) localStorage.removeItem(storageKey(selectedCompetitionId));
-    setRemainingParticipants(allParticipants);
-    setWinners([]);
+    setWinnerKeys([]);
     setCurrentWinner(null);
     setError(null);
   };
 
-  const getName = (userId: number) => climberNames.get(userId) ?? "…";
+  const addGuest = (e: FormEvent) => {
+    e.preventDefault();
+    if (!guestName.trim()) return;
+    setGuests((prev) => [...prev, newGuest(guestName, crypto.randomUUID())]);
+    setGuestName("");
+  };
+
+  const removeGuest = (key: string) => {
+    setGuests((prev) => prev.filter((g) => g.key !== key));
+  };
 
   const selectedCompetition = competitions.find((c) => c.id === selectedCompetitionId);
 
@@ -255,6 +276,44 @@ export default function Tombola() {
               </div>
             </div>
 
+            {/* Add guest (this device only) */}
+            {!isLoading && (
+              <form
+                onSubmit={addGuest}
+                className="bg-card rounded-2xl shadow-soft p-5 mb-6 border border-border"
+              >
+                <label
+                  htmlFor="guest-name"
+                  className="block text-sm font-semibold text-muted-foreground mb-2 uppercase tracking-wide"
+                >
+                  Lägg till person
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    id="guest-name"
+                    type="text"
+                    value={guestName}
+                    onChange={(e) => setGuestName(e.target.value)}
+                    maxLength={GUEST_NAME_MAX_LENGTH}
+                    placeholder="Namn"
+                    autoComplete="off"
+                    className="input-base p-2.5 flex-1 min-w-0"
+                  />
+                  <Button
+                    type="submit"
+                    disabled={!guestName.trim() || isSpinning}
+                    className="flex items-center gap-2 bg-primary hover:bg-primary-hover text-primary-foreground px-4 py-2 rounded-xl shadow-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-sm font-medium"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    Lägg till
+                  </Button>
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Sparas bara på den här enheten, inte i databasen.
+                </p>
+              </form>
+            )}
+
             {isLoading ? (
               <div className="bg-card rounded-2xl shadow-soft p-12 flex flex-col items-center justify-center border border-border min-h-[280px]">
                 <Spinner size="3" />
@@ -264,7 +323,8 @@ export default function Tombola() {
               <div className="bg-card rounded-2xl shadow-soft p-12 flex flex-col items-center justify-center border border-border min-h-[280px]">
                 <Users className="w-12 h-12 text-muted-foreground/40 mb-3" />
                 <p className="text-muted-foreground font-medium">
-                  Inga godkända anmälningar för {selectedCompetition?.name}
+                  Inga godkända anmälningar för {selectedCompetition?.name}. Lägg till personer
+                  ovan.
                 </p>
               </div>
             ) : (
@@ -292,7 +352,7 @@ export default function Tombola() {
                           isSpinning ? "text-muted-foreground" : "text-foreground"
                         }`}
                       >
-                        {getName(currentWinner.user_id)}
+                        {currentWinner.name}
                       </p>
                       {!isSpinning && (
                         <div className="flex flex-col items-center gap-1">
@@ -300,10 +360,12 @@ export default function Tombola() {
                             <Sparkles className="w-4 h-4" />
                             Vinnare #{winners.length}
                           </span>
-                          <span
-                            className="inline-block w-4 h-4 rounded-full border border-border mt-1"
-                            style={{ backgroundColor: getGradeColor(currentWinner.level) }}
-                          />
+                          {currentWinner.level !== null && (
+                            <span
+                              className="inline-block w-4 h-4 rounded-full border border-border mt-1"
+                              style={{ backgroundColor: getGradeColor(currentWinner.level) }}
+                            />
+                          )}
                         </div>
                       )}
                     </div>
@@ -349,20 +411,20 @@ export default function Tombola() {
                     <div className="space-y-2 max-h-72 overflow-y-auto">
                       {winners.map((winner, index) => (
                         <div
-                          key={winner.user_id}
+                          key={winner.key}
                           className="flex items-center gap-3 p-3 bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-500/10 dark:to-amber-500/10 rounded-lg border border-yellow-200 dark:border-yellow-500/30"
                         >
                           <span className="w-8 h-8 shrink-0 bg-gradient-to-br from-yellow-400 to-amber-500 text-amber-950 rounded-full flex items-center justify-center font-bold text-sm shadow-sm">
                             {index + 1}
                           </span>
                           <div className="min-w-0">
-                            <p className="font-semibold text-foreground truncate">
-                              {getName(winner.user_id)}
-                            </p>
-                            <span
-                              className="inline-block w-3 h-3 rounded-full border border-border mt-0.5"
-                              style={{ backgroundColor: getGradeColor(winner.level) }}
-                            />
+                            <p className="font-semibold text-foreground truncate">{winner.name}</p>
+                            {winner.level !== null && (
+                              <span
+                                className="inline-block w-3 h-3 rounded-full border border-border mt-0.5"
+                                style={{ backgroundColor: getGradeColor(winner.level) }}
+                              />
+                            )}
                           </div>
                         </div>
                       ))}
@@ -380,14 +442,26 @@ export default function Tombola() {
                     <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto">
                       {remainingParticipants.map((p) => (
                         <span
-                          key={p.user_id}
+                          key={p.key}
                           className="inline-flex items-center gap-1.5 px-3 py-1 bg-muted/50 border border-border rounded-full text-sm text-muted-foreground"
                         >
-                          {getName(p.user_id)}
-                          <span
-                            className="inline-block w-2.5 h-2.5 rounded-full border border-border shrink-0"
-                            style={{ backgroundColor: getGradeColor(p.level) }}
-                          />
+                          {p.name}
+                          {p.level !== null ? (
+                            <span
+                              className="inline-block w-2.5 h-2.5 rounded-full border border-border shrink-0"
+                              style={{ backgroundColor: getGradeColor(p.level) }}
+                            />
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => removeGuest(p.key)}
+                              disabled={isSpinning}
+                              aria-label={`Ta bort ${p.name}`}
+                              className="text-muted-foreground hover:text-red-600 dark:hover:text-red-400 disabled:opacity-50 cursor-pointer"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </span>
                       ))}
                     </div>
