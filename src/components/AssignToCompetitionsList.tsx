@@ -10,6 +10,10 @@ import { sortCompetitions } from "@/utils/competitionSort";
 import { SessionSwitcher } from "./SessionSwitcher";
 import { getGradeColor, LEVEL_NAMES } from "@/constants/gradeColors";
 import { getUserFriendlyError } from "@/utils/errorMessages";
+import { isToday } from "@/utils/competitionUtils";
+
+/** How often a pending registration is re-checked on the competition day. */
+export const APPROVAL_POLL_INTERVAL_MS = 30_000;
 
 export function AssignToCompetitionsList() {
   const {
@@ -93,6 +97,49 @@ export function AssignToCompetitionsList() {
       !registrationDetails[comp.id].approved
   );
 
+  // On the competition day, re-check pending registrations so the climber
+  // sees the approval without reloading. Paused while the tab is hidden.
+  const pendingTodayKey = competitionList
+    .filter(
+      (comp) =>
+        registrationStatus[comp.id] &&
+        registrationDetails[comp.id] &&
+        !registrationDetails[comp.id].approved &&
+        isToday(comp.comp_date)
+    )
+    .map((comp) => comp.id)
+    .join(",");
+
+  useEffect(() => {
+    if (!pendingTodayKey) return;
+    const ids = pendingTodayKey.split(",").map(Number);
+    let cancelled = false;
+
+    const checkApproval = async () => {
+      if (document.hidden) return;
+      const results = await Promise.allSettled(ids.map((id) => getCompRegistrationInfo(id)));
+      if (cancelled) return;
+      setRegistrationDetails((prev) => {
+        const next = { ...prev };
+        results.forEach((result, i) => {
+          // Skip registrations withdrawn while the request was in flight.
+          if (result.status === "fulfilled" && result.value && next[ids[i]]) {
+            next[ids[i]] = result.value;
+          }
+        });
+        return next;
+      });
+    };
+
+    const timer = window.setInterval(checkApproval, APPROVAL_POLL_INTERVAL_MS);
+    document.addEventListener("visibilitychange", checkApproval);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", checkApproval);
+    };
+  }, [pendingTodayKey]);
+
   const renderRegistrationStatus = (comp: CompetitionResponse) => {
     const isChecking = checkingRegistration[comp.id];
     const isRegistered = registrationStatus[comp.id];
@@ -130,9 +177,14 @@ export function AssignToCompetitionsList() {
           ) : (
             <div className="mb-2">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-sm text-amber-600 dark:text-amber-400">
-                  ⏳ Väntar på godkännande
-                </p>
+                <div>
+                  <p className="text-sm text-amber-600 dark:text-amber-400">
+                    ⏳ Väntar på godkännande
+                  </p>
+                  {isToday(comp.comp_date) && (
+                    <p className="text-xs text-muted-foreground">Uppdateras automatiskt</p>
+                  )}
+                </div>
 
                 {withdrawConfirm === comp.id ? (
                   <div className="flex items-center gap-2 shrink-0">
