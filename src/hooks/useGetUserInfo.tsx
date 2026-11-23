@@ -1,33 +1,41 @@
+import { useCallback, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { MyInfoResponse, MessageProps } from "@/types";
-import { useState, useEffect, useCallback } from "react";
 import { getMyInfo } from "../services/api";
 
-export default function useGetUserInfo() {
-  const [userInfo, setUserInfo] = useState<MyInfoResponse | null>(null);
-  const [messageInfo, setMessageInfo] = useState<MessageProps | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+interface UseGetUserInfoResult {
+  userInfo: MyInfoResponse | null;
+  messageInfo: MessageProps | null;
+  loading: boolean;
+  refetch: () => Promise<void>;
+}
 
-  const fetchInfo = useCallback(async () => {
-    setLoading(true);
-    try {
-      const info = await getMyInfo();
-      if (info) {
-        setUserInfo(info);
-      }
-    } catch (error) {
-      console.error("Error fetching user info:", error);
-      setMessageInfo({
-        message: "Ett fel uppstod vid hämtning av användarinformation.",
-        color: "red",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+const USER_INFO_ERROR_MESSAGE = "Ett fel uppstod vid hämtning av användarinformation.";
 
-  useEffect(() => {
-    fetchInfo();
-  }, [fetchInfo]);
+export default function useGetUserInfo(): UseGetUserInfoResult {
+  const query = useQuery({
+    // Per-user data: storeTokens resets every query on an account change.
+    queryKey: ["myInfo"],
+    queryFn: async () => (await getMyInfo()) ?? null,
+    // The profile is edited from several places, so always refetch on mount
+    // instead of trusting the global five-minute staleTime.
+    staleTime: 0,
+  });
 
-  return { userInfo, messageInfo, loading, refetch: fetchInfo };
+  const { refetch, error } = query;
+  const refetchInfo = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
+
+  const messageInfo = useMemo<MessageProps | null>(
+    () => (error ? { message: USER_INFO_ERROR_MESSAGE, color: "red" } : null),
+    [error]
+  );
+
+  return {
+    userInfo: query.data ?? null,
+    messageInfo,
+    loading: query.isPending,
+    refetch: refetchInfo,
+  };
 }
