@@ -9,7 +9,7 @@ import unusedImports from "eslint-plugin-unused-imports";
 
 export default tseslint.config(
   {
-    ignores: ["dist", "src/components/ui"],
+    ignores: ["dist", "src/components/ui", ".claude"],
   },
 
   js.configs.recommended,

@@ -1,41 +1,15 @@
-import { useState, useEffect, useMemo } from "react";
-import { CompetitionResponse } from "@/types";
-import { getCompetitions } from "@/services/api";
+import { useMemo } from "react";
 import { CompetitionRegistrations } from "./CompetitionRegistrations";
 import { sortCompetitions } from "@/utils/competitionSort";
 import { Spinner } from "@radix-ui/themes";
+import { useAllCompetitions } from "@/hooks/useAllCompetitions";
 
 interface CompetitionListSectionProps {
   refreshKey: number;
 }
 
 export function CompetitionListSection({ refreshKey }: CompetitionListSectionProps) {
-  const [competitions, setCompetitions] = useState<CompetitionResponse[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
-
-  useEffect(() => {
-    let isCurrent = true;
-    setLoading(true);
-    setError(false);
-    getCompetitions()
-      .then((data) => {
-        if (isCurrent) setCompetitions(data ?? []);
-      })
-      .catch(() => {
-        if (!isCurrent) return;
-        setCompetitions([]);
-        setError(true);
-      })
-      .finally(() => {
-        if (isCurrent) setLoading(false);
-      });
-
-    return () => {
-      isCurrent = false;
-    };
-  }, [refreshKey, retryCount]);
+  const { competitions, loading, fetching, error, refetch } = useAllCompetitions(refreshKey);
 
   const { upcoming, past } = useMemo(() => sortCompetitions(competitions), [competitions]);
 
@@ -48,14 +22,17 @@ export function CompetitionListSection({ refreshKey }: CompetitionListSectionPro
     );
   }
 
-  if (error) {
+  // The query is shared with CompetitionList: a failed refetch there keeps
+  // the cached list, so only replace the section when there is nothing to show.
+  if (error && competitions.length === 0) {
     return (
       <div role="alert" className="mb-4">
         <p className="text-red-600 dark:text-red-400 mb-2">Det gick inte att hämta tävlingar.</p>
         <button
           type="button"
           className="px-3 py-1 rounded bg-muted hover:bg-accent text-sm"
-          onClick={() => setRetryCount((c) => c + 1)}
+          onClick={() => refetch()}
+          disabled={fetching}
         >
           Försök igen
         </button>
