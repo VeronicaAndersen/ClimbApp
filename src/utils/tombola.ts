@@ -74,3 +74,23 @@ export function parseSavedTombola(raw: string | null): SavedTombola {
 
   return { guests: savedGuests, winnerKeys: [] };
 }
+
+/** Winners in draw order; keys whose participant is gone (a removed guest) are skipped. */
+export function winnersFromKeys(
+  participants: TombolaParticipant[],
+  winnerKeys: string[]
+): TombolaParticipant[] {
+  const byKey = new Map(participants.map((p) => [p.key, p]));
+  return winnerKeys
+    .map((key) => byKey.get(key))
+    .filter((p): p is TombolaParticipant => p !== undefined);
+}
+
+/** Everyone who has not won yet, in participant order. */
+export function remainingFromKeys(
+  participants: TombolaParticipant[],
+  winnerKeys: string[]
+): TombolaParticipant[] {
+  const won = new Set(winnerKeys);
+  return participants.filter((p) => !won.has(p.key));
+}
