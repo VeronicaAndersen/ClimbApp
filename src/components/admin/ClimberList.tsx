@@ -5,6 +5,11 @@ import { useClimbers } from "@/hooks/useClimbers";
 import { updateClimberById, deleteClimberById } from "@/services/api";
 import { ClimberResponse, ClimberUpdateRequest } from "@/types";
 import {
+  normalizeNewUsername,
+  normalizeUsername,
+  validateNewUsername,
+} from "@/utils/inputValidation";
+import {
   Pencil,
   Trash2,
   Check,
@@ -16,6 +21,7 @@ import {
   ArrowUpDown,
 } from "lucide-react";
 import { ClimberStatsModal } from "./ClimberStatsModal";
+import { getUserFriendlyError } from "@/utils/errorMessages";
 
 interface ClimberListProps {
   refreshKey?: number;
@@ -56,13 +62,13 @@ function SortableHeader({ label, field, sortField, sortDirection, onSort }: Sort
   const Icon = isActive ? (sortDirection === "asc" ? ArrowUp : ArrowDown) : ArrowUpDown;
 
   return (
-    <th className="text-left p-2 font-semibold text-gray-700">
+    <th className="text-left p-2 font-semibold text-muted-foreground">
       <button
         onClick={() => onSort(field)}
-        className={`flex items-center gap-1 hover:text-gray-900 ${isActive ? "text-gray-900" : ""}`}
+        className={`flex items-center gap-1 hover:text-foreground ${isActive ? "text-foreground" : ""}`}
       >
         {label}
-        <Icon className={`w-3.5 h-3.5 ${isActive ? "text-gray-900" : "text-gray-400"}`} />
+        <Icon className={`w-3.5 h-3.5 ${isActive ? "text-foreground" : "text-muted-foreground"}`} />
       </button>
     </th>
   );
@@ -138,9 +144,19 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
     try {
       const payload: ClimberUpdateRequest = {};
 
-      // Only include fields that have been changed
-      if (editValues.username && editValues.username.trim()) {
-        payload.username = editValues.username.trim();
+      // Only include fields that have been changed. An unchanged username is
+      // neither validated nor sent: legacy names may break the new-name rule.
+      const currentClimber = (climberList ?? []).find((c) => c.id === climberId);
+      const usernameChanged =
+        normalizeUsername(editValues.username ?? "") !==
+        normalizeUsername(currentClimber?.username ?? "");
+      if (usernameChanged && editValues.username && editValues.username.trim()) {
+        const usernameError = validateNewUsername(editValues.username);
+        if (usernameError) {
+          setRowError({ id: climberId, message: usernameError });
+          return;
+        }
+        payload.username = normalizeNewUsername(editValues.username);
       }
       if (editValues.password && editValues.password.trim()) {
         payload.password = editValues.password.trim();
@@ -171,7 +187,8 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
       resetState();
       await refetch();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Misslyckades att uppdatera klättrare.";
+      const message =
+        err instanceof Error ? getUserFriendlyError(err) : "Misslyckades att uppdatera klättrare.";
       setRowError({ id: climberId, message });
     } finally {
       setSaving(null);
@@ -187,7 +204,8 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
       await deleteClimberById(climberId);
       await refetch();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Misslyckades att radera klättrare.";
+      const message =
+        err instanceof Error ? getUserFriendlyError(err) : "Misslyckades att radera klättrare.";
       setRowError({ id: climberId, message });
     } finally {
       setDeleting(null);
@@ -195,20 +213,20 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
   };
 
   return (
-    <div className="mb-6 h-fit flex flex-col bg-white/90 backdrop-blur p-4 rounded-lg shadow-md">
+    <div className="mb-6 h-fit flex flex-col bg-card/90 backdrop-blur p-4 rounded-lg shadow-soft">
       <h2 className="text-2xl font-semibold text-center mb-4">Klättrare</h2>
 
       {error && <CalloutMessage message={error} color="red" />}
 
       {!loading && climberList && climberList.length > 0 && (
         <div className="relative mb-4">
-          <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Sök på namn, användarnamn, e-post eller klubb..."
-            className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-gray-300 text-base focus:outline-none focus:ring-2 focus:ring-[--secondary-color] bg-white text-gray-800"
+            className="input-base pl-9 pr-3 py-2.5"
           />
         </div>
       )}
@@ -220,15 +238,19 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
         </div>
       ) : climberList && climberList.length > 0 ? (
         displayedClimbers.length === 0 ? (
-          <p className="text-center text-gray-500 py-4">Inga klättrare matchar "{searchQuery}".</p>
+          <p className="text-center text-muted-foreground py-4">
+            Inga klättrare matchar "{searchQuery}".
+          </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
-                <tr className="border-b border-gray-300">
-                  <th className="text-left p-2 font-semibold text-gray-700">ID</th>
-                  <th className="text-left p-2 font-semibold text-gray-700">Användarnamn</th>
-                  <th className="text-left p-2 font-semibold text-gray-700">E-post</th>
+                <tr className="border-b border-border">
+                  <th className="text-left p-2 font-semibold text-muted-foreground">ID</th>
+                  <th className="text-left p-2 font-semibold text-muted-foreground">
+                    Användarnamn
+                  </th>
+                  <th className="text-left p-2 font-semibold text-muted-foreground">E-post</th>
                   <SortableHeader
                     label="Förnamn"
                     field="firstname"
@@ -243,11 +265,11 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
                     sortDirection={sortDirection}
                     onSort={handleSort}
                   />
-                  <th className="text-left p-2 font-semibold text-gray-700">Klubb</th>
-                  <th className="text-left p-2 font-semibold text-gray-700">Lösenord</th>
-                  <th className="text-left p-2 font-semibold text-gray-700">Behörighet</th>
-                  <th className="text-left p-2 font-semibold text-gray-700">Skapad</th>
-                  <th className="text-center p-2 font-semibold text-gray-700">Åtgärder</th>
+                  <th className="text-left p-2 font-semibold text-muted-foreground">Klubb</th>
+                  <th className="text-left p-2 font-semibold text-muted-foreground">Lösenord</th>
+                  <th className="text-left p-2 font-semibold text-muted-foreground">Behörighet</th>
+                  <th className="text-left p-2 font-semibold text-muted-foreground">Skapad</th>
+                  <th className="text-center p-2 font-semibold text-muted-foreground">Åtgärder</th>
                 </tr>
               </thead>
 
@@ -260,8 +282,8 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
                   const errorForRow = rowError?.id === climber.id;
 
                   return (
-                    <tr key={climber.id} className="border-b border-gray-200 hover:bg-gray-50">
-                      <td className="p-2 text-gray-800">{climber.id}</td>
+                    <tr key={climber.id} className="border-b border-border hover:bg-muted/50">
+                      <td className="p-2 text-foreground">{climber.id}</td>
 
                       <td className="p-2">
                         {isEditing ? (
@@ -271,13 +293,13 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
                             onChange={(e) =>
                               setEditValues({ ...editValues, username: e.target.value })
                             }
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-base"
+                            className="input-base rounded px-2 py-1"
                             disabled={isSavingRow}
                             placeholder="Användarnamn"
                             autoComplete="username"
                           />
                         ) : (
-                          <span className="text-gray-800">{climber.username}</span>
+                          <span className="text-foreground">{climber.username}</span>
                         )}
                       </td>
 
@@ -292,12 +314,12 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
                                 email: e.target.value.trim().toLowerCase(),
                               })
                             }
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-base"
+                            className="input-base rounded px-2 py-1"
                             disabled={isSavingRow}
                             placeholder="E-post"
                           />
                         ) : (
-                          <span className="text-gray-800">{climber.email}</span>
+                          <span className="text-foreground">{climber.email}</span>
                         )}
                       </td>
 
@@ -309,12 +331,12 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
                             onChange={(e) =>
                               setEditValues({ ...editValues, firstname: e.target.value })
                             }
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-base"
+                            className="input-base rounded px-2 py-1"
                             disabled={isSavingRow}
                             placeholder="Förnamn"
                           />
                         ) : (
-                          <span className="text-gray-800">{climber.firstname}</span>
+                          <span className="text-foreground">{climber.firstname}</span>
                         )}
                       </td>
 
@@ -326,12 +348,12 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
                             onChange={(e) =>
                               setEditValues({ ...editValues, lastname: e.target.value })
                             }
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-base"
+                            className="input-base rounded px-2 py-1"
                             disabled={isSavingRow}
                             placeholder="Efternamn"
                           />
                         ) : (
-                          <span className="text-gray-800">{climber.lastname}</span>
+                          <span className="text-foreground">{climber.lastname}</span>
                         )}
                       </td>
 
@@ -341,12 +363,12 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
                             type="text"
                             value={editValues.club}
                             onChange={(e) => setEditValues({ ...editValues, club: e.target.value })}
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-base"
+                            className="input-base rounded px-2 py-1"
                             disabled={isSavingRow}
                             placeholder="Klubb"
                           />
                         ) : (
-                          <span className="text-gray-800">{climber.club}</span>
+                          <span className="text-foreground">{climber.club}</span>
                         )}
                       </td>
 
@@ -358,13 +380,13 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
                             onChange={(e) =>
                               setEditValues({ ...editValues, password: e.target.value })
                             }
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-base"
+                            className="input-base rounded px-2 py-1"
                             disabled={isSavingRow}
                             placeholder="Nytt lösenord (valfritt)"
                             autoComplete="new-password"
                           />
                         ) : (
-                          <span className="text-gray-500">••••••••</span>
+                          <span className="text-muted-foreground">••••••••</span>
                         )}
                       </td>
 
@@ -375,7 +397,7 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
                             onChange={(e) =>
                               setEditValues({ ...editValues, user_scope: e.target.value })
                             }
-                            className="w-full p-2 rounded-lg border text-base focus:outline-none focus:ring-2 focus:ring-[--secondary-color]"
+                            className="input-base p-2"
                             disabled={isSavingRow}
                           >
                             {USER_SCOPES.map((scope) => (
@@ -385,10 +407,10 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
                             ))}
                           </select>
                         ) : (
-                          <span className="text-gray-800">{climber.user_scope}</span>
+                          <span className="text-foreground">{climber.user_scope}</span>
                         )}
                       </td>
-                      <td className="p-2 text-gray-800">{formatDate(climber.created_at)}</td>
+                      <td className="p-2 text-foreground">{formatDate(climber.created_at)}</td>
 
                       <td className="p-2">
                         <div className="flex items-center justify-center gap-2">
@@ -396,6 +418,7 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
                             <>
                               <Button
                                 onClick={() => handleSave(climber.id)}
+                                aria-label="Spara ändringar"
                                 disabled={isSavingRow}
                                 className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded disabled:opacity-50"
                                 size="1"
@@ -405,8 +428,9 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
 
                               <Button
                                 onClick={resetState}
+                                aria-label="Avbryt redigering"
                                 disabled={isSavingRow}
-                                className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded disabled:opacity-50"
+                                className="bg-secondary hover:bg-accent text-secondary-foreground px-3 py-1 rounded disabled:opacity-50"
                                 size="1"
                               >
                                 <X className="w-4 h-4" />
@@ -426,8 +450,9 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
 
                               <Button
                                 onClick={() => startEdit(climber)}
+                                aria-label={`Redigera ${climber.username}`}
                                 disabled={isSavingRow || isDeletingRow || editingId !== null}
-                                className="bg-[--secondary-color] hover:bg-[--secondary-color-hover] text-white px-3 py-1 rounded disabled:opacity-50"
+                                className="bg-primary hover:bg-primary-hover text-primary-foreground px-3 py-1 rounded disabled:opacity-50"
                                 size="1"
                               >
                                 <Pencil className="w-4 h-4" />
@@ -438,7 +463,7 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
                                   <Button
                                     onClick={() => handleDelete(climber.id)}
                                     disabled={isDeletingRow}
-                                    className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs disabled:opacity-50"
+                                    className="bg-destructive hover:bg-destructive/90 text-destructive-foreground px-2 py-1 rounded text-xs disabled:opacity-50"
                                     size="1"
                                   >
                                     {isDeletingRow ? <Spinner size="1" /> : "Bekräfta"}
@@ -447,7 +472,7 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
                                   <Button
                                     onClick={() => setDeleteConfirm(null)}
                                     disabled={isDeletingRow}
-                                    className="bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs disabled:opacity-50"
+                                    className="bg-secondary hover:bg-accent text-secondary-foreground px-2 py-1 rounded text-xs disabled:opacity-50"
                                     size="1"
                                   >
                                     Avbryt
@@ -457,7 +482,7 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
                                 <Button
                                   onClick={() => setDeleteConfirm(climber.id)}
                                   disabled={isSavingRow || isDeletingRow || editingId !== null}
-                                  className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded disabled:opacity-50"
+                                  className="bg-destructive hover:bg-destructive/90 text-destructive-foreground px-3 py-1 rounded disabled:opacity-50"
                                   size="1"
                                 >
                                   <Trash2 className="w-4 h-4" />
@@ -481,7 +506,7 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
           </div>
         )
       ) : (
-        <p className="text-center text-gray-500 py-4">Inga klättrare tillgängliga.</p>
+        <p className="text-center text-muted-foreground py-4">Inga klättrare tillgängliga.</p>
       )}
 
       <ClimberStatsModal climber={statsClimber} onClose={() => setStatsClimber(null)} />

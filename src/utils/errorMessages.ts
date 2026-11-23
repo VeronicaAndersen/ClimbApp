@@ -1,3 +1,6 @@
+import { ApiError, SERVER_ERROR_MESSAGE, formatRateLimitMessage } from "@/lib/apiError";
+import { summarizeIssues, translateKnownIssueText } from "./validationIssues";
+
 /**
  * Converts technical error messages into user-friendly Swedish messages
  */
@@ -5,6 +8,14 @@ export function getUserFriendlyError(error: unknown): string {
   // Handle null/undefined
   if (!error) {
     return "Ett oväntat fel uppstod. Försök igen.";
+  }
+
+  // Rate limits and server errors get fixed texts, whatever the message says.
+  if (error instanceof ApiError) {
+    if (error.status === 429) return formatRateLimitMessage(error.retryAfterSeconds);
+    if (error.status >= 500) return SERVER_ERROR_MESSAGE;
+    // Built from the original issues, so known scoring texts are translated.
+    if (error.status === 422) return summarizeIssues(error.validationIssues);
   }
 
   // Extract error message
@@ -42,22 +53,17 @@ export function getUserFriendlyError(error: unknown): string {
     return "Felaktigt användarnamn eller lösenord.";
   }
 
-  // Validation errors
-  if (msg.includes("ifsc: top implies zone") || msg.includes("got_bonus must be true")) {
-    return "Enligt IFSC-regler måste bonus uppnås innan topp. Sätt bonusvärde först.";
+  if (msg.includes("invalid or expired reset token")) {
+    return "Återställningslänken är ogiltig eller har gått ut. Begär en ny länk.";
   }
 
-  if (msg.includes("attempts_to_top must be >= attempts_to_bonus")) {
-    return "Antal försök till topp kan inte vara färre än försök till bonus.";
+  if (msg.includes("username is already taken")) {
+    return "Användarnamnet är redan upptaget. Välj ett annat.";
   }
 
-  if (msg.includes("attempts_to_bonus cannot exceed attempts_total")) {
-    return "Försök till bonus kan inte överstiga totalt antal försök.";
-  }
-
-  if (msg.includes("attempts_to_top cannot exceed attempts_total")) {
-    return "Försök till topp kan inte överstiga totalt antal försök.";
-  }
+  // Validation errors (scoring rules), shared with the 422 handling
+  const known = translateKnownIssueText(msg);
+  if (known) return known;
 
   if (msg.includes("required") || msg.includes("obligatorisk")) {
     return "Alla obligatoriska fält måste fyllas i.";

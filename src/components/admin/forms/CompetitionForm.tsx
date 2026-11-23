@@ -53,7 +53,7 @@ export function CompetitionForm({ onCompetitionCreated }: CompetitionFormProps =
     <>
       <form
         onSubmit={handleSubmit}
-        className="mb-6 h-fit flex flex-col bg-white/90 backdrop-blur p-4 rounded-lg shadow-md"
+        className="mb-6 h-fit flex flex-col bg-card/90 backdrop-blur p-4 rounded-lg shadow-soft"
       >
         <h1 className="text-2xl font-semibold text-center mb-4">Skapa tävling</h1>
         {error && <CalloutMessage message={error} color="red" />}
@@ -91,7 +91,7 @@ export function CompetitionForm({ onCompetitionCreated }: CompetitionFormProps =
           id="competition_type"
           value={competitionData.comp_type}
           onChange={handleChange("comp_type")}
-          className="w-full p-2 rounded-lg border text-base focus:outline-none focus:ring-2 focus:ring-[--secondary-color]"
+          className="input-base p-2"
           disabled={loading}
         >
           <option value="">Välj typ</option>
@@ -146,7 +146,7 @@ export function CompetitionForm({ onCompetitionCreated }: CompetitionFormProps =
         )}
 
         <Button
-          className="mt-4 w-full cursor-pointer rounded-full bg-[--secondary-color] hover:bg-[--secondary-color-hover] disabled:bg-[--secondary-color]/50 disabled:cursor-not-allowed flex items-center justify-center"
+          className="mt-4 w-full cursor-pointer rounded-full bg-primary text-primary-foreground hover:bg-primary-hover disabled:bg-primary/50 disabled:cursor-not-allowed flex items-center justify-center"
           type="submit"
           disabled={loading}
         >

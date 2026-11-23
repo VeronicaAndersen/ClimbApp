@@ -4,12 +4,23 @@ import { requestPasswordReset } from "@/services/api";
 import { Button, Card, TextField, Spinner } from "@radix-ui/themes";
 import CalloutMessage from "../feedback/CalloutMessage";
 import { getUserFriendlyError } from "@/utils/errorMessages";
+import { useCooldown } from "@/hooks/useCooldown";
+import { normalizeUsername, validateUsername } from "@/utils/inputValidation";
+import { useServerFieldErrors } from "@/hooks/useServerFieldErrors";
+import { FieldError } from "./FieldError";
 
 export function ForgotPasswordForm() {
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const { isCoolingDown, startCooldownFor } = useCooldown({
+    onExpire: () => setErrorMessage(null),
+  });
+  const { serverErrorFor, recordServerErrors, clearServerErrors } = useServerFieldErrors({
+    username,
+  });
+  const usernameError = validateUsername(username) ?? serverErrorFor("username");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,19 +29,22 @@ export function ForgotPasswordForm() {
     setSuccess(false);
 
     try {
-      await requestPasswordReset({ username: username.trim().toLowerCase() });
+      await requestPasswordReset({ username: normalizeUsername(username) });
       setSuccess(true);
       setUsername("");
+      clearServerErrors();
     } catch (error) {
       setErrorMessage(getUserFriendlyError(error));
+      recordServerErrors(error, { username });
+      startCooldownFor(error);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="w-80 flex items-center justify-center">
-      <Card className="w-full h-fit max-w-md p-6 bg-white/95 backdrop-blur shadow-xl">
+    <div className="w-full max-w-sm flex items-center justify-center">
+      <Card className="w-full h-fit p-6 sm:p-8 shadow-soft">
         <CalloutMessage message={errorMessage ?? ""} color="red" />
         <CalloutMessage
           message={
@@ -41,12 +55,14 @@ export function ForgotPasswordForm() {
           color="green"
         />
         <form onSubmit={handleSubmit} className="space-y-6">
-          <h1 className="text-2xl font-semibold text-center mb-4">Glömt lösenord</h1>
-          <p className="text-sm text-gray-600 text-center">
+          <h1 className="text-2xl font-semibold tracking-tight text-center mb-2">Glömt lösenord</h1>
+          <p className="text-sm text-muted-foreground text-center">
             Ange ditt användarnamn så skickar vi en länk för att återställa ditt lösenord.
           </p>
           <div className="space-y-2">
-            <label htmlFor="username" className="text-sm font-medium">Användarnamn</label>
+            <label htmlFor="username" className="text-sm font-medium">
+              Användarnamn
+            </label>
             <TextField.Root
               id="username"
               type="text"
@@ -55,15 +71,19 @@ export function ForgotPasswordForm() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
+              aria-invalid={usernameError !== null}
+              aria-describedby={usernameError ? "username-error" : undefined}
               className="w-full text-base"
               disabled={loading || success}
             />
+            <FieldError id="username-error" message={usernameError} />
           </div>
 
           <Button
             type="submit"
-            className="w-full cursor-pointer rounded-full bg-[--secondary-color] hover:bg-[--secondary-color-hover] disabled:bg-[--secondary-color]/50 disabled:cursor-not-allowed flex items-center justify-center"
-            disabled={!username || loading || success}
+            size="3"
+            className="w-full cursor-pointer rounded-full disabled:cursor-not-allowed"
+            disabled={!username || usernameError !== null || loading || success || isCoolingDown}
           >
             {loading ? (
               <>
@@ -74,10 +94,7 @@ export function ForgotPasswordForm() {
             )}
           </Button>
 
-          <Link
-            to="/"
-            className="w-fit text-sm text-center text-[--secondary-color] underline flex justify-center mx-auto"
-          >
+          <Link to="/" className="text-link w-fit flex justify-center mx-auto">
             Tillbaka till inloggning
           </Link>
         </form>

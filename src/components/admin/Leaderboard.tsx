@@ -36,12 +36,12 @@ function LevelTabs({
           onClick={() => onSelect(l.level)}
           className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
             activeLevel === l.level
-              ? "bg-[--secondary-color] text-white"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              ? "bg-primary text-primary-foreground"
+              : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
           }`}
         >
           <span
-            className="w-4 h-4 rounded-full border border-gray-300 shrink-0"
+            className="w-4 h-4 rounded-full border border-border shrink-0"
             style={{ backgroundColor: getGradeColor(l.level) }}
           />
           Grad {l.level}
@@ -59,24 +59,26 @@ function RankedTable({
   scoreLabel: string;
 }) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-gray-200">
+    <div className="overflow-x-auto rounded-lg border border-border">
       <table className="w-full text-sm">
-        <thead className="bg-gray-50 text-gray-600 uppercase text-xs">
+        <thead className="bg-muted/50 text-muted-foreground uppercase text-xs">
           <tr>
             <th className="px-4 py-3 text-left w-16">#</th>
             <th className="px-4 py-3 text-left">Namn</th>
             <th className="px-4 py-3 text-right">{scoreLabel}</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">
+        <tbody className="divide-y divide-border">
           {levelData.entries.map((entry) => (
             <tr
               key={`${entry.rank}-${entry.name}`}
-              className={entry.rank <= 3 ? "bg-amber-50" : "bg-white"}
+              className={entry.rank <= 3 ? "bg-amber-50 dark:bg-amber-500/10" : "bg-card"}
             >
-              <td className="px-4 py-3 font-semibold text-gray-500">{getRankIcon(entry.rank)}</td>
-              <td className="px-4 py-3 font-medium text-gray-800">{entry.name}</td>
-              <td className="px-4 py-3 text-right font-mono text-gray-700">
+              <td className="px-4 py-3 font-semibold text-muted-foreground">
+                {getRankIcon(entry.rank)}
+              </td>
+              <td className="px-4 py-3 font-medium text-foreground">{entry.name}</td>
+              <td className="px-4 py-3 text-right font-mono text-muted-foreground">
                 {entry.total_score.toFixed(1)}
               </td>
             </tr>
@@ -134,12 +136,12 @@ function CompetitionLeaderboard() {
   return (
     <div className="space-y-4">
       {loadingComps ? (
-        <div className="flex items-center gap-2 text-gray-500">
+        <div className="flex items-center gap-2 text-muted-foreground">
           <Spinner size="2" /> Laddar tävlingar...
         </div>
       ) : (
         <select
-          className="w-full p-2 rounded-lg border text-base focus:outline-none focus:ring-2 focus:ring-[--secondary-color]"
+          className="input-base p-2"
           value={selectedId ?? ""}
           onChange={(e) => setSelectedId(e.target.value ? Number(e.target.value) : null)}
         >
@@ -152,10 +154,10 @@ function CompetitionLeaderboard() {
         </select>
       )}
 
-      {error && <p className="text-red-500 text-sm">{error}</p>}
+      {error && <p className="text-red-500 dark:text-red-400 text-sm">{error}</p>}
 
       {loadingBoard && (
-        <div className="flex items-center gap-2 text-gray-500">
+        <div className="flex items-center gap-2 text-muted-foreground">
           <Spinner size="2" /> Laddar resultatlista...
         </div>
       )}
@@ -163,7 +165,9 @@ function CompetitionLeaderboard() {
       {leaderboard && !loadingBoard && (
         <>
           {leaderboard.levels.length === 0 ? (
-            <p className="text-gray-500 text-sm">Inga godkända resultat för denna tävling.</p>
+            <p className="text-muted-foreground text-sm">
+              Inga godkända resultat för denna tävling.
+            </p>
           ) : (
             <>
               <LevelTabs
@@ -227,12 +231,12 @@ function SeasonLeaderboard() {
   return (
     <div className="space-y-4">
       {loadingSeasons ? (
-        <div className="flex items-center gap-2 text-gray-500">
+        <div className="flex items-center gap-2 text-muted-foreground">
           <Spinner size="2" /> Laddar säsonger...
         </div>
       ) : (
         <select
-          className="w-full p-2 rounded-lg border text-base focus:outline-none focus:ring-2 focus:ring-[--secondary-color]"
+          className="input-base p-2"
           value={selectedId ?? ""}
           onChange={(e) => setSelectedId(e.target.value ? Number(e.target.value) : null)}
         >
@@ -245,10 +249,10 @@ function SeasonLeaderboard() {
         </select>
       )}
 
-      {error && <p className="text-red-500 text-sm">{error}</p>}
+      {error && <p className="text-red-500 dark:text-red-400 text-sm">{error}</p>}
 
       {loadingStandings && (
-        <div className="flex items-center gap-2 text-gray-500">
+        <div className="flex items-center gap-2 text-muted-foreground">
           <Spinner size="2" /> Laddar resultat...
         </div>
       )}
@@ -256,7 +260,9 @@ function SeasonLeaderboard() {
       {standings && !loadingStandings && (
         <>
           {standings.levels.length === 0 ? (
-            <p className="text-gray-500 text-sm">Inga godkända resultat för denna säsong.</p>
+            <p className="text-muted-foreground text-sm">
+              Inga godkända resultat för denna säsong.
+            </p>
           ) : (
             <>
               <LevelTabs
@@ -281,24 +287,24 @@ export function Leaderboard() {
   return (
     <div className="w-full space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-xl font-semibold text-gray-800">Resultatlista</h3>
-        <div className="flex rounded-lg border border-gray-200 overflow-hidden text-sm font-medium">
+        <h3 className="text-xl font-semibold text-foreground">Resultatlista</h3>
+        <div className="flex rounded-lg border border-border overflow-hidden text-sm font-medium">
           <button
             onClick={() => setView("competition")}
             className={`px-4 py-1.5 transition-colors ${
               view === "competition"
-                ? "bg-[--secondary-color] text-white"
-                : "bg-white text-gray-600 hover:bg-gray-50"
+                ? "bg-primary text-primary-foreground"
+                : "bg-card text-muted-foreground hover:bg-muted/50"
             }`}
           >
             Tävling
           </button>
           <button
             onClick={() => setView("season")}
-            className={`px-4 py-1.5 border-l border-gray-200 transition-colors ${
+            className={`px-4 py-1.5 border-l border-border transition-colors ${
               view === "season"
-                ? "bg-[--secondary-color] text-white"
-                : "bg-white text-gray-600 hover:bg-gray-50"
+                ? "bg-primary text-primary-foreground"
+                : "bg-card text-muted-foreground hover:bg-muted/50"
             }`}
           >
             Säsong

@@ -5,6 +5,7 @@ import { updateSeasonById, deleteSeasonById } from "@/services/api";
 import { SeasonResponse, SeasonRequest } from "@/types";
 import { Pencil, Trash2, Check, X } from "lucide-react";
 import CalloutMessage from "../feedback/CalloutMessage";
+import { getUserFriendlyError } from "@/utils/errorMessages";
 
 interface SeasonListProps {
   refreshKey?: number;
@@ -51,7 +52,8 @@ export function SeasonList({ refreshKey }: SeasonListProps = {}) {
       resetState();
       await refetch();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Misslyckades att uppdatera säsong.";
+      const message =
+        err instanceof Error ? getUserFriendlyError(err) : "Misslyckades att uppdatera säsong.";
       setRowError({ id: seasonId, message });
     } finally {
       setSaving(null);
@@ -67,7 +69,8 @@ export function SeasonList({ refreshKey }: SeasonListProps = {}) {
       await deleteSeasonById(seasonId);
       await refetch();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Misslyckades att radera säsong.";
+      const message =
+        err instanceof Error ? getUserFriendlyError(err) : "Misslyckades att radera säsong.";
       setRowError({ id: seasonId, message });
     } finally {
       setDeleting(null);
@@ -85,7 +88,7 @@ export function SeasonList({ refreshKey }: SeasonListProps = {}) {
           onChange={(e) =>
             setEditValues({ ...editValues, year: e.target.value ? parseInt(e.target.value) : null })
           }
-          className="w-full px-2 py-1 border border-gray-300 rounded text-base"
+          className="input-base rounded px-2 py-1"
           disabled={isSavingRow}
         />
       );
@@ -96,14 +99,14 @@ export function SeasonList({ refreshKey }: SeasonListProps = {}) {
         type="text"
         value={editValues.name}
         onChange={(e) => setEditValues({ ...editValues, name: e.target.value })}
-        className="w-full px-2 py-1 border border-gray-300 rounded text-base"
+        className="input-base rounded px-2 py-1"
         disabled={isSavingRow}
       />
     );
   };
 
   return (
-    <div className="mb-6 h-fit flex flex-col bg-white/90 backdrop-blur p-4 rounded-lg shadow-md">
+    <div className="mb-6 h-fit flex flex-col bg-card/90 backdrop-blur p-4 rounded-lg shadow-soft">
       <h2 className="text-2xl font-semibold text-center mb-4">Säsonger</h2>
 
       {error && <CalloutMessage message={error} color="red" />}
@@ -117,14 +120,17 @@ export function SeasonList({ refreshKey }: SeasonListProps = {}) {
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
-              <tr className="border-b border-gray-300">
-                <th className="text-left p-2 font-semibold text-gray-700">ID</th>
+              <tr className="border-b border-border">
+                <th className="text-left p-2 font-semibold text-muted-foreground">ID</th>
                 {FIELDS.map((f) => (
-                  <th key={f} className="text-left p-2 font-semibold text-gray-700 capitalize">
+                  <th
+                    key={f}
+                    className="text-left p-2 font-semibold text-muted-foreground capitalize"
+                  >
                     {f}
                   </th>
                 ))}
-                <th className="text-center p-2 font-semibold text-gray-700">Åtgärder</th>
+                <th className="text-center p-2 font-semibold text-muted-foreground">Åtgärder</th>
               </tr>
             </thead>
 
@@ -137,15 +143,15 @@ export function SeasonList({ refreshKey }: SeasonListProps = {}) {
                 const errorForRow = rowError?.id === season.id;
 
                 return (
-                  <tr key={season.id} className="border-b border-gray-200 hover:bg-gray-50">
-                    <td className="p-2 text-gray-800">{season.id}</td>
+                  <tr key={season.id} className="border-b border-border hover:bg-muted/50">
+                    <td className="p-2 text-foreground">{season.id}</td>
 
                     {FIELDS.map((field) => (
                       <td key={field} className="p-2">
                         {isEditing ? (
                           renderEditInput(field, isSavingRow)
                         ) : (
-                          <span className="text-gray-800">{season[field]}</span>
+                          <span className="text-foreground">{season[field]}</span>
                         )}
                       </td>
                     ))}
@@ -166,7 +172,7 @@ export function SeasonList({ refreshKey }: SeasonListProps = {}) {
                             <Button
                               onClick={resetState}
                               disabled={isSavingRow}
-                              className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded disabled:opacity-50"
+                              className="bg-secondary hover:bg-accent text-secondary-foreground px-3 py-1 rounded disabled:opacity-50"
                               size="1"
                             >
                               <X className="w-4 h-4" />
@@ -177,7 +183,7 @@ export function SeasonList({ refreshKey }: SeasonListProps = {}) {
                             <Button
                               onClick={() => startEdit(season)}
                               disabled={isSavingRow || isDeletingRow || editingId !== null}
-                              className="bg-[--secondary-color] hover:bg-[--secondary-color-hover] text-white px-3 py-1 rounded disabled:opacity-50"
+                              className="bg-primary hover:bg-primary-hover text-primary-foreground px-3 py-1 rounded disabled:opacity-50"
                               size="1"
                             >
                               <Pencil className="w-4 h-4" />
@@ -188,7 +194,7 @@ export function SeasonList({ refreshKey }: SeasonListProps = {}) {
                                 <Button
                                   onClick={() => handleDelete(season.id)}
                                   disabled={isDeletingRow}
-                                  className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs disabled:opacity-50"
+                                  className="bg-destructive hover:bg-destructive/90 text-destructive-foreground px-2 py-1 rounded text-xs disabled:opacity-50"
                                   size="1"
                                 >
                                   {isDeletingRow ? <Spinner size="1" /> : "Bekräfta"}
@@ -197,7 +203,7 @@ export function SeasonList({ refreshKey }: SeasonListProps = {}) {
                                 <Button
                                   onClick={() => setDeleteConfirm(null)}
                                   disabled={isDeletingRow}
-                                  className="bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs disabled:opacity-50"
+                                  className="bg-secondary hover:bg-accent text-secondary-foreground px-2 py-1 rounded text-xs disabled:opacity-50"
                                   size="1"
                                 >
                                   Avbryt
@@ -207,7 +213,7 @@ export function SeasonList({ refreshKey }: SeasonListProps = {}) {
                               <Button
                                 onClick={() => setDeleteConfirm(season.id)}
                                 disabled={isSavingRow || isDeletingRow || editingId !== null}
-                                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded disabled:opacity-50"
+                                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground px-3 py-1 rounded disabled:opacity-50"
                                 size="1"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -230,7 +236,7 @@ export function SeasonList({ refreshKey }: SeasonListProps = {}) {
           </table>
         </div>
       ) : (
-        <p className="text-center text-gray-500 py-4">Inga säsonger tillgängliga.</p>
+        <p className="text-center text-muted-foreground py-4">Inga säsonger tillgängliga.</p>
       )}
     </div>
   );

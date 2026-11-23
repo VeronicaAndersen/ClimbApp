@@ -98,13 +98,13 @@ export function RegistrationApprovalList({
   };
 
   return (
-    <div className="mb-6 h-fit flex flex-col bg-white/90 backdrop-blur p-4 rounded-lg shadow-md">
+    <div className="mb-6 h-fit flex flex-col bg-card/90 backdrop-blur p-4 rounded-lg shadow-soft">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-semibold">Anmälda</h2>
         <Button
           onClick={fetchRegistrations}
           disabled={loading}
-          className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded disabled:opacity-50 cursor-pointer"
+          className="bg-muted hover:bg-accent text-foreground px-3 py-1 rounded disabled:opacity-50 cursor-pointer"
           size="1"
         >
           {loading ? <Spinner size="1" /> : <RefreshCw className="w-4 h-4" />}
@@ -122,13 +122,13 @@ export function RegistrationApprovalList({
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
-              <tr className="border-b border-gray-300">
-                <th className="text-left p-2 font-semibold text-gray-700">Id</th>
-                <th className="text-left p-2 font-semibold text-gray-700">Klättrare</th>
-                <th className="text-left p-2 font-semibold text-gray-700">Nivå</th>
-                <th className="text-left p-2 font-semibold text-gray-700">Registrerad</th>
-                <th className="text-center p-2 font-semibold text-gray-700">Status</th>
-                <th className="text-center p-2 font-semibold text-gray-700">Åtgärd</th>
+              <tr className="border-b border-border">
+                <th className="text-left p-2 font-semibold text-muted-foreground">Id</th>
+                <th className="text-left p-2 font-semibold text-muted-foreground">Klättrare</th>
+                <th className="text-left p-2 font-semibold text-muted-foreground">Nivå</th>
+                <th className="text-left p-2 font-semibold text-muted-foreground">Registrerad</th>
+                <th className="text-center p-2 font-semibold text-muted-foreground">Status</th>
+                <th className="text-center p-2 font-semibold text-muted-foreground">Åtgärd</th>
               </tr>
             </thead>
 
@@ -141,14 +141,14 @@ export function RegistrationApprovalList({
                 return (
                   <tr
                     key={`${reg.comp_id}-${reg.user_id}`}
-                    className="border-b border-gray-200 hover:bg-gray-50"
+                    className="border-b border-border hover:bg-muted/50"
                   >
-                    <td className="p-2 text-gray-800">{reg.user_id}</td>
-                    <td className="p-2 text-gray-800">{reg.climber_name}</td>
+                    <td className="p-2 text-foreground">{reg.user_id}</td>
+                    <td className="p-2 text-foreground">{reg.climber_name}</td>
                     <td className="p-2">
                       <div className="flex items-center gap-2">
                         <span
-                          className="inline-block w-6 h-6 rounded-full border-2 border-gray-300"
+                          className="inline-block w-6 h-6 rounded-full border-2 border-border"
                           style={{ backgroundColor: getLevelColor(reg.level) }}
                           title={`Nivå ${reg.level}`}
                         />
@@ -156,7 +156,7 @@ export function RegistrationApprovalList({
                           value={reg.level}
                           onChange={(e) => handleLevelChange(reg.user_id, Number(e.target.value))}
                           disabled={isChangingLevel}
-                          className="w-full p-2 rounded-lg border text-base focus:outline-none focus:ring-2 focus:ring-[--secondary-color] disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="input-base min-w-28 p-2"
                         >
                           {LEVELS.map((level) => (
                             <option key={level} value={level}>
@@ -167,15 +167,17 @@ export function RegistrationApprovalList({
                         {isChangingLevel && <Spinner size="1" />}
                       </div>
                     </td>
-                    <td className="p-2 text-gray-600 text-sm">{formatDate(reg.created_at)}</td>
+                    <td className="p-2 text-muted-foreground text-sm">
+                      {formatDate(reg.created_at)}
+                    </td>
                     <td className="p-2 text-center">
                       {reg.approved ? (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-500/15 dark:text-green-300">
                           <Check className="w-3 h-3 mr-1" />
                           Godkänd
                         </span>
                       ) : (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-500/15 dark:text-yellow-300">
                           Väntar
                         </span>
                       )}
@@ -186,7 +188,7 @@ export function RegistrationApprovalList({
                           <Button
                             onClick={() => handleApprovalChange(reg.user_id, false)}
                             disabled={isBusy}
-                            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded disabled:opacity-50"
+                            className="bg-destructive hover:bg-destructive/90 text-destructive-foreground px-3 py-1 rounded disabled:opacity-50"
                             size="1"
                           >
                             {isUpdating ? <Spinner size="1" /> : <X className="w-4 h-4" />}
@@ -210,7 +212,7 @@ export function RegistrationApprovalList({
           </table>
         </div>
       ) : (
-        <p className="text-center text-gray-500 py-4">Inga anmälda för denna tävling.</p>
+        <p className="text-center text-muted-foreground py-4">Inga anmälda för denna tävling.</p>
       )}
     </div>
   );

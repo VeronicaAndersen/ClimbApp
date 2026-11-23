@@ -1,0 +1,227 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
+import { Theme } from "@radix-ui/themes";
+import * as api from "@/services/api";
+import { ApiError } from "@/lib/apiError";
+import { RegistrationForm } from "../../../components/forms/RegistrationForm";
+
+function renderRegistrationForm() {
+  return render(
+    <MemoryRouter>
+      <Theme>
+        <RegistrationForm />
+      </Theme>
+    </MemoryRouter>
+  );
+}
+
+type User = ReturnType<typeof userEvent.setup>;
+
+async function fillValidForm(user: User, overrides: { username?: string } = {}) {
+  await user.type(screen.getByLabelText("Användarnamn"), overrides.username ?? "Alice");
+  await user.type(screen.getByLabelText("Lösenord"), "secret123");
+  await user.type(screen.getByLabelText("E-post"), "alice@example.com");
+  await user.type(screen.getByLabelText("Förnamn"), "Alice");
+  await user.type(screen.getByLabelText("Efternamn"), "Climber");
+  await user.click(screen.getByRole("checkbox"));
+}
+
+const submitButton = () => screen.getByRole("button", { name: "Registrera dig" });
+
+beforeEach(() => {
+  vi.restoreAllMocks();
+});
+
+describe("RegistrationForm — input rules", () => {
+  it("lowercases a Greek name as a whole, keeping the inner sigma", async () => {
+    const signup = vi.spyOn(api, "signupClimber").mockResolvedValue(null);
+    const user = userEvent.setup();
+    renderRegistrationForm();
+
+    await fillValidForm(user, { username: "ΌΣΟΣ" });
+    expect(screen.getByLabelText("Användarnamn")).toHaveValue("ΌΣΟΣ");
+    await user.click(submitButton());
+
+    expect(signup).toHaveBeenCalledWith(expect.objectContaining({ username: "όσος" }));
+  });
+
+  it("shows a message for a too long password instead of truncating it", async () => {
+    const user = userEvent.setup();
+    renderRegistrationForm();
+    const password = screen.getByLabelText("Lösenord");
+    expect(password).not.toHaveAttribute("maxLength");
+
+    await user.click(password);
+    await user.paste("x".repeat(1025));
+
+    expect(password).toHaveAccessibleDescription("Lösenordet får vara högst 1024 tecken.");
+  });
+
+  it("explains a too short password", async () => {
+    const user = userEvent.setup();
+    renderRegistrationForm();
+
+    await user.type(screen.getByLabelText("Lösenord"), "abc");
+
+    expect(screen.getByLabelText("Lösenord")).toHaveAccessibleDescription(
+      "Lösenordet måste innehålla minst 6 tecken."
+    );
+  });
+
+  it("sends the trimmed, lowercased username", async () => {
+    const signup = vi.spyOn(api, "signupClimber").mockResolvedValue(null);
+    const user = userEvent.setup();
+    renderRegistrationForm();
+
+    await fillValidForm(user, { username: "  Alice  " });
+    await user.click(submitButton());
+
+    expect(signup).toHaveBeenCalledWith(expect.objectContaining({ username: "alice" }));
+  });
+
+  it("blocks invisible characters in the username", async () => {
+    const user = userEvent.setup();
+    renderRegistrationForm();
+
+    await fillValidForm(user, { username: "ali\u202Ece" });
+
+    expect(
+      screen.getByText("Användarnamn får bara innehålla bokstäver, siffror, mellanslag och . _ - @")
+    ).toBeInTheDocument();
+    expect(submitButton()).toBeDisabled();
+  });
+
+  it("rejects emoji in a new username", async () => {
+    const user = userEvent.setup();
+    renderRegistrationForm();
+
+    await fillValidForm(user, { username: "blomma\u{1F338}" });
+
+    expect(screen.getByLabelText("Användarnamn")).toHaveAccessibleDescription(
+      "Användarnamn får bara innehålla bokstäver, siffror, mellanslag och . _ - @"
+    );
+    expect(submitButton()).toBeDisabled();
+  });
+
+  it("rejects a double space", async () => {
+    const user = userEvent.setup();
+    renderRegistrationForm();
+
+    await fillValidForm(user, { username: "anna  karin" });
+
+    expect(screen.getByLabelText("Användarnamn")).toHaveAccessibleDescription(
+      "Användarnamnet får inte börja eller sluta med mellanslag eller ha två mellanslag i rad."
+    );
+    expect(submitButton()).toBeDisabled();
+  });
+
+  it.each([
+    ["Åsa Öberg", "åsa öberg"],
+    ["Jörgen.Ø@example.com", "jörgen.ø@example.com"],
+    ["José_ä-1", "josé_ä-1"],
+    ["\uFF41dmin", "admin"],
+  ])("sends %j as the normalized %j", async (typed, sent) => {
+    const signup = vi.spyOn(api, "signupClimber").mockResolvedValue(null);
+    const user = userEvent.setup();
+    renderRegistrationForm();
+
+    await fillValidForm(user, { username: typed });
+    await user.click(submitButton());
+
+    expect(signup).toHaveBeenCalledWith(expect.objectContaining({ username: sent }));
+  });
+
+  it("blocks control characters in the club", async () => {
+    const user = userEvent.setup();
+    renderRegistrationForm();
+
+    await fillValidForm(user);
+    await user.click(screen.getByLabelText("Klubb (valfritt)"));
+    await user.paste("Grepp\u0000");
+
+    expect(screen.getByLabelText("Klubb (valfritt)")).toHaveAccessibleDescription(
+      "Klubb får inte innehålla kontrolltecken eller osynliga tecken."
+    );
+    expect(submitButton()).toBeDisabled();
+  });
+
+  it("enables submit once everything is valid", async () => {
+    const user = userEvent.setup();
+    renderRegistrationForm();
+
+    await fillValidForm(user);
+
+    expect(submitButton()).toBeEnabled();
+  });
+});
+
+describe("RegistrationForm — API errors", () => {
+  it("shows a 422 in Swedish on its field until the field is edited", async () => {
+    vi.spyOn(api, "signupClimber").mockRejectedValue(
+      new ApiError({
+        status: 422,
+        message: "Value error, must not contain control or bidirectional override characters",
+        validationIssues: [
+          {
+            loc: ["body", "lastname"],
+            msg: "Value error, must not contain control or bidirectional override characters",
+            type: "value_error",
+          },
+        ],
+      })
+    );
+    const user = userEvent.setup();
+    renderRegistrationForm();
+
+    await fillValidForm(user);
+    await user.click(submitButton());
+
+    const lastname = screen.getByLabelText("Efternamn");
+    // Shown in the callout and on the field.
+    expect(
+      await screen.findAllByText(
+        "Efternamn får inte innehålla kontrolltecken eller tecken som ändrar textriktningen."
+      )
+    ).toHaveLength(2);
+    expect(lastname).toHaveAccessibleDescription(
+      "Efternamn får inte innehålla kontrolltecken eller tecken som ändrar textriktningen."
+    );
+    expect(screen.queryByText(/Value error/)).not.toBeInTheDocument();
+
+    await user.type(lastname, "s");
+    expect(lastname).not.toHaveAccessibleDescription();
+  });
+
+  it("shows a 429 wait and disables submit", async () => {
+    vi.spyOn(api, "signupClimber").mockRejectedValue(
+      new ApiError({ status: 429, message: "x", retryAfterSeconds: 60 })
+    );
+    const user = userEvent.setup();
+    renderRegistrationForm();
+
+    await fillValidForm(user);
+    await user.click(submitButton());
+
+    expect(
+      await screen.findByText("För många försök. Försök igen om ungefär 1 minut.")
+    ).toBeInTheDocument();
+    expect(submitButton()).toBeDisabled();
+  });
+
+  it("translates a taken username", async () => {
+    vi.spyOn(api, "signupClimber").mockRejectedValue(
+      new ApiError({ status: 409, message: "Username is already taken" })
+    );
+    const user = userEvent.setup();
+    renderRegistrationForm();
+
+    await fillValidForm(user);
+    await user.click(submitButton());
+
+    expect(
+      await screen.findByText("Användarnamnet är redan upptaget. Välj ett annat.")
+    ).toBeInTheDocument();
+  });
+});

@@ -4,6 +4,7 @@ import { Spinner, Button } from "@radix-ui/themes";
 import { getCompetitions, updateCompetitionById, deleteCompetitionById } from "@/services/api";
 import { CompetitionResponse, CompetitionRequest } from "@/types";
 import { Pencil, Trash2, Check, X } from "lucide-react";
+import { getUserFriendlyError } from "@/utils/errorMessages";
 
 interface CompetitionListProps {
   refreshKey?: number;
@@ -39,7 +40,7 @@ export function CompetitionList({ refreshKey }: CompetitionListProps = {}) {
       const data = await getCompetitions();
       setCompList(data ?? []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Kunde inte hämta tävlingar.");
+      setError(err instanceof Error ? getUserFriendlyError(err) : "Kunde inte hämta tävlingar.");
     } finally {
       setLoading(false);
     }
@@ -94,7 +95,8 @@ export function CompetitionList({ refreshKey }: CompetitionListProps = {}) {
       resetState();
       await refetch();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Misslyckades att uppdatera.";
+      const message =
+        err instanceof Error ? getUserFriendlyError(err) : "Misslyckades att uppdatera.";
       setRowError({ id: competitionId, message });
     } finally {
       setSaving(null);
@@ -110,7 +112,7 @@ export function CompetitionList({ refreshKey }: CompetitionListProps = {}) {
       await deleteCompetitionById(competitionId);
       await refetch();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Misslyckades att radera.";
+      const message = err instanceof Error ? getUserFriendlyError(err) : "Misslyckades att radera.";
       setRowError({ id: competitionId, message });
     } finally {
       setDeleting(null);
@@ -123,7 +125,7 @@ export function CompetitionList({ refreshKey }: CompetitionListProps = {}) {
         <select
           value={editValues[field] as string}
           onChange={(e) => setEditValues({ ...editValues, [field]: e.target.value })}
-          className="w-full p-2 rounded-lg border text-base focus:outline-none focus:ring-2 focus:ring-[--secondary-color]"
+          className="input-base p-2"
           disabled={isSavingRow}
         >
           <option value="">Välj typ</option>
@@ -135,7 +137,7 @@ export function CompetitionList({ refreshKey }: CompetitionListProps = {}) {
 
     if (field === "round_no") {
       if (editValues.comp_type === "FINAL") {
-        return <span className="text-gray-500 italic">-</span>;
+        return <span className="text-muted-foreground italic">-</span>;
       }
       return (
         <input
@@ -149,7 +151,7 @@ export function CompetitionList({ refreshKey }: CompetitionListProps = {}) {
               round_no: e.target.value ? parseInt(e.target.value) : null,
             })
           }
-          className="w-full px-2 py-1 border border-gray-300 rounded text-base"
+          className="input-base rounded px-2 py-1"
           disabled={isSavingRow}
         />
       );
@@ -161,7 +163,7 @@ export function CompetitionList({ refreshKey }: CompetitionListProps = {}) {
           type="date"
           value={editValues.comp_date}
           onChange={(e) => setEditValues({ ...editValues, comp_date: e.target.value })}
-          className="w-full px-2 py-1 border border-gray-300 rounded text-base"
+          className="input-base rounded px-2 py-1"
           disabled={isSavingRow}
         />
       );
@@ -176,7 +178,7 @@ export function CompetitionList({ refreshKey }: CompetitionListProps = {}) {
           onChange={(e) =>
             setEditValues({ ...editValues, season_id: parseInt(e.target.value) || 0 })
           }
-          className="w-full px-2 py-1 border border-gray-300 rounded text-base"
+          className="input-base rounded px-2 py-1"
           disabled={isSavingRow}
         />
       );
@@ -187,14 +189,14 @@ export function CompetitionList({ refreshKey }: CompetitionListProps = {}) {
         type="text"
         value={(editValues[field] as string) ?? ""}
         onChange={(e) => setEditValues({ ...editValues, [field]: e.target.value })}
-        className="w-full px-2 py-1 border border-gray-300 rounded text-base"
+        className="input-base rounded px-2 py-1"
         disabled={isSavingRow}
       />
     );
   };
 
   return (
-    <div className="mb-6 h-fit flex flex-col bg-white/90 backdrop-blur p-4 rounded-lg shadow-md">
+    <div className="mb-6 h-fit flex flex-col bg-card/90 backdrop-blur p-4 rounded-lg shadow-soft">
       <h2 className="text-2xl font-semibold text-center mb-4">Tävlingar</h2>
 
       {error && <CalloutMessage message={error} color="red" />}
@@ -208,14 +210,17 @@ export function CompetitionList({ refreshKey }: CompetitionListProps = {}) {
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
-              <tr className="border-b border-gray-300">
-                <th className="p-2 font-semibold text-gray-700 text-left">ID</th>
+              <tr className="border-b border-border">
+                <th className="p-2 font-semibold text-muted-foreground text-left">ID</th>
                 {FIELDS.map((f) => (
-                  <th key={f} className="p-2 font-semibold text-gray-700 text-left capitalize">
+                  <th
+                    key={f}
+                    className="p-2 font-semibold text-muted-foreground text-left capitalize"
+                  >
                     {f.replace("_", " ")}
                   </th>
                 ))}
-                <th className="text-center p-2 font-semibold text-gray-700">Åtgärder</th>
+                <th className="text-center p-2 font-semibold text-muted-foreground">Åtgärder</th>
               </tr>
             </thead>
 
@@ -228,16 +233,18 @@ export function CompetitionList({ refreshKey }: CompetitionListProps = {}) {
                 const errorForRow = rowError?.id === competition.id;
 
                 return (
-                  <tr key={competition.id} className="border-b border-gray-200 hover:bg-gray-50">
+                  <tr key={competition.id} className="border-b border-border hover:bg-muted/50">
                     <td className="p-2">
-                      <span className="text-gray-600 font-mono text-sm">{competition.id}</span>
+                      <span className="text-muted-foreground font-mono text-sm">
+                        {competition.id}
+                      </span>
                     </td>
                     {FIELDS.map((field) => (
                       <td key={field} className="p-2">
                         {isEditing ? (
                           renderEditInput(field, isSavingRow)
                         ) : (
-                          <span className="text-gray-800">
+                          <span className="text-foreground">
                             {field === "round_no" && !competition[field] ? "-" : competition[field]}
                           </span>
                         )}
@@ -260,7 +267,7 @@ export function CompetitionList({ refreshKey }: CompetitionListProps = {}) {
                             <Button
                               onClick={resetState}
                               disabled={isSavingRow}
-                              className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded disabled:opacity-50"
+                              className="bg-secondary hover:bg-accent text-secondary-foreground px-3 py-1 rounded disabled:opacity-50"
                               size="1"
                             >
                               <X className="w-4 h-4" />
@@ -271,7 +278,7 @@ export function CompetitionList({ refreshKey }: CompetitionListProps = {}) {
                             <Button
                               onClick={() => startEdit(competition)}
                               disabled={isSavingRow || isDeletingRow || editingId !== null}
-                              className="bg-[--secondary-color] hover:bg-[--secondary-color-hover] text-white px-3 py-1 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="bg-primary hover:bg-primary-hover text-primary-foreground px-3 py-1 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                               size="1"
                             >
                               <Pencil className="w-4 h-4" />
@@ -282,7 +289,7 @@ export function CompetitionList({ refreshKey }: CompetitionListProps = {}) {
                                 <Button
                                   onClick={() => handleDelete(competition.id)}
                                   disabled={isDeletingRow}
-                                  className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs disabled:opacity-50"
+                                  className="bg-destructive hover:bg-destructive/90 text-destructive-foreground px-2 py-1 rounded text-xs disabled:opacity-50"
                                   size="1"
                                 >
                                   {isDeletingRow ? <Spinner size="1" /> : "Bekräfta"}
@@ -291,7 +298,7 @@ export function CompetitionList({ refreshKey }: CompetitionListProps = {}) {
                                 <Button
                                   onClick={() => setDeleteConfirm(null)}
                                   disabled={isDeletingRow}
-                                  className="bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs disabled:opacity-50"
+                                  className="bg-secondary hover:bg-accent text-secondary-foreground px-2 py-1 rounded text-xs disabled:opacity-50"
                                   size="1"
                                 >
                                   Avbryt
@@ -301,7 +308,7 @@ export function CompetitionList({ refreshKey }: CompetitionListProps = {}) {
                               <Button
                                 onClick={() => setDeleteConfirm(competition.id)}
                                 disabled={isSavingRow || isDeletingRow || editingId !== null}
-                                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded disabled:opacity-50"
+                                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground px-3 py-1 rounded disabled:opacity-50"
                                 size="1"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -324,7 +331,7 @@ export function CompetitionList({ refreshKey }: CompetitionListProps = {}) {
           </table>
         </div>
       ) : (
-        <p className="text-center text-gray-500 py-4">Inga tävlingar tillgängliga.</p>
+        <p className="text-center text-muted-foreground py-4">Inga tävlingar tillgängliga.</p>
       )}
     </div>
   );

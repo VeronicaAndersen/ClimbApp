@@ -4,6 +4,7 @@ import { Trophy, Star, Users, LucideIcon } from "lucide-react";
 import { getLevelStats } from "@/services/api";
 import { LevelStatsResponse, ProblemStats } from "@/types";
 import CalloutMessage from "../feedback/CalloutMessage";
+import { getUserFriendlyError } from "@/utils/errorMessages";
 
 interface ProblemStatsTableProps {
   comp_id: number;
@@ -70,10 +71,10 @@ interface SummaryCardConfig {
 function SummaryCard({ config }: { config: SummaryCardConfig }) {
   const { icon: Icon, label, value, color, bgColor } = config;
   return (
-    <div className={`${bgColor} p-4 rounded-lg border border-gray-200`}>
+    <div className={`${bgColor} p-4 rounded-lg border border-border`}>
       <div className="flex items-center gap-2 mb-2">
         <Icon className={`w-5 h-5 ${color}`} aria-hidden="true" />
-        <span className="text-sm text-gray-600 font-medium">{label}</span>
+        <span className="text-sm text-muted-foreground font-medium">{label}</span>
       </div>
       <span className={`text-2xl font-bold ${color}`}>{value}</span>
     </div>
@@ -89,21 +90,21 @@ function SummaryCards({ problems }: { problems: ProblemStats[] }) {
       label: "Deltagare",
       value: String(summary.totalParticipants),
       color: "text-blue-500",
-      bgColor: "bg-blue-50",
+      bgColor: "bg-blue-50 dark:bg-blue-500/10",
     },
     {
       icon: Trophy,
       label: "Snitt topp",
       value: `${summary.avgTopPercentage.toFixed(0)}%`,
       color: "text-amber-500",
-      bgColor: "bg-amber-50",
+      bgColor: "bg-amber-50 dark:bg-amber-500/10",
     },
     {
       icon: Star,
       label: "Snitt bonus",
       value: `${summary.avgBonusPercentage.toFixed(0)}%`,
       color: "text-green-500",
-      bgColor: "bg-green-50",
+      bgColor: "bg-green-50 dark:bg-green-500/10",
     },
   ];
 
@@ -126,11 +127,11 @@ interface PercentageBarProps {
 function PercentageBar({ count, percentage, icon: Icon, iconColor }: PercentageBarProps) {
   return (
     <div className="flex flex-col items-center gap-1 min-w-24">
-      <span className="flex items-center gap-1 text-sm font-medium text-gray-800">
+      <span className="flex items-center gap-1 text-sm font-medium text-foreground">
         <Icon className={`w-3.5 h-3.5 ${iconColor}`} aria-hidden="true" />
-        {count} <span className="text-gray-500">({percentage}%)</span>
+        {count} <span className="text-muted-foreground">({percentage}%)</span>
       </span>
-      <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+      <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
         <div
           className={`h-full rounded-full transition-all ${getBarColor(percentage)}`}
           style={{ width: `${Math.min(100, Math.max(0, percentage))}%` }}
@@ -153,7 +154,8 @@ export function ProblemStatsTable({ comp_id, level, refreshKey }: ProblemStatsTa
       const data = await getLevelStats({ comp_id, level });
       setStats(data);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Misslyckades att hämta statistik.";
+      const message =
+        err instanceof Error ? getUserFriendlyError(err) : "Misslyckades att hämta statistik.";
       setError(message);
     } finally {
       setLoading(false);
@@ -170,20 +172,20 @@ export function ProblemStatsTable({ comp_id, level, refreshKey }: ProblemStatsTa
   );
 
   return (
-    <div className="mb-6 h-fit flex flex-col bg-white/90 backdrop-blur p-4 rounded-lg shadow-md">
+    <div className="mb-6 h-fit flex flex-col bg-card/90 backdrop-blur p-4 rounded-lg shadow-soft">
       <div className="flex flex-col md:flex-row items-center justify-between gap-3 mb-4">
         <h2 className="text-2xl font-semibold text-center">Problemstatistik - Nivå {level}</h2>
 
         {stats && stats.problems.length > 0 && (
-          <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
+          <div className="flex gap-1 bg-muted p-1 rounded-lg">
             {SORT_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
                 onClick={() => setSortMode(opt.value)}
                 className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
                   sortMode === opt.value
-                    ? "bg-white text-gray-800 shadow-sm"
-                    : "text-gray-500 hover:text-gray-700"
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {opt.label}
@@ -205,7 +207,7 @@ export function ProblemStatsTable({ comp_id, level, refreshKey }: ProblemStatsTa
           <SummaryCards problems={stats.problems} />
 
           {stats.problems[0]?.total_competitors === 0 && (
-            <p className="text-center text-gray-500 bg-gray-50 rounded-lg py-3 mb-4">
+            <p className="text-center text-muted-foreground bg-muted/50 rounded-lg py-3 mb-4">
               Inga deltagare anmälda till denna nivå ännu.
             </p>
           )}
@@ -213,22 +215,19 @@ export function ProblemStatsTable({ comp_id, level, refreshKey }: ProblemStatsTa
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
-                <tr className="border-b border-gray-300">
-                  <th className="text-left p-2 font-semibold text-gray-700">Problem</th>
-                  <th className="text-center p-2 font-semibold text-gray-700">Deltagare</th>
-                  <th className="text-center p-2 font-semibold text-gray-700">Topp</th>
-                  <th className="text-center p-2 font-semibold text-gray-700">Bonus</th>
+                <tr className="border-b border-border">
+                  <th className="text-left p-2 font-semibold text-muted-foreground">Problem</th>
+                  <th className="text-center p-2 font-semibold text-muted-foreground">Deltagare</th>
+                  <th className="text-center p-2 font-semibold text-muted-foreground">Topp</th>
+                  <th className="text-center p-2 font-semibold text-muted-foreground">Bonus</th>
                 </tr>
               </thead>
 
               <tbody>
                 {sortedProblems.map((problem) => (
-                  <tr
-                    key={problem.problem_no}
-                    className="border-b border-gray-200 hover:bg-gray-50"
-                  >
-                    <td className="p-2 text-gray-800 font-medium">{problem.problem_no}</td>
-                    <td className="p-2 text-center text-gray-800">{problem.total_competitors}</td>
+                  <tr key={problem.problem_no} className="border-b border-border hover:bg-muted/50">
+                    <td className="p-2 text-foreground font-medium">{problem.problem_no}</td>
+                    <td className="p-2 text-center text-foreground">{problem.total_competitors}</td>
                     <td className="p-2">
                       <PercentageBar
                         count={problem.got_top_count}
@@ -252,7 +251,7 @@ export function ProblemStatsTable({ comp_id, level, refreshKey }: ProblemStatsTa
           </div>
         </>
       ) : (
-        <p className="text-center text-gray-500 py-4">Ingen statistik tillgänglig.</p>
+        <p className="text-center text-muted-foreground py-4">Ingen statistik tillgänglig.</p>
       )}
     </div>
   );

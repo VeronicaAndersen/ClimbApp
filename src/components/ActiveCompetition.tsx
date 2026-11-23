@@ -101,7 +101,7 @@ export function ActiveCompetition({ onHasChangesChange }: ActiveCompetitionProps
 
   if (loading) {
     return (
-      <div className="flex flex-col bg-white/90 backdrop-blur p-4 rounded-lg shadow-md">
+      <div className="flex flex-col bg-card/90 backdrop-blur p-4 rounded-lg shadow-soft">
         <h2 className="text-2xl font-semibold text-center mb-4">Aktiv Tävling</h2>
         <div className="flex items-center justify-center py-8">
           <Spinner size="3" />
@@ -112,7 +112,7 @@ export function ActiveCompetition({ onHasChangesChange }: ActiveCompetitionProps
   }
 
   return (
-    <div className="flex flex-col bg-white/90 backdrop-blur p-4 rounded-lg shadow-md">
+    <div className="flex flex-col bg-card/90 backdrop-blur p-4 rounded-lg shadow-soft">
       <div className="flex items-center justify-center gap-2 mb-4">
         <h2 className="text-2xl font-semibold text-center">Aktiv Tävling</h2>
       </div>
@@ -123,23 +123,25 @@ export function ActiveCompetition({ onHasChangesChange }: ActiveCompetitionProps
 
       {!activeCompetition ? (
         <div>
-          <p className="text-center text-gray-600">
+          <p className="text-center text-muted-foreground">
             Just nu har du inga aktiva tävlingar. Om du har anmält dig och betalat tävlingen kommer
             du att bli godkänd på tävlingsdagen.
           </p>
-          <p className="text-center text-gray-600">Kontakta receptionen för mer information.</p>
+          <p className="text-center text-muted-foreground">
+            Kontakta receptionen för mer information.
+          </p>
         </div>
       ) : (
         <>
-          <div className="mb-4 p-4 border border-gray-300 rounded-lg bg-white shadow-sm">
+          <div className="mb-4 p-4 border border-border rounded-lg bg-card shadow-sm">
             <h3 className="text-xl font-semibold mb-2">{activeCompetition.name}</h3>
 
-            <p className="text-gray-600 mb-1">
+            <p className="text-muted-foreground mb-1">
               <strong>Datum:</strong> {activeCompetition.comp_date}
             </p>
 
             {activeCompetition.description && (
-              <p className="text-gray-600 mb-1">
+              <p className="text-muted-foreground mb-1">
                 <strong>Beskrivning:</strong> {activeCompetition.description}
               </p>
             )}
