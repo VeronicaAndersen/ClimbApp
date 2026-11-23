@@ -1,41 +1,15 @@
-import { useState, useEffect, useMemo } from "react";
-import { CompetitionResponse } from "@/types";
-import { getCompetitions } from "@/services/api";
+import { useMemo } from "react";
 import { CompetitionRegistrations } from "./CompetitionRegistrations";
 import { sortCompetitions } from "@/utils/competitionSort";
 import { Spinner } from "@radix-ui/themes";
+import { useAllCompetitions } from "@/hooks/useAllCompetitions";
 
 interface CompetitionListSectionProps {
   refreshKey: number;
 }
 
 export function CompetitionListSection({ refreshKey }: CompetitionListSectionProps) {
-  const [competitions, setCompetitions] = useState<CompetitionResponse[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
-
-  useEffect(() => {
-    let isCurrent = true;
-    setLoading(true);
-    setError(false);
-    getCompetitions()
-      .then((data) => {
-        if (isCurrent) setCompetitions(data ?? []);
-      })
-      .catch(() => {
-        if (!isCurrent) return;
-        setCompetitions([]);
-        setError(true);
-      })
-      .finally(() => {
-        if (isCurrent) setLoading(false);
-      });
-
-    return () => {
-      isCurrent = false;
-    };
-  }, [refreshKey, retryCount]);
+  const { competitions, loading, fetching, error, refetch } = useAllCompetitions(refreshKey);
 
   const { upcoming, past } = useMemo(() => sortCompetitions(competitions), [competitions]);
 
@@ -55,7 +29,8 @@ export function CompetitionListSection({ refreshKey }: CompetitionListSectionPro
         <button
           type="button"
           className="px-3 py-1 rounded bg-muted hover:bg-accent text-sm"
-          onClick={() => setRetryCount((c) => c + 1)}
+          onClick={() => refetch()}
+          disabled={fetching}
         >
           Försök igen
         </button>

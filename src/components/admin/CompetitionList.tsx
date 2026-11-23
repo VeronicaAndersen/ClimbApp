@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import CalloutMessage from "../feedback/CalloutMessage";
 import { Spinner, Button } from "@radix-ui/themes";
-import { getCompetitions, updateCompetitionById, deleteCompetitionById } from "@/services/api";
+import { updateCompetitionById, deleteCompetitionById } from "@/services/api";
 import { CompetitionResponse, CompetitionRequest } from "@/types";
 import { Pencil, Trash2, Check, X } from "lucide-react";
 import { getUserFriendlyError } from "@/utils/errorMessages";
+import { useAllCompetitions } from "@/hooks/useAllCompetitions";
 
 interface CompetitionListProps {
   refreshKey?: number;
@@ -29,26 +30,7 @@ const FIELDS: (keyof CompetitionRequest)[] = [
 ];
 
 export function CompetitionList({ refreshKey }: CompetitionListProps = {}) {
-  const [compList, setCompList] = useState<CompetitionResponse[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const refetch = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getCompetitions();
-      setCompList(data ?? []);
-    } catch (err) {
-      setError(getUserFriendlyError(err));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    refetch();
-  }, [refetch, refreshKey]);
+  const { competitions: compList, loading, error, refetch } = useAllCompetitions(refreshKey);
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editValues, setEditValues] = useState<CompetitionRequest>(emptyEditValues);
