@@ -79,8 +79,9 @@ export const updateCompetitionById = (competitionId: number, payload: Competitio
 export const deleteCompetitionById = (competitionId: number) =>
   api.delete(`/competition/${competitionId}`, true);
 
+// Not cached: approval is changed by an admin on another device.
 export const getCompRegistrationInfo = (competitionId: number) =>
-  api.get<RegisterToCompResponse>(`/competition/${competitionId}/registration`, true);
+  api.get<RegisterToCompResponse>(`/competition/${competitionId}/registration`, true, true);
 
 export const checkRegistration = (competitionId: number) =>
   api.get<boolean>(`/competition/${competitionId}/registration/check`, true);
