@@ -37,6 +37,9 @@ function renderList() {
   );
 }
 
+const NETWORK_ERROR = "Kunde inte ansluta till servern. Kontrollera din internetanslutning.";
+const refreshButton = () => screen.getByRole("button", { name: "Uppdatera anmälda" });
+
 const climberRow = () => screen.getByText("Blomma Gren").closest("tr") as HTMLElement;
 
 beforeEach(() => {
@@ -107,7 +110,36 @@ describe("RegistrationApprovalList", () => {
       )
     ).toBeInTheDocument();
     await waitFor(() => expect(getAllRegistrationsMock).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(refreshButton()).toBeEnabled());
+    // The rollback refetch must not clear the message.
+    expect(screen.getByText(NETWORK_ERROR)).toBeInTheDocument();
     expect(within(climberRow()).getByText("Väntar")).toBeInTheDocument();
+  });
+
+  it("shows the error and restores the level when the level change fails", async () => {
+    updateLevelMock.mockRejectedValue(new Error("Failed to fetch"));
+    renderList();
+    await screen.findByText("Blomma Gren");
+
+    await userEvent.selectOptions(within(climberRow()).getByRole("combobox"), "5");
+
+    await waitFor(() => expect(getAllRegistrationsMock).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(refreshButton()).toBeEnabled());
+    expect(screen.getByText(NETWORK_ERROR)).toBeInTheDocument();
+    expect(within(climberRow()).getByRole("combobox")).toHaveValue("2");
+  });
+
+  it("clears an action error when the list is refreshed", async () => {
+    updateApprovalMock.mockRejectedValue(new Error("Failed to fetch"));
+    renderList();
+    await screen.findByText("Blomma Gren");
+    await userEvent.click(within(climberRow()).getByRole("button"));
+    expect(await screen.findByText(NETWORK_ERROR)).toBeInTheDocument();
+    await waitFor(() => expect(refreshButton()).toBeEnabled());
+
+    await userEvent.click(refreshButton());
+
+    await waitFor(() => expect(screen.queryByText(NETWORK_ERROR)).not.toBeInTheDocument());
   });
 
   it("refetches when the refresh button is clicked", async () => {
@@ -115,8 +147,7 @@ describe("RegistrationApprovalList", () => {
     await screen.findByText("Blomma Gren");
 
     getAllRegistrationsMock.mockResolvedValue([{ ...pending, approved: true }]);
-    const refresh = screen.getAllByRole("button")[0];
-    await userEvent.click(refresh);
+    await userEvent.click(refreshButton());
 
     expect(await within(climberRow()).findByText("Godkänd")).toBeInTheDocument();
     expect(getAllRegistrationsMock).toHaveBeenCalledTimes(2);
