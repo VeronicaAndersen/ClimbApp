@@ -227,6 +227,31 @@ describe("api.delete", () => {
     mockFetch(403, "Forbidden");
     await expect(api.delete("/resource/1")).rejects.toThrow();
   });
+
+  it("drops the cached list after a 204 response", async () => {
+    const spy = vi.spyOn(global, "fetch");
+    spy.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      text: () => Promise.resolve(JSON.stringify([{ id: 1 }, { id: 2 }])),
+    } as Response);
+    await api.get("/competition");
+
+    spy.mockResolvedValueOnce({
+      ok: true,
+      status: 204,
+      text: () => Promise.resolve(""),
+    } as Response);
+    await api.delete("/competition/1");
+
+    spy.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      text: () => Promise.resolve(JSON.stringify([{ id: 2 }])),
+    } as Response);
+    expect(await api.get("/competition")).toEqual([{ id: 2 }]);
+    expect(spy).toHaveBeenCalledTimes(3);
+  });
 });
 
 // ----------------------------------------------------------------
