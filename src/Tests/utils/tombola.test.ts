@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { GUEST_NAME_MAX_LENGTH, climberKey, newGuest, parseSavedTombola } from "@/utils/tombola";
+import {
+  GUEST_NAME_MAX_LENGTH,
+  climberKey,
+  newGuest,
+  parseSavedTombola,
+  remainingFromKeys,
+  winnersFromKeys,
+} from "@/utils/tombola";
 
 describe("parseSavedTombola", () => {
   it("returns an empty tombola for missing or broken data", () => {
@@ -51,5 +58,21 @@ describe("newGuest", () => {
     expect(guest.key).toBe("gid1");
     expect(guest.name).toHaveLength(GUEST_NAME_MAX_LENGTH);
     expect(guest.level).toBeNull();
+  });
+});
+
+describe("winnersFromKeys / remainingFromKeys", () => {
+  const anna = { key: "c1", name: "Anna", level: 2 };
+  const bo = { key: "c2", name: "Bo", level: 3 };
+  const guest = { key: "gx", name: "Gäst", level: null };
+  const all = [anna, bo, guest];
+
+  it("keeps winners in draw order and skips keys no one has", () => {
+    expect(winnersFromKeys(all, ["gx", "gone", "c1"])).toEqual([guest, anna]);
+  });
+
+  it("leaves everyone who has not won, in participant order", () => {
+    expect(remainingFromKeys(all, ["c1"])).toEqual([bo, guest]);
+    expect(remainingFromKeys(all, [])).toEqual(all);
   });
 });
