@@ -9,7 +9,6 @@ import { getUserFriendlyError } from "@/utils/errorMessages";
 interface ProblemStatsTableProps {
   comp_id: number;
   level: number;
-  refreshKey?: number;
 }
 
 type SortMode = "problem_no" | "hardest_top" | "hardest_bonus";
@@ -141,7 +140,7 @@ function PercentageBar({ count, percentage, icon: Icon, iconColor }: PercentageB
   );
 }
 
-export function ProblemStatsTable({ comp_id, level, refreshKey }: ProblemStatsTableProps) {
+export function ProblemStatsTable({ comp_id, level }: ProblemStatsTableProps) {
   const [stats, setStats] = useState<LevelStatsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -154,8 +153,7 @@ export function ProblemStatsTable({ comp_id, level, refreshKey }: ProblemStatsTa
       const data = await getLevelStats({ comp_id, level });
       setStats(data);
     } catch (err) {
-      const message =
-        err instanceof Error ? getUserFriendlyError(err) : "Misslyckades att hämta statistik.";
+      const message = getUserFriendlyError(err);
       setError(message);
     } finally {
       setLoading(false);
@@ -164,7 +162,7 @@ export function ProblemStatsTable({ comp_id, level, refreshKey }: ProblemStatsTa
 
   useEffect(() => {
     fetchStats();
-  }, [fetchStats, refreshKey]);
+  }, [fetchStats]);
 
   const sortedProblems = useMemo(
     () => (stats ? sortProblems(stats.problems, sortMode) : []),

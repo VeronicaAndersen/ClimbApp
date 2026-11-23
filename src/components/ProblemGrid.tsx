@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState, useEffect } from "react";
-import { Star, Medal, Lock, Unlock, ChevronDown, ChevronUp } from "lucide-react";
+import { Lock, Unlock } from "lucide-react";
 import { ScoreBatchResponse } from "@/types";
 import CalloutMessage from "./feedback/CalloutMessage";
 import { Button } from "@radix-ui/themes";
@@ -7,6 +7,13 @@ import { useUpdateScore } from "@/hooks/useUpdateScore";
 import { useUpdateScoreBatch } from "@/hooks/useUpdateScoreBatchResult";
 import { canEditCompetition, isAdmin, isToday } from "@/utils/competitionUtils";
 import { getGradeColor } from "@/constants/gradeColors";
+import {
+  buildScoreMap,
+  isScoreChanged,
+  sanitizeScoreValue,
+  type ScoreField,
+} from "@/utils/problemScore";
+import { ProblemCard } from "./ProblemCard";
 
 interface ProblemGridProps {
   competitionId: number;
@@ -20,15 +27,6 @@ interface ProblemGridProps {
   gradeLevel: number | null;
   onHasChangesChange?: (hasChanges: boolean) => void;
 }
-
-const SCORE_FIELDS = ["attempts_total", "attempts_to_bonus", "attempts_to_top"] as const;
-const SCORE_FIELD_LABELS: Record<(typeof SCORE_FIELDS)[number], string> = {
-  attempts_total: "Antal försök",
-  attempts_to_bonus: "Bonus",
-  attempts_to_top: "Topp",
-};
-
-const MIN_SCORE_VALUE = 0;
 
 export default function ProblemGrid({
   competitionId,
@@ -87,47 +85,18 @@ export default function ProblemGrid({
 
   const gradeLabel = gradeLevel ? `Gradnivå: ${gradeLevel}` : "Gradnivå: ej tilldelad";
 
-  const initialScoreMap = useMemo(() => {
-    const map = new Map<number, ScoreBatchResponse["score"]>();
-    initialProblems.forEach((problem) => {
-      map.set(problem.problem_no, problem.score);
-    });
-    return map;
-  }, [initialProblems]);
-
-  const sanitizeValue = useCallback((value: number) => {
-    if (Number.isNaN(value) || value < MIN_SCORE_VALUE) {
-      return MIN_SCORE_VALUE;
-    }
-    return Math.floor(value);
-  }, []);
+  const initialScoreMap = useMemo(() => buildScoreMap(initialProblems), [initialProblems]);
 
   const updateField = useCallback(
-    (problemNo: number, field: keyof ScoreBatchResponse["score"], value: number) => {
-      const safeValue = sanitizeValue(value);
+    (problemNo: number, field: ScoreField, value: number) => {
+      const safeValue = sanitizeScoreValue(value);
       setProblems((prev) =>
         prev.map((p) =>
           p.problem_no === problemNo ? { ...p, score: { ...p.score, [field]: safeValue } } : p
         )
       );
     },
-    [sanitizeValue, setProblems]
-  );
-
-  const inc = useCallback(
-    (problem: ScoreBatchResponse, key: keyof ScoreBatchResponse["score"]) => {
-      const current = typeof problem.score[key] === "number" ? Number(problem.score[key]) : 0;
-      updateField(problem.problem_no, key, current + 1);
-    },
-    [updateField]
-  );
-
-  const dec = useCallback(
-    (problem: ScoreBatchResponse, key: keyof ScoreBatchResponse["score"]) => {
-      const current = typeof problem.score[key] === "number" ? Number(problem.score[key]) : 0;
-      updateField(problem.problem_no, key, current - 1);
-    },
-    [updateField]
+    [setProblems]
   );
 
   const toggleCollapse = useCallback((problemNo: number) => {
@@ -142,16 +111,13 @@ export default function ProblemGrid({
     });
   }, []);
 
-  const hasAnyChanges = useMemo(() => {
-    return problems.some((problem) => {
-      const originalScore = initialScoreMap.get(problem.problem_no);
-      return SCORE_FIELDS.some((field) => {
-        const currentValue = Number(problem.score[field]) || 0;
-        const originalValue = Number(originalScore?.[field]) || 0;
-        return currentValue !== originalValue;
-      });
-    });
-  }, [problems, initialScoreMap]);
+  const hasAnyChanges = useMemo(
+    () =>
+      problems.some((problem) =>
+        isScoreChanged(problem.score, initialScoreMap.get(problem.problem_no))
+      ),
+    [problems, initialScoreMap]
+  );
 
   useEffect(() => {
     onHasChangesChange?.(hasAnyChanges);
@@ -169,6 +135,53 @@ export default function ProblemGrid({
       setErrorProblemNo(null);
     }
   };
+
+  const handleSaveProblem = async (problem: ScoreBatchResponse) => {
+    if (!gradeLevel) return;
+    const success = await saveAll(competitionId, gradeLevel, problem.problem_no, problem.score);
+    if (success) {
+      // Track which problem was saved to show message over it
+      setSavedProblemNo(problem.problem_no);
+      setErrorProblemNo(null); // Clear any previous error
+      // Update initialProblems to reflect the saved state, so isChanged will be false
+      setInitialProblems((prev) =>
+        prev.map((p) =>
+          p.problem_no === problem.problem_no
+            ? {
+                ...p,
+                score: {
+                  attempts_total: problem.score.attempts_total,
+                  got_bonus: problem.score.got_bonus,
+                  got_top: problem.score.got_top,
+                  attempts_to_bonus: problem.score.attempts_to_bonus,
+                  attempts_to_top: problem.score.attempts_to_top,
+                },
+              }
+            : p
+        )
+      );
+
+      // Auto-collapse if problem has a top
+      if (problem.score.attempts_to_top > 0) {
+        setTimeout(() => {
+          toggleCollapse(problem.problem_no);
+        }, 1500); // Wait 1.5 seconds to show success message first
+      }
+    } else {
+      // Track which problem had an error
+      setErrorProblemNo(problem.problem_no);
+      setSavedProblemNo(null); // Clear any previous success message
+    }
+  };
+
+  const inputsDisabled = saving || batchSaving || !canEdit;
+  const saveLabel = saving
+    ? "Sparar..."
+    : !canEdit
+      ? "Redigering inaktiverad"
+      : gradeLevel
+        ? `Spara försök för ${viewingClimberName || "dig"}`
+        : "Välj gradnivå för att spara";
 
   return (
     <div className="space-y-4">
@@ -240,176 +253,24 @@ export default function ProblemGrid({
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-        {problems.map((problem) => {
-          const originalScore = initialScoreMap.get(problem.problem_no);
-          const isChanged = SCORE_FIELDS.some((field) => {
-            const currentValue = Number(problem.score[field]) || 0;
-            const originalValue = Number(originalScore?.[field]) || 0;
-            return currentValue !== originalValue;
-          });
-
-          const isSaved = savedProblemNo === problem.problem_no && saveMessage;
-          const hasError = errorProblemNo === problem.problem_no && saveError;
-          const isCollapsed = collapsedProblems.has(problem.problem_no);
-
-          return (
-            <div
-              key={problem.problem_no}
-              className={`relative p-4 rounded-xl shadow-sm flex flex-col border transition-all
-                ${isChanged ? "border-yellow-500" : "border-border"}
-              `}
-            >
-              {isSaved && <CalloutMessage message={saveMessage} color="green" />}
-              {hasError && <CalloutMessage message={saveError} color="red" />}
-
-              {isChanged && !isSaved && (
-                <span
-                  className={`absolute top-2 right-2 text-xs font-medium text-yellow-700 dark:text-yellow-300
-                      bg-yellow-100 dark:bg-yellow-500/15 border border-yellow-300 dark:border-yellow-500/30 rounded-md px-2 py-0.5`}
-                >
-                  Ej sparad
-                </span>
-              )}
-
-              <div
-                className="flex justify-between items-center py-6 cursor-pointer"
-                onClick={() => toggleCollapse(problem.problem_no)}
-              >
-                <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-semibold text-foreground">
-                    Problem {problem.problem_no}
-                  </h3>
-                  <span
-                    className="w-5 h-5 rounded-full border border-foreground/25"
-                    style={{ backgroundColor: gradeColor }}
-                    title={gradeLabel}
-                  />
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  B{problem.score.attempts_to_bonus}T{problem.score.attempts_to_top}
-                </p>
-                <div className="flex gap-1 items-center">
-                  {problem.score.attempts_to_bonus > 0 && (
-                    <Star className="w-5 h-5 text-primary" aria-hidden />
-                  )}
-                  {problem.score.attempts_to_top > 0 && (
-                    <Medal className="w-5 h-5 text-amber-300" aria-hidden />
-                  )}
-                  {isCollapsed ? (
-                    <ChevronDown className="w-5 h-5 text-muted-foreground" aria-hidden />
-                  ) : (
-                    <ChevronUp className="w-5 h-5 text-muted-foreground" aria-hidden />
-                  )}
-                </div>
-              </div>
-
-              {!isCollapsed && (
-                <>
-                  {SCORE_FIELDS.map((key) => (
-                    <div key={key} className="flex flex-row justify-between m-2">
-                      <label
-                        htmlFor={`problem-${problem.problem_no}-${key}`}
-                        className="block text-sm text-muted-foreground font-medium capitalize mb-1"
-                      >
-                        {SCORE_FIELD_LABELS[key]}
-                      </label>
-
-                      <div className="flex items-center gap-2">
-                        <Button
-                          onClick={() => dec(problem, key)}
-                          disabled={saving || batchSaving || !canEdit}
-                          className={`w-8 h-8 rounded-full bg-primary hover:bg-primary-hover
-                                    text-primary-foreground font-bold text-lg cursor-pointer`}
-                          aria-label={`Minska ${SCORE_FIELD_LABELS[key]}`}
-                        >
-                          −
-                        </Button>
-                        <input
-                          id={`problem-${problem.problem_no}-${key}`}
-                          type="number"
-                          disabled={saving || batchSaving || !canEdit}
-                          min={MIN_SCORE_VALUE}
-                          inputMode="numeric"
-                          value={String(sanitizeValue(Number(problem.score[key])))}
-                          onChange={(event) =>
-                            updateField(problem.problem_no, key, Number(event.target.value))
-                          }
-                          className="w-14 text-center border border-input bg-card text-foreground rounded-full px-2 py-1 text-base focus:outline-none focus:ring-2 focus:ring-ring"
-                        />
-                        <Button
-                          onClick={() => inc(problem, key)}
-                          disabled={saving || batchSaving || !canEdit}
-                          className={`w-8 h-8 rounded-full bg-primary hover:bg-primary-hover
-                                    text-primary-foreground font-bold text-lg cursor-pointer`}
-                          aria-label={`Öka ${SCORE_FIELD_LABELS[key]}`}
-                        >
-                          +
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                  <div className="flex justify-center">
-                    <Button
-                      onClick={async () => {
-                        if (!gradeLevel) return;
-                        const success = await saveAll(
-                          competitionId,
-                          gradeLevel,
-                          problem.problem_no,
-                          problem.score
-                        );
-                        if (success) {
-                          // Track which problem was saved to show message over it
-                          setSavedProblemNo(problem.problem_no);
-                          setErrorProblemNo(null); // Clear any previous error
-                          // Update initialProblems to reflect the saved state, so isChanged will be false
-                          setInitialProblems((prev) =>
-                            prev.map((p) =>
-                              p.problem_no === problem.problem_no
-                                ? {
-                                    ...p,
-                                    score: {
-                                      attempts_total: problem.score.attempts_total,
-                                      got_bonus: problem.score.got_bonus,
-                                      got_top: problem.score.got_top,
-                                      attempts_to_bonus: problem.score.attempts_to_bonus,
-                                      attempts_to_top: problem.score.attempts_to_top,
-                                    },
-                                  }
-                                : p
-                            )
-                          );
-
-                          // Auto-collapse if problem has a top
-                          if (problem.score.attempts_to_top > 0) {
-                            setTimeout(() => {
-                              toggleCollapse(problem.problem_no);
-                            }, 1500); // Wait 1.5 seconds to show success message first
-                          }
-                        } else {
-                          // Track which problem had an error
-                          setErrorProblemNo(problem.problem_no);
-                          setSavedProblemNo(null); // Clear any previous success message
-                        }
-                      }}
-                      disabled={saving || batchSaving || !gradeLevel || !canEdit}
-                      className={`bg-primary hover:bg-primary-hover text-primary-foreground px-6 py-2 mt-4 rounded-full
-                        shadow font-medium cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed w-full`}
-                    >
-                      {saving
-                        ? "Sparar..."
-                        : !canEdit
-                          ? "Redigering inaktiverad"
-                          : gradeLevel
-                            ? `Spara försök för ${viewingClimberName || "dig"}`
-                            : "Välj gradnivå för att spara"}
-                    </Button>
-                  </div>
-                </>
-              )}
-            </div>
-          );
-        })}
+        {problems.map((problem) => (
+          <ProblemCard
+            key={problem.problem_no}
+            problem={problem}
+            isChanged={isScoreChanged(problem.score, initialScoreMap.get(problem.problem_no))}
+            isCollapsed={collapsedProblems.has(problem.problem_no)}
+            savedMessage={savedProblemNo === problem.problem_no ? saveMessage : null}
+            errorMessage={errorProblemNo === problem.problem_no ? saveError : null}
+            gradeColor={gradeColor}
+            gradeLabel={gradeLabel}
+            inputsDisabled={inputsDisabled}
+            saveDisabled={inputsDisabled || !gradeLevel}
+            saveLabel={saveLabel}
+            onToggleCollapse={toggleCollapse}
+            onFieldChange={updateField}
+            onSave={handleSaveProblem}
+          />
+        ))}
       </div>
     </div>
   );

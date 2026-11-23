@@ -52,8 +52,7 @@ export function SeasonList({ refreshKey }: SeasonListProps = {}) {
       resetState();
       await refetch();
     } catch (err) {
-      const message =
-        err instanceof Error ? getUserFriendlyError(err) : "Misslyckades att uppdatera säsong.";
+      const message = getUserFriendlyError(err);
       setRowError({ id: seasonId, message });
     } finally {
       setSaving(null);
@@ -69,8 +68,7 @@ export function SeasonList({ refreshKey }: SeasonListProps = {}) {
       await deleteSeasonById(seasonId);
       await refetch();
     } catch (err) {
-      const message =
-        err instanceof Error ? getUserFriendlyError(err) : "Misslyckades att radera säsong.";
+      const message = getUserFriendlyError(err);
       setRowError({ id: seasonId, message });
     } finally {
       setDeleting(null);

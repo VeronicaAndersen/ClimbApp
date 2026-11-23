@@ -4,18 +4,6 @@ import { useSessionsStore } from "@/store/sessions";
 import { useCallback, useEffect, useState, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Spinner } from "@radix-ui/themes/components/index";
-import * as Menubar from "@radix-ui/react-menubar";
-import {
-  CalendarDays,
-  Zap,
-  User,
-  Users,
-  Trophy,
-  Dices,
-  Settings,
-  MoreHorizontal,
-  BarChart3,
-} from "lucide-react";
 import useGetUserInfo from "@/hooks/useGetUserInfo";
 import { AppHeader } from "@/components/AppHeader";
 import CalloutMessage from "@/components/feedback/CalloutMessage";
@@ -23,6 +11,8 @@ import ProfilInfo from "@/components/ProfilInfo";
 import { AssignToCompetitionsList } from "@/components/AssignToCompetitionsList";
 import { CompleteProfileForm } from "@/components/forms/CompleteProfileForm";
 import { SessionSwitcher } from "@/components/SessionSwitcher";
+import { ProfileBottomNav, ProfileMenubar, type NavigationView } from "@/components/ProfileNav";
+import { ADMIN_VIEWS } from "@/constants/profileMenu";
 import { getCompetitions } from "@/services/api";
 import { CompetitionResponse } from "@/types";
 import { getGradeColor } from "@/constants/gradeColors";
@@ -57,75 +47,6 @@ const ProblemStatsTable = lazy(() =>
   import("@/components/admin/ProblemStatsTable").then((m) => ({ default: m.ProblemStatsTable }))
 );
 
-type NavigationView =
-  | "competition"
-  | "active_competition"
-  | "profile"
-  | "users"
-  | "admin"
-  | "leaderboard"
-  | "statistics";
-
-const MENU_ITEMS = [
-  {
-    value: "competition" as const,
-    label: "Anmälan",
-    mobileLabel: "Anmälan",
-    requiresAdmin: false,
-    icon: CalendarDays,
-  },
-  {
-    value: "active_competition" as const,
-    label: "Mina poäng",
-    mobileLabel: "Poäng",
-    requiresAdmin: false,
-    icon: Zap,
-  },
-  {
-    value: "profile" as const,
-    label: "Profil",
-    mobileLabel: "Profil",
-    requiresAdmin: false,
-    icon: User,
-  },
-  {
-    value: "users" as const,
-    label: "Klättrare",
-    mobileLabel: "Klättrare",
-    requiresAdmin: true,
-    icon: Users,
-  },
-  {
-    value: "leaderboard" as const,
-    label: "Resultatlista",
-    mobileLabel: "Resultat",
-    requiresAdmin: true,
-    icon: Trophy,
-  },
-  {
-    value: "statistics" as const,
-    label: "Statistik",
-    mobileLabel: "Statistik",
-    requiresAdmin: true,
-    icon: BarChart3,
-  },
-  {
-    value: "tombola" as const,
-    label: "Tombola",
-    mobileLabel: "Tombola",
-    requiresAdmin: true,
-    icon: Dices,
-    to: "/tombola",
-  },
-  {
-    value: "admin" as const,
-    label: "Admin",
-    mobileLabel: "Admin",
-    requiresAdmin: true,
-    icon: Settings,
-  },
-];
-
 const LoadingFallback = () => (
   <div className="flex items-center justify-center py-8">
     <Spinner size="3" />
@@ -144,24 +65,19 @@ export default function Profile() {
     return saved ?? "active_competition";
   });
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 
   const { userInfo, messageInfo, loading: userLoading, refetch } = useGetUserInfo();
 
   const isAdmin = userInfo?.user_scope === "admin";
   const [selectedCompForStats, setSelectedCompForStats] = useState<number | null>(null);
   const [selectedLevelForStats, setSelectedLevelForStats] = useState<number | null>(null);
-  const [statsRefreshKey] = useState(0);
   const [competitions, setCompetitions] = useState<CompetitionResponse[]>([]);
   const [competitionsLoading, setCompetitionsLoading] = useState(true);
   const LEVELS = [1, 2, 3, 4, 5, 6, 7];
 
-  const getLevelColor = (level: number): string => getGradeColor(level);
-
   // If a non-admin ended up on an admin-only view (e.g. after role change), fall back.
   useEffect(() => {
-    const adminViews: NavigationView[] = ["users", "leaderboard", "admin", "statistics"];
-    if (!userLoading && !isAdmin && adminViews.includes(activeView)) {
+    if (!userLoading && !isAdmin && ADMIN_VIEWS.includes(activeView)) {
       setActiveView("active_competition");
     }
   }, [isAdmin, userLoading, activeView]);
@@ -197,17 +113,17 @@ export default function Profile() {
   }, []);
 
   const handleNavigate = useCallback(
-    (view: NavigationView | null, to?: string) => {
+    (view: NavigationView | null, to?: string): boolean => {
       if (hasUnsavedChanges && activeView === "active_competition") {
-        if (!window.confirm("Du har osparade ändringar. Vill du lämna sidan ändå?")) return;
+        if (!window.confirm("Du har osparade ändringar. Vill du lämna sidan ändå?")) return false;
       }
-      setMoreMenuOpen(false);
       if (to) {
         navigate(to);
       } else if (view) {
         sessionStorage.setItem("profile_view", view);
         setActiveView(view);
       }
+      return true;
     },
     [hasUnsavedChanges, activeView, navigate]
   );
@@ -220,12 +136,159 @@ export default function Profile() {
     navigate("/");
   };
 
-  const getMenuItemClass = (itemValue: NavigationView) =>
-    `px-4 py-2 rounded-full font-medium cursor-pointer select-none outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring ${
-      activeView === itemValue
-        ? "bg-primary text-primary-foreground shadow-sm"
-        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-    }`;
+  const renderActiveView = () => {
+    if (ADMIN_VIEWS.includes(activeView) && !isAdmin) return null;
+
+    switch (activeView) {
+      case "competition":
+        return <AssignToCompetitionsList />;
+      case "active_competition":
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <ActiveCompetition onHasChangesChange={setHasUnsavedChanges} />
+          </Suspense>
+        );
+      case "profile":
+        return (
+          <div>
+            {sessions.length > 1 && (
+              <div className="mb-4 p-4 bg-card/90 backdrop-blur rounded-lg shadow-soft">
+                <SessionSwitcher onSwitch={refetch} />
+              </div>
+            )}
+            <ProfilInfo />
+          </div>
+        );
+      case "users":
+        return (
+          <div>
+            <h3 className="text-xl font-semibold mt-4 mb-2 text-foreground">Hantera klättrare</h3>
+            <Suspense fallback={<LoadingFallback />}>
+              <ClimberList />
+            </Suspense>
+          </div>
+        );
+      case "leaderboard":
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <Leaderboard />
+          </Suspense>
+        );
+      case "admin":
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <div className="grid grid-cols-1 gap-2">
+              <h3 className="text-xl font-semibold mb-2 text-foreground">Godkänn anmälda</h3>
+              <CompetitionListSection refreshKey={competitionRefreshKey} />
+
+              <h3 className="text-xl font-semibold mt-4 mb-2 text-foreground">
+                Hantera säsonger och tävlingar
+              </h3>
+              <div className="grid grid-cols-1 gap-2">
+                <SeasonList refreshKey={seasonRefreshKey} />
+                <CompetitionList refreshKey={competitionRefreshKey} />
+
+                <SeasonForm onSeasonCreated={() => setSeasonRefreshKey((prev) => prev + 1)} />
+                <CompetitionForm
+                  onCompetitionCreated={() => setCompetitionRefreshKey((prev) => prev + 1)}
+                />
+              </div>
+            </div>
+          </Suspense>
+        );
+      case "statistics":
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <div className="grid grid-cols-1 gap-2">
+              <h3 className="text-xl font-semibold mb-2 text-foreground">Statistik</h3>
+              <div className="mb-4 p-4 bg-card/90 backdrop-blur rounded-lg shadow-soft flex flex-col md:flex-row gap-4">
+                <div className="flex-1">
+                  <label className="block text-sm font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
+                    Tävling
+                  </label>
+                  {competitionsLoading ? (
+                    <div className="flex items-center gap-2 text-muted-foreground p-2.5">
+                      <Spinner size="2" />
+                      <span>Hämtar tävlingar...</span>
+                    </div>
+                  ) : competitions.length === 0 ? (
+                    <p className="text-muted-foreground p-2.5">Inga tävlingar tillgängliga.</p>
+                  ) : (
+                    <select
+                      value={selectedCompForStats ?? ""}
+                      onChange={(e) =>
+                        setSelectedCompForStats(e.target.value ? parseInt(e.target.value) : null)
+                      }
+                      className="w-full p-2.5 rounded-lg border border-border text-base focus:outline-none focus:ring-2 focus:ring-ring bg-card text-foreground"
+                    >
+                      <option value="">Välj tävling...</option>
+                      {competitions.map((comp) => (
+                        <option key={comp.id} value={comp.id}>
+                          {comp.name} ({comp.comp_date})
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+                {selectedCompForStats !== null && (
+                  <div className="flex-1">
+                    <label className="block text-sm font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
+                      Nivå
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {LEVELS.map((level) => (
+                        <button
+                          key={level}
+                          onClick={() => setSelectedLevelForStats(level)}
+                          className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all font-medium ${
+                            selectedLevelForStats === level
+                              ? "shadow-soft"
+                              : "border-border text-muted-foreground hover:border-foreground/40"
+                          }`}
+                          style={{
+                            backgroundColor:
+                              selectedLevelForStats === level
+                                ? getGradeColor(level)
+                                : "transparent",
+                            color: selectedLevelForStats === level ? "white" : undefined,
+                            borderColor:
+                              selectedLevelForStats === level ? getGradeColor(level) : undefined,
+                          }}
+                        >
+                          <span
+                            className="w-4 h-4 rounded-full border border-foreground/25 shrink-0"
+                            style={{ backgroundColor: getGradeColor(level) }}
+                          />
+                          Nivå {level}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {selectedCompForStats !== null && selectedLevelForStats !== null ? (
+                <ProblemStatsTable comp_id={selectedCompForStats} level={selectedLevelForStats} />
+              ) : selectedCompForStats !== null ? (
+                <p className="text-center text-muted-foreground bg-card/90 backdrop-blur rounded-lg shadow-soft py-6">
+                  Välj en nivå ovan för att visa statistik.
+                </p>
+              ) : (
+                !competitionsLoading &&
+                competitions.length > 0 && (
+                  <p className="text-center text-muted-foreground bg-card/90 backdrop-blur rounded-lg shadow-soft py-6">
+                    Välj en tävling ovan för att visa statistik.
+                  </p>
+                )
+              )}
+            </div>
+          </Suspense>
+        );
+      default:
+        return null;
+    }
+  };
 
   const logoutButton = (
     <Button size="2" className="max-w-[45vw] cursor-pointer rounded-full" onClick={handleLogout}>
@@ -268,250 +331,12 @@ export default function Profile() {
         {messageInfo && <CalloutMessage message={messageInfo.message} color={messageInfo.color} />}
 
         {/* Navigation Menubar — desktop only */}
-        <Menubar.Root className="mb-6 hidden md:flex justify-center gap-1 self-center rounded-full border border-border bg-card/90 p-1 shadow-soft text-sm">
-          {MENU_ITEMS.filter((item) => !item.requiresAdmin || isAdmin).map((item) => (
-            <Menubar.Menu key={item.value} value={item.value}>
-              <Menubar.Trigger
-                onClick={() => handleNavigate(item.value as NavigationView, item.to)}
-                className={getMenuItemClass(item.value as NavigationView)}
-              >
-                {item.label}
-              </Menubar.Trigger>
-            </Menubar.Menu>
-          ))}
-        </Menubar.Root>
+        <ProfileMenubar activeView={activeView} isAdmin={isAdmin} onNavigate={handleNavigate} />
 
         {/* Content Area */}
-        <div className="w-full">
-          {activeView === "competition" && <AssignToCompetitionsList />}
-
-          {activeView === "active_competition" && (
-            <Suspense fallback={<LoadingFallback />}>
-              <ActiveCompetition onHasChangesChange={setHasUnsavedChanges} />
-            </Suspense>
-          )}
-
-          {activeView === "profile" && (
-            <div>
-              {sessions.length > 1 && (
-                <div className="mb-4 p-4 bg-card/90 backdrop-blur rounded-lg shadow-soft">
-                  <SessionSwitcher onSwitch={refetch} />
-                </div>
-              )}
-              <ProfilInfo />
-            </div>
-          )}
-
-          {activeView === "users" && isAdmin && (
-            <div>
-              <h3 className="text-xl font-semibold mt-4 mb-2 text-foreground">Hantera klättrare</h3>
-              <Suspense fallback={<LoadingFallback />}>
-                <ClimberList />
-              </Suspense>
-            </div>
-          )}
-
-          {activeView === "leaderboard" && isAdmin && (
-            <Suspense fallback={<LoadingFallback />}>
-              <Leaderboard />
-            </Suspense>
-          )}
-
-          {activeView === "admin" && isAdmin && (
-            <Suspense fallback={<LoadingFallback />}>
-              <div className="grid grid-cols-1 gap-2">
-                <h3 className="text-xl font-semibold mb-2 text-foreground">Godkänn anmälda</h3>
-                <CompetitionListSection refreshKey={competitionRefreshKey} />
-
-                <h3 className="text-xl font-semibold mt-4 mb-2 text-foreground">
-                  Hantera säsonger och tävlingar
-                </h3>
-                <div className="grid grid-cols-1 gap-2">
-                  <SeasonList refreshKey={seasonRefreshKey} />
-                  <CompetitionList refreshKey={competitionRefreshKey} />
-
-                  <SeasonForm onSeasonCreated={() => setSeasonRefreshKey((prev) => prev + 1)} />
-                  <CompetitionForm
-                    onCompetitionCreated={() => setCompetitionRefreshKey((prev) => prev + 1)}
-                  />
-                </div>
-              </div>
-            </Suspense>
-          )}
-
-          {activeView === "statistics" && isAdmin && (
-            <Suspense fallback={<LoadingFallback />}>
-              <div className="grid grid-cols-1 gap-2">
-                <h3 className="text-xl font-semibold mb-2 text-foreground">Statistik</h3>
-                <div className="mb-4 p-4 bg-card/90 backdrop-blur rounded-lg shadow-soft flex flex-col md:flex-row gap-4">
-                  <div className="flex-1">
-                    <label className="block text-sm font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
-                      Tävling
-                    </label>
-                    {competitionsLoading ? (
-                      <div className="flex items-center gap-2 text-muted-foreground p-2.5">
-                        <Spinner size="2" />
-                        <span>Hämtar tävlingar...</span>
-                      </div>
-                    ) : competitions.length === 0 ? (
-                      <p className="text-muted-foreground p-2.5">Inga tävlingar tillgängliga.</p>
-                    ) : (
-                      <select
-                        value={selectedCompForStats ?? ""}
-                        onChange={(e) =>
-                          setSelectedCompForStats(e.target.value ? parseInt(e.target.value) : null)
-                        }
-                        className="w-full p-2.5 rounded-lg border border-border text-base focus:outline-none focus:ring-2 focus:ring-ring bg-card text-foreground"
-                      >
-                        <option value="">Välj tävling...</option>
-                        {competitions.map((comp) => (
-                          <option key={comp.id} value={comp.id}>
-                            {comp.name} ({comp.comp_date})
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
-
-                  {selectedCompForStats !== null && (
-                    <div className="flex-1">
-                      <label className="block text-sm font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
-                        Nivå
-                      </label>
-                      <div className="flex flex-wrap gap-2">
-                        {LEVELS.map((level) => (
-                          <button
-                            key={level}
-                            onClick={() => setSelectedLevelForStats(level)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all font-medium ${
-                              selectedLevelForStats === level
-                                ? "shadow-soft"
-                                : "border-border text-muted-foreground hover:border-foreground/40"
-                            }`}
-                            style={{
-                              backgroundColor:
-                                selectedLevelForStats === level
-                                  ? getLevelColor(level)
-                                  : "transparent",
-                              color: selectedLevelForStats === level ? "white" : undefined,
-                              borderColor:
-                                selectedLevelForStats === level ? getLevelColor(level) : undefined,
-                            }}
-                          >
-                            <span
-                              className="w-4 h-4 rounded-full border border-foreground/25 shrink-0"
-                              style={{ backgroundColor: getLevelColor(level) }}
-                            />
-                            Nivå {level}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {selectedCompForStats !== null && selectedLevelForStats !== null ? (
-                  <ProblemStatsTable
-                    comp_id={selectedCompForStats}
-                    level={selectedLevelForStats}
-                    refreshKey={statsRefreshKey}
-                  />
-                ) : selectedCompForStats !== null ? (
-                  <p className="text-center text-muted-foreground bg-card/90 backdrop-blur rounded-lg shadow-soft py-6">
-                    Välj en nivå ovan för att visa statistik.
-                  </p>
-                ) : (
-                  !competitionsLoading &&
-                  competitions.length > 0 && (
-                    <p className="text-center text-muted-foreground bg-card/90 backdrop-blur rounded-lg shadow-soft py-6">
-                      Välj en tävling ovan för att visa statistik.
-                    </p>
-                  )
-                )}
-              </div>
-            </Suspense>
-          )}
-        </div>
+        <div className="w-full">{renderActiveView()}</div>
       </div>
-      {/* Mobile bottom navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur border-t border-border md:hidden">
-        {/* Admin overflow panel */}
-        {isAdmin && moreMenuOpen && (
-          <>
-            <div className="fixed inset-0 z-40" onClick={() => setMoreMenuOpen(false)} />
-            <div className="absolute bottom-16 right-0 z-50 bg-card border border-border rounded-tl-xl shadow-lg py-2 min-w-40">
-              {MENU_ITEMS.filter((item) => item.requiresAdmin).map((item) => {
-                const Icon = item.icon;
-                const isActive = !item.to && activeView === item.value;
-                return (
-                  <button
-                    key={item.value}
-                    onClick={() => handleNavigate(item.value as NavigationView, item.to)}
-                    className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-medium transition-colors ${
-                      isActive
-                        ? "text-foreground bg-muted/50"
-                        : "text-muted-foreground hover:bg-muted/50"
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    {item.mobileLabel}
-                  </button>
-                );
-              })}
-            </div>
-          </>
-        )}
-
-        <div className="flex justify-around items-stretch h-16">
-          {MENU_ITEMS.filter((item) => !item.requiresAdmin).map((item) => {
-            const Icon = item.icon;
-            const isActive = activeView === item.value;
-            return (
-              <button
-                key={item.value}
-                onClick={() => handleNavigate(item.value as NavigationView)}
-                className={`flex flex-col items-center justify-center flex-1 gap-1 text-xs font-medium transition-colors ${
-                  isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <Icon className="w-5 h-5" />
-                <span>{item.mobileLabel}</span>
-                <span
-                  className={`w-1.5 h-1.5 rounded-full bg-primary transition-opacity ${
-                    isActive ? "opacity-100" : "opacity-0"
-                  }`}
-                />
-              </button>
-            );
-          })}
-
-          {isAdmin && (
-            <button
-              onClick={() => setMoreMenuOpen((prev) => !prev)}
-              className={`flex flex-col items-center justify-center flex-1 gap-1 text-xs font-medium transition-colors ${
-                moreMenuOpen ||
-                MENU_ITEMS.filter((i) => i.requiresAdmin).some(
-                  (i) => !i.to && activeView === i.value
-                )
-                  ? "text-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <MoreHorizontal className="w-5 h-5" />
-              <span>Mer</span>
-              <span
-                className={`w-1.5 h-1.5 rounded-full bg-primary transition-opacity ${
-                  MENU_ITEMS.filter((i) => i.requiresAdmin).some(
-                    (i) => !i.to && activeView === i.value
-                  )
-                    ? "opacity-100"
-                    : "opacity-0"
-                }`}
-              />
-            </button>
-          )}
-        </div>
-      </nav>
+      <ProfileBottomNav activeView={activeView} isAdmin={isAdmin} onNavigate={handleNavigate} />
     </div>
   );
 }

@@ -40,7 +40,7 @@ export function CompetitionList({ refreshKey }: CompetitionListProps = {}) {
       const data = await getCompetitions();
       setCompList(data ?? []);
     } catch (err) {
-      setError(err instanceof Error ? getUserFriendlyError(err) : "Kunde inte hämta tävlingar.");
+      setError(getUserFriendlyError(err));
     } finally {
       setLoading(false);
     }
@@ -95,8 +95,7 @@ export function CompetitionList({ refreshKey }: CompetitionListProps = {}) {
       resetState();
       await refetch();
     } catch (err) {
-      const message =
-        err instanceof Error ? getUserFriendlyError(err) : "Misslyckades att uppdatera.";
+      const message = getUserFriendlyError(err);
       setRowError({ id: competitionId, message });
     } finally {
       setSaving(null);
@@ -112,7 +111,7 @@ export function CompetitionList({ refreshKey }: CompetitionListProps = {}) {
       await deleteCompetitionById(competitionId);
       await refetch();
     } catch (err) {
-      const message = err instanceof Error ? getUserFriendlyError(err) : "Misslyckades att radera.";
+      const message = getUserFriendlyError(err);
       setRowError({ id: competitionId, message });
     } finally {
       setDeleting(null);

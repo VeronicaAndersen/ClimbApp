@@ -1,8 +1,8 @@
 import "@radix-ui/themes/styles.css";
 import { lazy, Suspense } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { shouldRetryQuery } from "./lib/queryRetry";
+import { queryClient } from "./lib/queryClient";
 
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Login = lazy(() => import("./pages/Login"));
@@ -11,21 +11,6 @@ const Registration = lazy(() => import("./pages/Registration"));
 const Tombola = lazy(() => import("./pages/Tombola"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes - data is considered fresh
-      gcTime: 10 * 60 * 1000, // 10 minutes - cache garbage collection time
-      retry: shouldRetryQuery, // Once for network errors and 5xx, never for 4xx
-      refetchOnWindowFocus: false, // Don't refetch when window regains focus
-      refetchOnReconnect: true, // Refetch when reconnecting to network
-    },
-    mutations: {
-      retry: false, // Never resend writes such as logins automatically
-    },
-  },
-});
 
 const App = () => (
   <>

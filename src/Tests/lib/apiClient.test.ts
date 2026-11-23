@@ -13,6 +13,7 @@ import {
   api,
 } from "../../lib/apiClient";
 import { ApiError, SERVER_ERROR_MESSAGE } from "../../lib/apiError";
+import { queryClient } from "../../lib/queryClient";
 
 // Reset all token/session state before each test
 beforeEach(() => {
@@ -140,6 +141,34 @@ describe("api.get", () => {
     } as Response);
     const result = await api.get("/empty");
     expect(result).toBeNull();
+  });
+});
+
+describe("caches on account change", () => {
+  const getTwice = async (changeAccount: () => void) => {
+    const spy = mockFetch(200, { id: 1 });
+    await api.get("/cached");
+    changeAccount();
+    await api.get("/cached");
+    return spy.mock.calls.length;
+  };
+
+  it("serves a repeated GET from the cache for the same account", async () => {
+    expect(await getTwice(() => {})).toBe(1);
+  });
+
+  it.each([
+    ["logout", () => clearTokens()],
+    ["login", () => tokens.saveTokens({ access_token: "a2", refresh_token: "r2" })],
+    ["session switch", () => switchSession("a3", "r3")],
+  ])("drops cached GET responses on %s", async (_name, changeAccount) => {
+    expect(await getTwice(changeAccount)).toBe(2);
+  });
+
+  it("drops react-query data on logout", () => {
+    queryClient.setQueryData(["climbers"], [{ id: 1 }]);
+    clearTokens();
+    expect(queryClient.getQueryData(["climbers"])).toBeUndefined();
   });
 });
 

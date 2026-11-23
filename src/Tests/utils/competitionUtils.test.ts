@@ -1,5 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { isToday, isAdmin, canEditCompetition, normalizeScorePayload } from "../../utils/competitionUtils";
+import {
+  isToday,
+  isAdmin,
+  canEditCompetition,
+  normalizeScorePayload,
+} from "../../utils/competitionUtils";
 
 const TODAY = "2026-04-04";
 
