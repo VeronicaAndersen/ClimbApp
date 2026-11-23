@@ -121,7 +121,7 @@ const apiCases: ApiCase[] = [
   {
     name: "getCompRegistrationInfo",
     method: "get",
-    args: ["/competition/12/registration", true],
+    args: ["/competition/12/registration", true, true],
     invoke: () => service.getCompRegistrationInfo(12),
   },
   {
