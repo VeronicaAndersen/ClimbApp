@@ -170,6 +170,19 @@ describe("caches on account change", () => {
     clearTokens();
     expect(queryClient.getQueryData(["climbers"])).toBeUndefined();
   });
+
+  // The keys of the per-user hooks (useGetUserInfo, useUserCompetitions,
+  // useCompetitions, useScores) rely on this reset to avoid leaking data.
+  it.each([
+    [["myInfo"]],
+    [["userCompetitions"]],
+    [["competitionsWithRegistration", undefined]],
+    [["scores", 3, undefined]],
+  ])("drops per-user query %j on logout", (queryKey) => {
+    queryClient.setQueryData(queryKey, { id: 1 });
+    clearTokens();
+    expect(queryClient.getQueryData(queryKey)).toBeUndefined();
+  });
 });
 
 describe("api.post", () => {
