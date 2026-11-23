@@ -15,7 +15,7 @@ interface UseRegistrationsResult {
   error: string | null;
   refetch: () => Promise<void>;
   /** Applies a change the server already accepted, without refetching. */
-  applyChange: (userId: number, change: RegistrationChange) => void;
+  applyChange: (userId: number, change: RegistrationChange) => Promise<void>;
 }
 
 const NO_REGISTRATIONS: RegistrationWithClimber[] = [];
@@ -42,10 +42,12 @@ export function useRegistrations(
   }, [refetch]);
 
   const applyChange = useCallback(
-    (userId: number, change: RegistrationChange) => {
-      queryClient.setQueryData<RegistrationWithClimber[]>(
-        registrationsKey(competitionId, refreshKey),
-        (prev) => prev?.map((reg) => (reg.user_id === userId ? { ...reg, ...change } : reg))
+    async (userId: number, change: RegistrationChange) => {
+      const queryKey = registrationsKey(competitionId, refreshKey);
+      // A fetch that started before the change would overwrite it with old data.
+      await queryClient.cancelQueries({ queryKey });
+      queryClient.setQueryData<RegistrationWithClimber[]>(queryKey, (prev) =>
+        prev?.map((reg) => (reg.user_id === userId ? { ...reg, ...change } : reg))
       );
     },
     [queryClient, competitionId, refreshKey]

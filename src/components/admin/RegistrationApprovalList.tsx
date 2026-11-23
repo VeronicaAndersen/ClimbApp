@@ -45,11 +45,11 @@ export function RegistrationApprovalList({
 
     try {
       await updateRegistrationApproval(competitionId, userId, approved);
-      applyChange(userId, { approved });
+      await applyChange(userId, { approved });
     } catch (err) {
       setActionError(getUserFriendlyError(err));
-      // Refetch to restore the server's state
-      refetch();
+      // Refetch to restore the server's state; it reports failures itself.
+      void refetch();
     } finally {
       setUpdatingId(null);
     }
@@ -61,11 +61,11 @@ export function RegistrationApprovalList({
 
     try {
       await updateRegistrationLevel(competitionId, userId, newLevel);
-      applyChange(userId, { level: newLevel });
+      await applyChange(userId, { level: newLevel });
     } catch (err) {
       setActionError(getUserFriendlyError(err));
-      // Refetch to restore the server's state
-      refetch();
+      // Refetch to restore the server's state; it reports failures itself.
+      void refetch();
     } finally {
       setChangingLevelId(null);
     }
@@ -73,7 +73,7 @@ export function RegistrationApprovalList({
 
   const handleRefresh = () => {
     setActionError(null);
-    refetch();
+    void refetch();
   };
 
   const shownError = actionError ?? error;
@@ -85,6 +85,7 @@ export function RegistrationApprovalList({
         <Button
           onClick={handleRefresh}
           disabled={fetching}
+          aria-label="Uppdatera anmälda"
           className="bg-muted hover:bg-accent text-foreground px-3 py-1 rounded disabled:opacity-50 cursor-pointer"
           size="1"
         >

@@ -49,7 +49,7 @@ describe("useRegistrations", () => {
     const { result } = renderHookWithQueryClient(() => useRegistrations(3));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    act(() => result.current.applyChange(7, { approved: true, level: 5 }));
+    await act(() => result.current.applyChange(7, { approved: true, level: 5 }));
 
     await waitFor(() =>
       expect(result.current.registrations).toEqual([
@@ -58,6 +58,29 @@ describe("useRegistrations", () => {
       ])
     );
     expect(getAllRegistrationsMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps a change that lands while an older refetch is in flight", async () => {
+    getAllRegistrationsMock.mockResolvedValue([registration(7)]);
+    const { result } = renderHookWithQueryClient(() => useRegistrations(3));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    let resolveStale: (value: RegistrationWithClimber[]) => void = () => {};
+    getAllRegistrationsMock.mockReturnValueOnce(
+      new Promise<RegistrationWithClimber[]>((resolve) => {
+        resolveStale = resolve;
+      })
+    );
+    act(() => {
+      void result.current.refetch();
+    });
+    await waitFor(() => expect(result.current.fetching).toBe(true));
+
+    await act(() => result.current.applyChange(7, { approved: true }));
+    await act(async () => resolveStale([registration(7)]));
+
+    await waitFor(() => expect(result.current.fetching).toBe(false));
+    expect(result.current.registrations).toEqual([{ ...registration(7), approved: true }]);
   });
 
   it("keeps each competition's registrations apart", async () => {
