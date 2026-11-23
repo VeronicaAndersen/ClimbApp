@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { apiMock, clearCacheMock, saveTokensMock } = vi.hoisted(() => ({
+const { apiMock, saveTokensMock } = vi.hoisted(() => ({
   apiMock: {
     get: vi.fn(),
     post: vi.fn(),
@@ -8,13 +8,11 @@ const { apiMock, clearCacheMock, saveTokensMock } = vi.hoisted(() => ({
     put: vi.fn(),
     delete: vi.fn(),
   },
-  clearCacheMock: vi.fn(),
   saveTokensMock: vi.fn(),
 }));
 
 vi.mock("@/lib/apiClient", () => ({
   api: apiMock,
-  clearCache: clearCacheMock,
   tokens: { saveTokens: saveTokensMock },
 }));
 
@@ -275,31 +273,23 @@ describe("authentication side effects", () => {
   it.each([
     ["loginClimber", service.loginClimber],
     ["signupClimber", service.signupClimber],
-  ])(
-    "%s clears cache before the request and saves returned tokens",
-    async (_name, authenticate) => {
-      const response = { access_token: "access", refresh_token: "refresh" };
-      apiMock.post.mockResolvedValue(response);
+  ])("%s saves the returned tokens after the request", async (_name, authenticate) => {
+    const response = { access_token: "access", refresh_token: "refresh" };
+    apiMock.post.mockResolvedValue(response);
 
-      await expect(authenticate(payload)).resolves.toBe(response);
+    await expect(authenticate(payload)).resolves.toBe(response);
 
-      expect(clearCacheMock).toHaveBeenCalledTimes(1);
-      expect(saveTokensMock).toHaveBeenCalledWith(response);
-      expect(clearCacheMock.mock.invocationCallOrder[0]).toBeLessThan(
-        apiMock.post.mock.invocationCallOrder[0]
-      );
-      expect(apiMock.post.mock.invocationCallOrder[0]).toBeLessThan(
-        saveTokensMock.mock.invocationCallOrder[0]
-      );
-    }
-  );
+    expect(saveTokensMock).toHaveBeenCalledWith(response);
+    expect(apiMock.post.mock.invocationCallOrder[0]).toBeLessThan(
+      saveTokensMock.mock.invocationCallOrder[0]
+    );
+  });
 
   it("does not save tokens when authentication fails", async () => {
     const error = new Error("Invalid credentials");
     apiMock.post.mockRejectedValue(error);
 
     await expect(service.loginClimber(payload)).rejects.toBe(error);
-    expect(clearCacheMock).toHaveBeenCalledTimes(1);
     expect(saveTokensMock).not.toHaveBeenCalled();
   });
 });

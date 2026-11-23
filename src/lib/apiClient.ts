@@ -5,6 +5,7 @@ import {
   formatRateLimitMessage,
   toApiError,
 } from "./apiError";
+import { queryClient } from "./queryClient";
 
 const apiUrl = import.meta.env.VITE_REACT_APP_API_URL;
 
@@ -69,14 +70,23 @@ let _accountGeneration = 0;
 
 type TokenPair = { access_token: string; refresh_token: string };
 
-/** Store tokens. `newAccount` is false only for a refresh of the same account. */
+/**
+ * Store tokens. `newAccount` is false only for a refresh of the same account.
+ * On an account change (login, signup, switch, logout) both response caches
+ * are dropped, so data fetched for one account is never shown to another.
+ */
 function storeTokens(accessToken: string | null, refreshToken: string | null, newAccount: boolean) {
   _accessToken = accessToken;
   if (refreshToken === null) sessionStorage.removeItem("refresh_token");
   else sessionStorage.setItem("refresh_token", refreshToken);
   _refreshBlockedUntil = null;
   _sessionGeneration += 1;
-  if (newAccount) _accountGeneration += 1;
+  if (newAccount) {
+    _accountGeneration += 1;
+    clearCache();
+    // Drops cached data and refetches mounted queries with the new tokens.
+    void queryClient.resetQueries();
+  }
 }
 
 /** Save tokens from a login or signup. */
@@ -95,7 +105,6 @@ export function getAccessToken(): string | null {
 /** Switch the active session without going through the login endpoint. */
 export function switchSession(accessToken: string, refreshToken: string): void {
   storeTokens(accessToken, refreshToken, true);
-  clearCache();
 }
 
 export function isLoggedIn(): boolean {
