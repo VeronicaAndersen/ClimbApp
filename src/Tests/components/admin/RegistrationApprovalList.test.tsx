@@ -94,8 +94,7 @@ describe("RegistrationApprovalList", () => {
     expect(getAllRegistrationsMock).toHaveBeenCalledTimes(1);
   });
 
-  // Known bug: the rollback refetch clears the error before anyone can read it.
-  it.fails("shows the error and refetches when approval fails", async () => {
+  it("shows the error and refetches when approval fails", async () => {
     updateApprovalMock.mockRejectedValue(new Error("Failed to fetch"));
     renderList();
     await screen.findByText("Blomma Gren");
