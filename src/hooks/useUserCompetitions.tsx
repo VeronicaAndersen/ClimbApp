@@ -102,8 +102,7 @@ export function useUserCompetitions() {
         setCompetitions(userCompetitionsData);
       } catch (err) {
         if (!active) return;
-        const message =
-          err instanceof Error ? getUserFriendlyError(err) : "Kunde inte hämta tävlingsdata";
+        const message = getUserFriendlyError(err);
         setError(message);
       } finally {
         if (active) setIsLoading(false);

@@ -67,10 +67,7 @@ export function useCompetitions(refreshKey?: number): UseCompetitionsResult {
         setCompetitions([]);
       }
     } catch (err) {
-      const message =
-        err instanceof Error
-          ? getUserFriendlyError(err)
-          : "Ett fel uppstod vid hämtning av tävlingar.";
+      const message = getUserFriendlyError(err);
       setError(message);
       console.error("Error fetching competitions:", err);
     } finally {

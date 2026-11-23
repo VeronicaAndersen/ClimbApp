@@ -15,8 +15,7 @@ export function useClimbers(refreshKey?: number) {
       const data = await getAllClimbers();
       setClimbers(data || []);
     } catch (err) {
-      const message =
-        err instanceof Error ? getUserFriendlyError(err) : "Kunde inte hämta klättrare.";
+      const message = getUserFriendlyError(err);
       setError(message);
     } finally {
       setLoading(false);

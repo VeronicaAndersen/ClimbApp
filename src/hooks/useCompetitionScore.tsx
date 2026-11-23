@@ -45,7 +45,7 @@ export function useCompetitionScores(competitionId: number): UseCompetitionScore
         setScores(result || []);
       } catch (err) {
         if (alive) {
-          setError(err instanceof Error ? getUserFriendlyError(err) : "Kunde inte hämta data.");
+          setError(getUserFriendlyError(err));
         }
       } finally {
         if (alive) setLoading(false);

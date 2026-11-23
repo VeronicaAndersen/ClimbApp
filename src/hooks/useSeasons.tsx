@@ -24,10 +24,7 @@ export function useSeasons(refreshKey?: number): UseSeasonsResult {
         setSeasons(data);
       }
     } catch (err) {
-      const message =
-        err instanceof Error
-          ? getUserFriendlyError(err)
-          : "Ett fel uppstod vid hämtning av säsonger.";
+      const message = getUserFriendlyError(err);
       setError(message);
       console.error("Error fetching seasons:", err);
     } finally {

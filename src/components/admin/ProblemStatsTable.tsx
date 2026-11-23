@@ -154,8 +154,7 @@ export function ProblemStatsTable({ comp_id, level, refreshKey }: ProblemStatsTa
       const data = await getLevelStats({ comp_id, level });
       setStats(data);
     } catch (err) {
-      const message =
-        err instanceof Error ? getUserFriendlyError(err) : "Misslyckades att hämta statistik.";
+      const message = getUserFriendlyError(err);
       setError(message);
     } finally {
       setLoading(false);

@@ -187,8 +187,7 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
       resetState();
       await refetch();
     } catch (err) {
-      const message =
-        err instanceof Error ? getUserFriendlyError(err) : "Misslyckades att uppdatera klättrare.";
+      const message = getUserFriendlyError(err);
       setRowError({ id: climberId, message });
     } finally {
       setSaving(null);
@@ -204,8 +203,7 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
       await deleteClimberById(climberId);
       await refetch();
     } catch (err) {
-      const message =
-        err instanceof Error ? getUserFriendlyError(err) : "Misslyckades att radera klättrare.";
+      const message = getUserFriendlyError(err);
       setRowError({ id: climberId, message });
     } finally {
       setDeleting(null);
