@@ -376,6 +376,19 @@ async function apiRequest<T>(
     throw await toApiError(response);
   }
 
+  // Invalidate cache for mutations. Done before reading the body, because a
+  // successful mutation often has none (204) and must still clear stale GETs.
+  if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+    const basePath = url.split("?")[0];
+    const resourceType = basePath.split("/").slice(0, -1).join("/") || basePath;
+
+    for (const key of cache.keys()) {
+      if (key.includes(basePath) || key.includes(resourceType)) {
+        cache.delete(key);
+      }
+    }
+  }
+
   const raw = await response.text();
   if (!raw) return null as T;
 
@@ -385,18 +398,6 @@ async function apiRequest<T>(
     // Cache GET requests
     if (method === "GET" && !options.skipCache) {
       setCachedData(cacheKey, data);
-    }
-
-    // Invalidate cache for mutations
-    if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
-      const basePath = url.split("?")[0];
-      const resourceType = basePath.split("/").slice(0, -1).join("/") || basePath;
-
-      for (const key of cache.keys()) {
-        if (key.includes(basePath) || key.includes(resourceType)) {
-          cache.delete(key);
-        }
-      }
     }
 
     return data;
