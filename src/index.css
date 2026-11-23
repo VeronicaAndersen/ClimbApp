@@ -99,9 +99,40 @@
     @apply border-border;
   }
 
+  html {
+    font-family:
+      system-ui,
+      -apple-system,
+      "Segoe UI",
+      Roboto,
+      sans-serif;
+    line-height: 1.5;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Tracking and leading tighten as type grows; body text stays near zero. */
+  h1 {
+    letter-spacing: -0.022em;
+    line-height: 1.1;
+  }
+
+  h2 {
+    letter-spacing: -0.018em;
+    line-height: 1.15;
+  }
+
+  h3 {
+    letter-spacing: -0.012em;
+    line-height: 1.25;
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
     min-height: 100vh;
+    font-optical-sizing: auto;
+    transition:
+      background-color 300ms ease,
+      color 300ms ease;
     background-image:
       radial-gradient(60rem 30rem at 0% -10%, hsl(var(--sage) / 0.9), transparent 65%),
       radial-gradient(50rem 30rem at 110% 110%, hsl(var(--sage) / 0.6), transparent 65%);
@@ -159,4 +190,126 @@
   .text-link {
     @apply rounded-sm text-sm font-medium text-foreground underline decoration-foreground/30 underline-offset-4 transition-colors hover:decoration-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
   }
+
+  /*
+   * Press feedback lands on pointer-down, not on release: a short scale-down
+   * that springs back when the finger lifts.
+   */
+  .pressable,
+  .btn-primary,
+  .btn-secondary,
+  .radix-themes .rt-BaseButton {
+    transition-property: transform, background-color, color, box-shadow, opacity;
+    transition-duration: 160ms;
+    transition-timing-function: theme("transitionTimingFunction.apple");
+  }
+
+  .pressable:not(:disabled):active,
+  .btn-primary:not(:disabled):active,
+  .btn-secondary:not(:disabled):active,
+  .radix-themes .rt-BaseButton:not(:disabled):not([data-disabled]):active {
+    transform: scale(0.97);
+    transition-duration: 80ms;
+  }
+
+  /*
+   * Translucent material: floating chrome that content scrolls under.
+   * The bright top edge reads as light catching the surface.
+   * .material is the thin variant for bars and chips; .material-thick for
+   * large surfaces, which read as heavier (more blur, deeper shadow).
+   */
+  .material,
+  .material-thick {
+    background-color: hsl(var(--card) / 0.72);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.45),
+      0 1px 2px hsl(120 5% 10% / 0.04);
+  }
+
+  .material-thick {
+    background-color: hsl(var(--card) / 0.55);
+    -webkit-backdrop-filter: blur(32px) saturate(180%);
+    backdrop-filter: blur(32px) saturate(180%);
+    @apply shadow-material;
+  }
+
+  .dark .material,
+  .dark .material-thick {
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.06),
+      0 1px 2px hsl(0 0% 0% / 0.2);
+  }
+
+  .dark .material-thick {
+    background-color: hsl(var(--card) / 0.6);
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.06),
+      0 24px 56px -20px hsl(0 0% 0% / 0.6);
+  }
+
+  /* Tabular digits so changing numbers don't shift the layout. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Reduced motion: keep feedback, drop scaling and movement. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+
+  .pressable:active,
+  .btn-primary:active,
+  .btn-secondary:active,
+  .radix-themes .rt-BaseButton:active {
+    transform: none !important;
+  }
+
+  .collapsible {
+    transition: none !important;
+  }
+}
+
+/* Reduced transparency: solid surfaces, no blur. */
+@media (prefers-reduced-transparency: reduce) {
+  .material,
+  .material-thick {
+    background-color: hsl(var(--card));
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* Increased contrast: near-solid surfaces with a defined edge. */
+@media (prefers-contrast: more) {
+  .material,
+  .material-thick {
+    background-color: hsl(var(--card));
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-color: hsl(var(--foreground) / 0.5);
+  }
+}
+
+/* Height animation for disclosure content (grid-rows 0fr -> 1fr). */
+.collapsible {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 320ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.collapsible[data-open="true"] {
+  grid-template-rows: 1fr;
+}
+
+.collapsible > * {
+  min-height: 0;
+  overflow: hidden;
 }

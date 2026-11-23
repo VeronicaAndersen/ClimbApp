@@ -59,6 +59,12 @@ export default {
       },
       boxShadow: {
         soft: "0 1px 2px hsl(120 5% 10% / 0.05), 0 12px 32px -12px hsl(120 5% 10% / 0.18)",
+        material:
+          "inset 0 1px 0 hsl(0 0% 100% / 0.4), 0 2px 6px hsl(120 5% 10% / 0.05), 0 24px 56px -20px hsl(120 5% 10% / 0.28)",
+      },
+      transitionTimingFunction: {
+        /* Critically damped feel: fast start, long gentle settle, no overshoot. */
+        apple: "cubic-bezier(0.32, 0.72, 0, 1)",
       },
       borderRadius: {
         lg: "var(--radius)",
