@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { getCompetitions, getCompRegistrationInfo, getScoresBatch } from "@/services/api";
 import { CompetitionResponse, ScoreBatchResponse } from "@/types";
 import { getUserFriendlyError } from "@/utils/errorMessages";
@@ -16,105 +16,79 @@ export interface CompetitionWithScores {
   };
 }
 
-export function useUserCompetitions() {
-  const [competitions, setCompetitions] = useState<CompetitionWithScores[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+interface UseUserCompetitionsResult {
+  competitions: CompetitionWithScores[];
+  isLoading: boolean;
+  error: string | null;
+}
 
-  useEffect(() => {
-    let active = true;
+const NO_COMPETITIONS: CompetitionWithScores[] = [];
 
-    const fetchUserCompetitions = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
+function summarize(scores: ScoreBatchResponse[]): CompetitionWithScores["summary"] {
+  const { problemsWithTop, problemsWithBonus, totalAttempts, attemptedProblems } = scores.reduce(
+    (acc, s) => ({
+      problemsWithTop: acc.problemsWithTop + (s.score.attempts_to_top > 0 ? 1 : 0),
+      problemsWithBonus: acc.problemsWithBonus + (s.score.attempts_to_bonus > 0 ? 1 : 0),
+      totalAttempts: acc.totalAttempts + s.score.attempts_total,
+      attemptedProblems: acc.attemptedProblems + (s.score.attempts_total > 0 ? 1 : 0),
+    }),
+    { problemsWithTop: 0, problemsWithBonus: 0, totalAttempts: 0, attemptedProblems: 0 }
+  );
+  return {
+    totalProblems: scores.length,
+    problemsWithTop,
+    problemsWithBonus,
+    totalAttempts,
+    averageAttempts: attemptedProblems > 0 ? (totalAttempts / attemptedProblems).toFixed(1) : "0",
+  };
+}
 
-        // Get all competitions
-        const allCompetitions = await getCompetitions();
+/** One competition with the user's scores, or null if not registered or no scores. */
+async function fetchCompetitionWithScores(
+  comp: CompetitionResponse
+): Promise<CompetitionWithScores | null> {
+  // getCompRegistrationInfo throws 404 if not registered — catch means "not registered"
+  const registration = await getCompRegistrationInfo(comp.id).catch(() => null);
+  if (!registration?.level) return null;
 
-        if (!active || !allCompetitions || allCompetitions.length === 0) {
-          setCompetitions([]);
-          return;
-        }
+  const scores = await getScoresBatch({ comp_id: comp.id, level: registration.level });
+  if (scores.length === 0) return null;
 
-        // Filter competitions the user is registered for and get their scores
-        // Parallelize all competition checks instead of sequential loop
-        const competitionResults = await Promise.allSettled(
-          allCompetitions.map(async (comp) => {
-            // getCompRegistrationInfo throws 404 if not registered — catch means "not registered"
-            const registration = await getCompRegistrationInfo(comp.id).catch(() => null);
-            if (!registration?.level) return null;
+  return { competition: comp, level: registration.level, scores, summary: summarize(scores) };
+}
 
-            // Then fetch scores for that level
-            const scores = await getScoresBatch({
-              comp_id: comp.id,
-              level: registration.level,
-            });
+async function fetchUserCompetitions(): Promise<CompetitionWithScores[]> {
+  const allCompetitions = await getCompetitions();
+  if (!allCompetitions || allCompetitions.length === 0) return NO_COMPETITIONS;
 
-            if (scores.length === 0) return null;
+  // A failure for one competition hides that competition, not the whole list.
+  const results = await Promise.allSettled(allCompetitions.map(fetchCompetitionWithScores));
 
-            const totalProblems = scores.length;
-            const { problemsWithTop, problemsWithBonus, totalAttempts, attemptedProblems } =
-              scores.reduce(
-                (acc, s) => ({
-                  problemsWithTop: acc.problemsWithTop + (s.score.attempts_to_top > 0 ? 1 : 0),
-                  problemsWithBonus:
-                    acc.problemsWithBonus + (s.score.attempts_to_bonus > 0 ? 1 : 0),
-                  totalAttempts: acc.totalAttempts + s.score.attempts_total,
-                  attemptedProblems: acc.attemptedProblems + (s.score.attempts_total > 0 ? 1 : 0),
-                }),
-                { problemsWithTop: 0, problemsWithBonus: 0, totalAttempts: 0, attemptedProblems: 0 }
-              );
-            const averageAttempts =
-              attemptedProblems > 0 ? (totalAttempts / attemptedProblems).toFixed(1) : "0";
+  return results
+    .filter(
+      (r): r is PromiseFulfilledResult<CompetitionWithScores> =>
+        r.status === "fulfilled" && r.value !== null
+    )
+    .map((r) => r.value)
+    .sort(
+      (a, b) =>
+        new Date(b.competition.comp_date).getTime() - new Date(a.competition.comp_date).getTime()
+    );
+}
 
-            return {
-              competition: comp,
-              level: registration.level,
-              scores,
-              summary: {
-                totalProblems,
-                problemsWithTop,
-                problemsWithBonus,
-                totalAttempts,
-                averageAttempts,
-              },
-            };
-          })
-        );
+export function useUserCompetitions(): UseUserCompetitionsResult {
+  const query = useQuery({
+    // Per-user data: storeTokens resets every query on an account change.
+    queryKey: ["userCompetitions"],
+    queryFn: fetchUserCompetitions,
+    // Scores change while the user climbs, so always refetch on mount
+    // instead of trusting the global five-minute staleTime.
+    staleTime: 0,
+  });
 
-        const userCompetitionsData = competitionResults
-          .filter(
-            (r): r is PromiseFulfilledResult<CompetitionWithScores> =>
-              r.status === "fulfilled" && r.value !== null
-          )
-          .map((r) => r.value);
-
-        if (!active) return;
-
-        // Sort by date (most recent first)
-        userCompetitionsData.sort(
-          (a, b) =>
-            new Date(b.competition.comp_date).getTime() -
-            new Date(a.competition.comp_date).getTime()
-        );
-
-        setCompetitions(userCompetitionsData);
-      } catch (err) {
-        if (!active) return;
-        const message = getUserFriendlyError(err);
-        setError(message);
-      } finally {
-        if (active) setIsLoading(false);
-      }
-    };
-
-    fetchUserCompetitions();
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  return { competitions, isLoading, error };
+  return {
+    competitions: query.data ?? NO_COMPETITIONS,
+    isLoading: query.isPending,
+    error: query.error ? getUserFriendlyError(query.error) : null,
+  };
 }
