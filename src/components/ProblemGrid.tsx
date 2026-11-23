@@ -47,6 +47,7 @@ export default function ProblemGrid({
     saveMessage: batchSaveMessage,
     saveAll: saveAllBatch,
   } = useUpdateScoreBatch();
+  const [savingProblemNo, setSavingProblemNo] = useState<number | null>(null);
   const [savedProblemNo, setSavedProblemNo] = useState<number | null>(null);
   const [errorProblemNo, setErrorProblemNo] = useState<number | null>(null);
   const [adminOverride, setAdminOverride] = useState(false);
@@ -138,6 +139,7 @@ export default function ProblemGrid({
 
   const handleSaveProblem = async (problem: ScoreBatchResponse) => {
     if (!gradeLevel) return;
+    setSavingProblemNo(problem.problem_no);
     const success = await saveAll(competitionId, gradeLevel, problem.problem_no, problem.score);
     if (success) {
       // Track which problem was saved to show message over it
@@ -174,14 +176,11 @@ export default function ProblemGrid({
     }
   };
 
-  const inputsDisabled = saving || batchSaving || !canEdit;
-  const saveLabel = saving
-    ? "Sparar..."
-    : !canEdit
-      ? "Redigering inaktiverad"
-      : gradeLevel
-        ? `Spara försök för ${viewingClimberName || "dig"}`
-        : "Välj gradnivå för att spara";
+  const idleSaveLabel = !canEdit
+    ? "Redigering inaktiverad"
+    : gradeLevel
+      ? `Spara försök för ${viewingClimberName || "dig"}`
+      : "Välj gradnivå för att spara";
 
   return (
     <div className="space-y-4">
@@ -253,24 +252,29 @@ export default function ProblemGrid({
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-        {problems.map((problem) => (
-          <ProblemCard
-            key={problem.problem_no}
-            problem={problem}
-            isChanged={isScoreChanged(problem.score, initialScoreMap.get(problem.problem_no))}
-            isCollapsed={collapsedProblems.has(problem.problem_no)}
-            savedMessage={savedProblemNo === problem.problem_no ? saveMessage : null}
-            errorMessage={errorProblemNo === problem.problem_no ? saveError : null}
-            gradeColor={gradeColor}
-            gradeLabel={gradeLabel}
-            inputsDisabled={inputsDisabled}
-            saveDisabled={inputsDisabled || !gradeLevel}
-            saveLabel={saveLabel}
-            onToggleCollapse={toggleCollapse}
-            onFieldChange={updateField}
-            onSave={handleSaveProblem}
-          />
-        ))}
+        {problems.map((problem) => {
+          const isSavingThis = saving && savingProblemNo === problem.problem_no;
+          const inputsDisabled = isSavingThis || batchSaving || !canEdit;
+          return (
+            <ProblemCard
+              key={problem.problem_no}
+              problem={problem}
+              isChanged={isScoreChanged(problem.score, initialScoreMap.get(problem.problem_no))}
+              isCollapsed={collapsedProblems.has(problem.problem_no)}
+              savedMessage={savedProblemNo === problem.problem_no ? saveMessage : null}
+              errorMessage={errorProblemNo === problem.problem_no ? saveError : null}
+              gradeColor={gradeColor}
+              gradeLabel={gradeLabel}
+              inputsDisabled={inputsDisabled}
+              // Any in-flight single save blocks other saves: the hook holds one result at a time.
+              saveDisabled={inputsDisabled || saving || !gradeLevel}
+              saveLabel={isSavingThis ? "Sparar..." : idleSaveLabel}
+              onToggleCollapse={toggleCollapse}
+              onFieldChange={updateField}
+              onSave={handleSaveProblem}
+            />
+          );
+        })}
       </div>
     </div>
   );
