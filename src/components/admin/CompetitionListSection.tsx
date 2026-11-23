@@ -22,7 +22,9 @@ export function CompetitionListSection({ refreshKey }: CompetitionListSectionPro
     );
   }
 
-  if (error) {
+  // The query is shared with CompetitionList: a failed refetch there keeps
+  // the cached list, so only replace the section when there is nothing to show.
+  if (error && competitions.length === 0) {
     return (
       <div role="alert" className="mb-4">
         <p className="text-red-600 dark:text-red-400 mb-2">Det gick inte att hämta tävlingar.</p>

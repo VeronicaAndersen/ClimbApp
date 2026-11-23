@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Theme } from "@radix-ui/themes";
@@ -18,9 +18,9 @@ vi.mock("@/services/api", () => ({
 const competition = (id: number, comp_date: string) =>
   ({ id, name: `Tävling ${id}`, comp_date, comp_type: "QUALIFIER" }) as CompetitionResponse;
 
-function renderSection() {
+function renderSection(queryClient = createTestQueryClient()) {
   return render(
-    <QueryClientProvider client={createTestQueryClient()}>
+    <QueryClientProvider client={queryClient}>
       <Theme>
         <CompetitionListSection refreshKey={0} />
       </Theme>
@@ -42,6 +42,22 @@ describe("CompetitionListSection", () => {
 
     expect(await screen.findByText("Tävling 2")).toBeVisible();
     expect(screen.getByText("Visa tidigare tävlingar (1)")).toBeInTheDocument();
+  });
+
+  it("keeps the list when a later refetch of the shared query fails", async () => {
+    getCompetitionsMock.mockResolvedValue([competition(2, "2999-01-01")]);
+    const queryClient = createTestQueryClient();
+    renderSection(queryClient);
+    await screen.findByText("Tävling 2");
+
+    getCompetitionsMock.mockRejectedValue(new Error("Failed to fetch"));
+    await act(() => queryClient.refetchQueries({ queryKey: ["competitions"] }));
+    expect(queryClient.getQueryState(["competitions", 0])?.status).toBe("error");
+    // Let the observer's batched notification re-render the section.
+    await act(() => new Promise((resolve) => setTimeout(resolve, 0)));
+
+    expect(screen.getByText("Tävling 2")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
   it("offers a retry when the competitions cannot be fetched", async () => {
