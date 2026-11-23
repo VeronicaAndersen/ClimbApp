@@ -12,6 +12,7 @@ import { AssignToCompetitionsList } from "@/components/AssignToCompetitionsList"
 import { CompleteProfileForm } from "@/components/forms/CompleteProfileForm";
 import { SessionSwitcher } from "@/components/SessionSwitcher";
 import { ProfileBottomNav, ProfileMenubar, type NavigationView } from "@/components/ProfileNav";
+import { ADMIN_VIEWS } from "@/constants/profileMenu";
 import { getCompetitions } from "@/services/api";
 import { CompetitionResponse } from "@/types";
 import { getGradeColor } from "@/constants/gradeColors";
@@ -45,8 +46,6 @@ const CompetitionListSection = lazy(() =>
 const ProblemStatsTable = lazy(() =>
   import("@/components/admin/ProblemStatsTable").then((m) => ({ default: m.ProblemStatsTable }))
 );
-
-const ADMIN_VIEWS: NavigationView[] = ["users", "leaderboard", "admin", "statistics"];
 
 const LoadingFallback = () => (
   <div className="flex items-center justify-center py-8">
