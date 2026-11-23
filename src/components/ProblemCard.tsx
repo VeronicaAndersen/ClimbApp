@@ -1,4 +1,4 @@
-import { Star, Medal, ChevronDown, ChevronUp } from "lucide-react";
+import { Star, Medal, ChevronDown } from "lucide-react";
 import { Button } from "@radix-ui/themes";
 import { ScoreBatchResponse } from "@/types";
 import CalloutMessage from "./feedback/CalloutMessage";
@@ -49,10 +49,12 @@ export function ProblemCard({
     onFieldChange(problem.problem_no, key, current + delta);
   };
 
+  const contentId = `problem-${problem.problem_no}-scores`;
+
   return (
     <div
-      className={`relative p-4 rounded-xl shadow-sm flex flex-col border transition-all
-                ${isChanged ? "border-yellow-500" : "border-border"}
+      className={`relative px-4 rounded-2xl bg-card shadow-soft flex flex-col border transition-[border-color,box-shadow] duration-300 ease-apple
+                ${isChanged ? "border-amber-400/80 ring-4 ring-amber-400/15" : "border-border"}
               `}
     >
       {savedMessage && <CalloutMessage message={savedMessage} color="green" />}
@@ -67,19 +69,29 @@ export function ProblemCard({
         </span>
       )}
 
+      {/* The whole row toggles on click; the heading button gives it a keyboard and screen-reader handle. */}
       <div
-        className="flex justify-between items-center py-6 cursor-pointer"
+        className="flex justify-between items-center py-6 cursor-pointer select-none"
         onClick={() => onToggleCollapse(problem.problem_no)}
       >
         <div className="flex items-center gap-2">
-          <h3 className="text-lg font-semibold text-foreground">Problem {problem.problem_no}</h3>
+          <h3 className="text-lg font-semibold text-foreground">
+            <button
+              type="button"
+              aria-expanded={!isCollapsed}
+              aria-controls={contentId}
+              className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              Problem {problem.problem_no}
+            </button>
+          </h3>
           <span
             className="w-5 h-5 rounded-full border border-foreground/25"
             style={{ backgroundColor: gradeColor }}
             title={gradeLabel}
           />
         </div>
-        <p className="text-sm text-muted-foreground">
+        <p className="tabular text-sm text-muted-foreground">
           B{problem.score.attempts_to_bonus}T{problem.score.attempts_to_top}
         </p>
         <div className="flex gap-1 items-center">
@@ -89,18 +101,24 @@ export function ProblemCard({
           {problem.score.attempts_to_top > 0 && (
             <Medal className="w-5 h-5 text-amber-300" aria-hidden />
           )}
-          {isCollapsed ? (
-            <ChevronDown className="w-5 h-5 text-muted-foreground" aria-hidden />
-          ) : (
-            <ChevronUp className="w-5 h-5 text-muted-foreground" aria-hidden />
-          )}
+          <ChevronDown
+            className={`w-5 h-5 text-muted-foreground transition-transform duration-300 ease-apple ${
+              isCollapsed ? "" : "rotate-180"
+            }`}
+            aria-hidden
+          />
         </div>
       </div>
 
-      {!isCollapsed && (
-        <>
+      <div className="collapsible" data-open={!isCollapsed}>
+        <div
+          id={contentId}
+          aria-hidden={isCollapsed}
+          ref={(el) => el?.toggleAttribute("inert", isCollapsed)}
+          className={`transition-opacity duration-300 ease-apple ${isCollapsed ? "opacity-0" : "opacity-100"}`}
+        >
           {SCORE_FIELDS.map((key) => (
-            <div key={key} className="flex flex-row justify-between m-2">
+            <div key={key} className="flex flex-row items-center justify-between m-2">
               <label
                 htmlFor={`problem-${problem.problem_no}-${key}`}
                 className="block text-sm text-muted-foreground font-medium capitalize mb-1"
@@ -112,8 +130,8 @@ export function ProblemCard({
                 <Button
                   onClick={() => step(key, -1)}
                   disabled={inputsDisabled}
-                  className={`w-8 h-8 rounded-full bg-primary hover:bg-primary-hover
-                                    text-primary-foreground font-bold text-lg cursor-pointer`}
+                  className={`w-10 h-10 rounded-full bg-primary hover:bg-primary-hover
+                                    text-primary-foreground font-semibold text-xl cursor-pointer`}
                   aria-label={`Minska ${SCORE_FIELD_LABELS[key]}`}
                 >
                   −
@@ -128,13 +146,13 @@ export function ProblemCard({
                   onChange={(event) =>
                     onFieldChange(problem.problem_no, key, Number(event.target.value))
                   }
-                  className="w-14 text-center border border-input bg-card text-foreground rounded-full px-2 py-1 text-base focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="tabular w-14 h-10 text-center border border-input bg-card text-foreground rounded-full px-2 text-base font-medium focus:outline-none focus:ring-2 focus:ring-ring"
                 />
                 <Button
                   onClick={() => step(key, 1)}
                   disabled={inputsDisabled}
-                  className={`w-8 h-8 rounded-full bg-primary hover:bg-primary-hover
-                                    text-primary-foreground font-bold text-lg cursor-pointer`}
+                  className={`w-10 h-10 rounded-full bg-primary hover:bg-primary-hover
+                                    text-primary-foreground font-semibold text-xl cursor-pointer`}
                   aria-label={`Öka ${SCORE_FIELD_LABELS[key]}`}
                 >
                   +
@@ -146,14 +164,14 @@ export function ProblemCard({
             <Button
               onClick={() => onSave(problem)}
               disabled={saveDisabled}
-              className={`bg-primary hover:bg-primary-hover text-primary-foreground px-6 py-2 mt-4 rounded-full
+              className={`bg-primary hover:bg-primary-hover text-primary-foreground px-6 py-2 mt-4 mb-4 rounded-full
                         shadow font-medium cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed w-full`}
             >
               {saveLabel}
             </Button>
           </div>
-        </>
-      )}
+        </div>
+      </div>
     </div>
   );
 }

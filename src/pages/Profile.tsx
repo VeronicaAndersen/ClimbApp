@@ -129,7 +129,7 @@ export default function Profile() {
         return (
           <div>
             {sessions.length > 1 && (
-              <div className="mb-4 p-4 bg-card/90 backdrop-blur rounded-lg shadow-soft">
+              <div className="mb-4 p-4 rounded-2xl border border-border/50 bg-card shadow-soft">
                 <SessionSwitcher onSwitch={refetch} />
               </div>
             )}
@@ -221,7 +221,7 @@ export default function Profile() {
   return (
     <div className="min-h-screen flex flex-col items-center">
       <AppHeader actions={logoutButton} />
-      <div className="flex flex-col items-center mt-24 mb-20 md:my-24 mx-auto px-4 py-5 sm:p-6 rounded-3xl border border-border/60 bg-sage/30 dark:bg-card/40 backdrop-blur max-w-6xl w-[calc(100%-2rem)] overflow-y-auto">
+      <div className="flex flex-col items-center mt-24 mb-20 md:my-24 mx-auto px-4 py-5 sm:p-6 material-thick rounded-[1.75rem] border border-border/50 max-w-6xl w-[calc(100%-2rem)] overflow-y-auto">
         {messageInfo && <CalloutMessage message={messageInfo.message} color={messageInfo.color} />}
 
         {/* Navigation Menubar — desktop only */}
