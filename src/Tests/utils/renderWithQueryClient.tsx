@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { renderHook, type RenderHookOptions } from "@testing-library/react";
+import { render, renderHook, type RenderHookOptions } from "@testing-library/react";
 
 /** A fresh QueryClient per test, without retries so errors surface at once. */
 export function createTestQueryClient(): QueryClient {
@@ -19,4 +19,13 @@ export function renderHookWithQueryClient<Result, Props>(
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
   return { queryClient, ...renderHook(hook, { ...options, wrapper }) };
+}
+
+/** render inside a QueryClientProvider; returns the client for assertions. */
+export function renderWithQueryClient(ui: ReactNode) {
+  const queryClient = createTestQueryClient();
+  return {
+    queryClient,
+    ...render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>),
+  };
 }

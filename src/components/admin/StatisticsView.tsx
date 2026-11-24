@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
-import { getCompetitions } from "@/services/api";
-import type { CompetitionResponse } from "@/types";
+import { useState } from "react";
 import { getGradeColor } from "@/constants/gradeColors";
 import { ProblemStatsTable } from "@/components/admin/ProblemStatsTable";
 import Loader from "@/components/feedback/Loader";
+import { useAllCompetitions } from "@/hooks/useAllCompetitions";
 
 const LEVELS = [1, 2, 3, 4, 5, 6, 7];
 
@@ -11,23 +10,8 @@ const LEVELS = [1, 2, 3, 4, 5, 6, 7];
 export function StatisticsView() {
   const [selectedCompForStats, setSelectedCompForStats] = useState<number | null>(null);
   const [selectedLevelForStats, setSelectedLevelForStats] = useState<number | null>(null);
-  const [competitions, setCompetitions] = useState<CompetitionResponse[]>([]);
-  const [competitionsLoading, setCompetitionsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchCompetitions = async () => {
-      setCompetitionsLoading(true);
-      try {
-        const comps = await getCompetitions();
-        setCompetitions(comps);
-      } catch (err) {
-        console.error("Failed to fetch competitions:", err);
-      } finally {
-        setCompetitionsLoading(false);
-      }
-    };
-    void fetchCompetitions();
-  }, []);
+  // A failed load shows as "no competitions", as before.
+  const { competitions, loading: competitionsLoading } = useAllCompetitions();
 
   return (
     <div className="grid grid-cols-1 gap-2">
