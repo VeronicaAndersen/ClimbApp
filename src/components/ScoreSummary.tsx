@@ -70,7 +70,7 @@ const createStatCards = (summary: SummaryStats): StatCardConfig[] => [
   },
   {
     icon: Medal,
-    label: "Genomsnittliga försök",
+    label: "Snitt försök",
     value: summary.averageAttempts,
     color: "text-purple-500",
     bgColor: "bg-purple-50 dark:bg-purple-500/10",
@@ -83,19 +83,31 @@ interface StatCardProps {
 
 function StatCard({ config }: StatCardProps) {
   const { icon: Icon, label, value, total, color, bgColor } = config;
+  const progress =
+    total !== undefined && total > 0 ? Math.min(100, (Number(value) / total) * 100) : null;
 
   return (
-    <div
-      className={`${bgColor} p-4 rounded-lg border border-border transition-transform hover:scale-105`}
-    >
-      <div className="flex items-center gap-2 mb-2">
-        <Icon className={`w-5 h-5 ${color}`} aria-hidden="true" />
-        <span className="text-sm text-muted-foreground font-medium">{label}</span>
+    <div className={`${bgColor} min-w-0 rounded-xl p-3 sm:p-4 flex flex-col gap-1.5`}>
+      <div className="flex items-center gap-1.5 min-w-0">
+        <Icon className={`size-4 shrink-0 ${color}`} aria-hidden="true" />
+        <span className="text-xs font-medium text-muted-foreground leading-tight break-words">
+          {label}
+        </span>
       </div>
-      <div className="flex items-baseline gap-1">
-        <span className={`text-2xl font-bold ${color}`}>{value}</span>
+      <div className="flex items-baseline gap-1 tabular-nums">
+        <span className={`text-2xl sm:text-3xl font-semibold tracking-tight leading-none ${color}`}>
+          {value}
+        </span>
         {total !== undefined && <span className="text-sm text-muted-foreground">/ {total}</span>}
       </div>
+      {progress !== null && (
+        <div className="mt-1 h-1 rounded-full bg-foreground/10 overflow-hidden" aria-hidden="true">
+          <div
+            className={`h-full rounded-full bg-current ${color} transition-[width] duration-500 ease-out motion-reduce:transition-none`}
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -108,9 +120,11 @@ export default function ScoreSummary({ problems, gradeLevel }: ScoreSummaryProps
   const gradeLabel = gradeLevel ? `Gradnivå: ${gradeLevel}` : "Gradnivå: ej tilldelad";
 
   return (
-    <div className="bg-card/90 backdrop-blur p-6 rounded-lg shadow-soft mb-6 border border-border">
-      <header className="flex items-center justify-between mb-4">
-        <h3 className="text-xl font-semibold text-foreground">Sammanfattning</h3>
+    <div className="bg-card/90 backdrop-blur p-4 sm:p-6 rounded-2xl shadow-soft mb-6 border border-border">
+      <header className="flex items-center justify-between gap-3 mb-3 sm:mb-4">
+        <h3 className="text-lg sm:text-xl font-semibold tracking-tight text-foreground">
+          Sammanfattning
+        </h3>
         {gradeLevel && (
           <span className="text-sm text-muted-foreground bg-muted px-3 py-1 rounded-full flex items-center gap-2">
             Nivå:
@@ -123,7 +137,7 @@ export default function ScoreSummary({ problems, gradeLevel }: ScoreSummaryProps
         )}
       </header>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
         {statCards.map((config) => (
           <StatCard key={config.label} config={config} />
         ))}
