@@ -128,8 +128,10 @@ export const updateSeasonById = (seasonId: number, payload: SeasonRequest) =>
 export const deleteSeasonById = (seasonId: number) => api.delete(`/season/${seasonId}`, true);
 
 // Scores
+// Not cached: a single-problem save does not clear this URL, and "save all"
+// writes back whatever this returns, so a stale list would overwrite scores.
 export const getScoresBatch = ({ comp_id, level }: UrlParams) =>
-  api.get<ScoreBatchResponse[]>(`/competitions/${comp_id}/level/${level}/scores/batch`, true);
+  api.get<ScoreBatchResponse[]>(`/competitions/${comp_id}/level/${level}/scores/batch`, true, true);
 
 export const updateScore = ({ comp_id, level, problem_no }: UrlParams, payload: ScoreRequest) =>
   api.put(`/competitions/${comp_id}/level/${level}/problems/${problem_no}/score`, payload, true);
