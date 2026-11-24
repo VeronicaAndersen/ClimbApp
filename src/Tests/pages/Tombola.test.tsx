@@ -112,18 +112,34 @@ describe("Tombola", () => {
     renderTombola();
     await selectCompetition(user);
 
-    await user.type(screen.getByLabelText("Lägg till person"), "  Gästen  ");
+    await user.type(screen.getByLabelText("Namn"), "  Gästen  ");
     await user.click(screen.getByRole("button", { name: "Lägg till" }));
 
     expect(screen.getByText("Kvarvarande (3)")).toBeInTheDocument();
     expect(within(remainingList()).getByText("Gästen")).toBeInTheDocument();
-    expect(screen.getByLabelText("Lägg till person")).toHaveValue("");
+    expect(screen.getByLabelText("Namn")).toHaveValue("");
     const saved = JSON.parse(localStorage.getItem("tombola_1") ?? "{}");
     expect(saved.guests).toEqual([expect.objectContaining({ name: "Gästen", level: null })]);
 
     await user.click(screen.getByRole("button", { name: "Ta bort Gästen" }));
     expect(screen.getByText("Kvarvarande (2)")).toBeInTheDocument();
     expect(screen.queryByText("Gästen")).not.toBeInTheDocument();
+  });
+
+  it("collapses and expands the add-person form", async () => {
+    const user = userEvent.setup();
+    renderTombola();
+    await selectCompetition(user);
+    const toggle = screen.getByRole("button", { name: "Lägg till person" });
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByLabelText("Namn")).not.toBeVisible();
+
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByLabelText("Namn")).toBeVisible();
   });
 
   it("draws winners from the remaining pool until it is empty, and reset clears them", async () => {
