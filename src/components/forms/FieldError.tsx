@@ -1,3 +1,4 @@
+import { CircleAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type FieldErrorProps = {
@@ -16,9 +17,17 @@ export function FieldError({ id, message }: FieldErrorProps) {
     <p
       id={id}
       aria-live="polite"
-      className={cn("text-xs italic text-red-700 dark:text-red-400", !message && "sr-only")}
+      className={cn(
+        "mt-1 flex items-start gap-1.5 text-xs font-medium leading-snug text-red-700 dark:text-red-400",
+        !message && "sr-only"
+      )}
     >
-      {message}
+      {message && (
+        <span key={message} className="field-error-in flex items-start gap-1.5">
+          <CircleAlert className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          <span>{message}</span>
+        </span>
+      )}
     </p>
   );
 }
