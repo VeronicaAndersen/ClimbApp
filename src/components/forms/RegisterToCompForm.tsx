@@ -60,7 +60,7 @@ export default function RegisterToCompForm({
   return (
     <Dialog.Root open={open} onOpenChange={handleOpenChange}>
       <Dialog.Trigger>
-        <Button className="bg-primary hover:bg-primary-hover cursor-pointer rounded-full my-2">
+        <Button className="bg-primary hover:bg-primary-hover cursor-pointer rounded-full">
           Anmäl dig
         </Button>
       </Dialog.Trigger>
