@@ -106,6 +106,29 @@ describe("Tombola", () => {
     expect(screen.queryByText("Cia Lind")).not.toBeInTheDocument();
   });
 
+  it("keeps the newest competition when an older one answers late", async () => {
+    let answerFirst: (regs: unknown[]) => void = () => {};
+    getAllRegistrationsMock.mockImplementation((compId: number) =>
+      compId === 1
+        ? new Promise((resolve) => {
+            answerFirst = resolve;
+          })
+        : Promise.resolve([registration(9, true, 2)])
+    );
+    const user = userEvent.setup();
+    renderTombola();
+
+    const select = await screen.findByLabelText("Tävling");
+    await user.selectOptions(select, "1");
+    await user.selectOptions(select, "2");
+    await screen.findByText("Kvarvarande (1)");
+    await act(async () => answerFirst([registration(7), registration(8)]));
+
+    expect(within(remainingList()).getByText("Cia Lind")).toBeInTheDocument();
+    expect(screen.queryByText("Anna Berg")).not.toBeInTheDocument();
+    expect(screen.getByText("Kvarvarande (1)")).toBeInTheDocument();
+  });
+
   it("adds and removes a guest kept on this device only", async () => {
     const user = userEvent.setup();
     renderTombola();

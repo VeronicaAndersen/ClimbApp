@@ -34,6 +34,9 @@ export function useTombola() {
   // Set once the picked competition's saved state is loaded, so the save
   // effect never overwrites it with the previous competition's state.
   const loadedCompId = useRef<number | null>(null);
+  // The pending spin step, so a spin can be stopped when the competition
+  // changes or the page closes.
+  const spinTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const allParticipants = useMemo(() => [...climbers, ...guests], [climbers, guests]);
   const winners = useMemo(
@@ -59,15 +62,23 @@ export function useTombola() {
     fetchCompetitions();
   }, []);
 
+  useEffect(() => () => clearTimeout(spinTimer.current), []);
+
   useEffect(() => {
     if (!selectedCompetitionId) return;
+    // Set by cleanup when another competition is picked, so a slow response
+    // for this one never replaces the newer competition's participants.
+    let stale = false;
 
     const fetchRegistrations = async () => {
       loadedCompId.current = null;
+      clearTimeout(spinTimer.current);
+      setIsSpinning(false);
       try {
         setIsLoading(true);
         setError(null);
         const registrations = await getAllRegistrations(selectedCompetitionId);
+        if (stale) return;
         setClimbers(registrations.filter((reg) => reg.approved).map(climberFromRegistration));
 
         const saved = parseSavedTombola(
@@ -78,12 +89,15 @@ export function useTombola() {
         setCurrentWinner(null);
         loadedCompId.current = selectedCompetitionId;
       } catch (err) {
-        setError(getUserFriendlyError(err));
+        if (!stale) setError(getUserFriendlyError(err));
       } finally {
-        setIsLoading(false);
+        if (!stale) setIsLoading(false);
       }
     };
     fetchRegistrations();
+    return () => {
+      stale = true;
+    };
   }, [selectedCompetitionId]);
 
   useEffect(() => {
@@ -118,7 +132,7 @@ export function useTombola() {
       step++;
       if (step < SPIN_STEPS) {
         const t = step / SPIN_STEPS;
-        setTimeout(snap, 50 + 350 * t * t);
+        spinTimer.current = setTimeout(snap, 50 + 350 * t * t);
       } else {
         const winner = pick();
         setCurrentWinner(winner);
@@ -127,7 +141,7 @@ export function useTombola() {
       }
     };
 
-    setTimeout(snap, 50);
+    spinTimer.current = setTimeout(snap, 50);
   }, [remainingParticipants]);
 
   // Space draws a winner, unless the user is typing.
@@ -150,6 +164,8 @@ export function useTombola() {
 
   // Starts a new draw; guests added on this device stay in the pool.
   const resetTombola = () => {
+    clearTimeout(spinTimer.current);
+    setIsSpinning(false);
     setWinnerKeys([]);
     setCurrentWinner(null);
     setError(null);
