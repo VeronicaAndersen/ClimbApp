@@ -6,7 +6,8 @@
  * produce the expected output.
  */
 import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import CompetitionSummaryCard from "../../components/CompetitionSummaryCard";
 import type { CompetitionWithScores } from "@/hooks/useUserCompetitions";
 import { GRADE_COLORS } from "@/constants/gradeColors";
@@ -132,5 +133,60 @@ describe("CompetitionSummaryCard — stat cards", () => {
       />
     );
     expect(screen.getByText("2.5")).toBeInTheDocument();
+  });
+});
+
+describe("CompetitionSummaryCard — scorecard", () => {
+  const scores = [
+    {
+      problem_no: 2,
+      score: {
+        attempts_total: 4,
+        got_bonus: true,
+        got_top: false,
+        attempts_to_bonus: 3,
+        attempts_to_top: 0,
+      },
+    },
+    {
+      problem_no: 1,
+      score: {
+        attempts_total: 1,
+        got_bonus: true,
+        got_top: true,
+        attempts_to_bonus: 1,
+        attempts_to_top: 1,
+      },
+    },
+  ];
+
+  it("hides the scorecard until Visa innehåll is clicked", async () => {
+    render(<CompetitionSummaryCard competitionData={makeCompetition({ scores })} />);
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+
+    const toggle = screen.getByRole("button", { name: /Visa innehåll/ });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await userEvent.click(toggle);
+
+    expect(screen.getByRole("button", { name: /Dölj innehåll/ })).toHaveAttribute(
+      "aria-expanded",
+      "true"
+    );
+    expect(screen.getByRole("table")).toBeInTheDocument();
+  });
+
+  it("lists each problem in order with its saved attempts", async () => {
+    render(<CompetitionSummaryCard competitionData={makeCompetition({ scores })} />);
+    await userEvent.click(screen.getByRole("button", { name: /Visa innehåll/ }));
+
+    const rows = within(screen.getByRole("table")).getAllByRole("row").slice(1);
+    expect(rows.map((r) => r.textContent)).toEqual(["1111", "243–"]);
+  });
+
+  it("hides the scorecard again on second click", async () => {
+    render(<CompetitionSummaryCard competitionData={makeCompetition({ scores })} />);
+    await userEvent.click(screen.getByRole("button", { name: /Visa innehåll/ }));
+    await userEvent.click(screen.getByRole("button", { name: /Dölj innehåll/ }));
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
   });
 });
