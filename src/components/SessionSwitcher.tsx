@@ -34,8 +34,8 @@ export function SessionSwitcher({ onSwitch }: Props) {
   };
 
   // Bootstrap: seed the sessions list on first mount.
-  // - If sessions were persisted (localStorage), restore the active session's
-  //   refresh token into sessionStorage in case the tab was closed/reopened.
+  // - If sessions were persisted (sessionStorage) but the refresh token is
+  //   gone, restore the active session's tokens.
   // - Otherwise, call getMyInfo() so a token refresh can happen if needed,
   //   then capture the (possibly refreshed) tokens for the initial user.
   useEffect(() => {

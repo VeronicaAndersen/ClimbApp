@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
+import { onTokensRefreshed } from "@/lib/apiClient";
 
 export type ClimberSession = {
   id: number;
@@ -12,6 +13,8 @@ interface SessionsState {
   sessions: ClimberSession[];
   activeId: number | null;
   addOrUpdateSession: (session: ClimberSession) => void;
+  /** Replace the tokens of the session holding `oldRefreshToken`, if any. */
+  updateTokens: (oldRefreshToken: string, accessToken: string, refreshToken: string) => void;
   removeSession: (id: number) => void;
   setActiveId: (id: number) => void;
   clearSessions: () => void;
@@ -33,6 +36,13 @@ export const useSessionsStore = create<SessionsState>()(
           };
         }),
 
+      updateTokens: (oldRefreshToken, accessToken, refreshToken) =>
+        set((state) => ({
+          sessions: state.sessions.map((s) =>
+            s.refreshToken === oldRefreshToken ? { ...s, accessToken, refreshToken } : s
+          ),
+        })),
+
       removeSession: (id) =>
         set((state) => {
           const remaining = state.sessions.filter((s) => s.id !== id);
@@ -44,6 +54,19 @@ export const useSessionsStore = create<SessionsState>()(
 
       clearSessions: () => set({ sessions: [], activeId: null }),
     }),
-    { name: "climber-sessions" }
+    // Same lifetime as the refresh token in apiClient: sessionStorage, so
+    // saved tokens are gone when the tab closes and never reach localStorage.
+    { name: "climber-sessions", storage: createJSONStorage(() => sessionStorage) }
   )
+);
+
+// Earlier versions kept the sessions, tokens included, in localStorage.
+localStorage.removeItem("climber-sessions");
+
+// A refresh rotates the active account's tokens; keep its saved copy current
+// so switching back to it later does not use an expired refresh token.
+onTokensRefreshed((oldRefreshToken, tokens) =>
+  useSessionsStore
+    .getState()
+    .updateTokens(oldRefreshToken, tokens.access_token, tokens.refresh_token)
 );

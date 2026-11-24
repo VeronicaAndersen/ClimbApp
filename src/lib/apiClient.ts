@@ -164,6 +164,19 @@ const REFRESH_TOKEN_REJECTED_STATUSES = new Set([400, 401, 403, 422]);
 
 let _refresh: { generation: number; promise: Promise<RefreshResult> } | null = null;
 
+type RefreshListener = (oldRefreshToken: string, tokens: TokenPair) => void;
+const refreshListeners = new Set<RefreshListener>();
+
+/**
+ * Called after a refresh has replaced `oldRefreshToken` with `tokens`, so a
+ * copy of the old pair (the saved accounts in the switcher) can follow the
+ * rotation. Returns an unsubscribe function.
+ */
+export function onTokensRefreshed(listener: RefreshListener): () => void {
+  refreshListeners.add(listener);
+  return () => refreshListeners.delete(listener);
+}
+
 function isTokenPair(value: unknown): value is TokenPair {
   if (typeof value !== "object" || value === null) return false;
   const { access_token, refresh_token } = value as Record<string, unknown>;
@@ -262,6 +275,7 @@ async function exchangeRefreshToken(
     return { kind: "failed", error: new ApiError({ status: 500, message: SERVER_ERROR_MESSAGE }) };
   }
   storeTokens(data.access_token, data.refresh_token, false); // same account
+  for (const listener of refreshListeners) listener(refreshToken, data);
   return { kind: "refreshed", tokens: data };
 }
 
