@@ -1,13 +1,12 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { Dialog } from "@radix-ui/themes";
 import { Trophy, Star } from "lucide-react";
-import { getClimberRegistrations, getUserScoresBatch } from "@/services/api";
-import { ClimberResponse, RegistrationWithCompetition, ScoreBatchResponse } from "@/types";
+import { ClimberResponse } from "@/types";
 import CalloutMessage from "../feedback/CalloutMessage";
 import ScoreSummary from "../ScoreSummary";
 import { getGradeColor, LEVEL_NAMES } from "@/constants/gradeColors";
-import { getUserFriendlyError } from "@/utils/errorMessages";
 import Loader from "@/components/feedback/Loader";
+import { useClimberRegistrations, useClimberScores } from "@/hooks/useClimberStats";
 
 interface ClimberStatsModalProps {
   climber: ClimberResponse | null;
@@ -17,73 +16,27 @@ interface ClimberStatsModalProps {
 const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString("sv-SE");
 
 export function ClimberStatsModal({ climber, onClose }: ClimberStatsModalProps) {
-  const [registrations, setRegistrations] = useState<RegistrationWithCompetition[]>([]);
-  const [selectedCompId, setSelectedCompId] = useState<number | null>(null);
-  const [scores, setScores] = useState<ScoreBatchResponse[]>([]);
-  const [loadingRegistrations, setLoadingRegistrations] = useState(false);
-  const [loadingScores, setLoadingScores] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const climberId = climber?.id ?? null;
+  const registrationsQuery = useClimberRegistrations(climberId);
+  const registrations = registrationsQuery.data;
+  const loadingRegistrations = registrationsQuery.loading;
 
-  const selectedRegistration = registrations.find((r) => r.comp_id === selectedCompId) ?? null;
+  // The picked competition belongs to one open of the modal: reopening, or
+  // opening another climber, starts at the first registration again.
+  const [picked, setPicked] = useState<{ climberId: number; compId: number } | null>(null);
+  if (climberId === null && picked !== null) setPicked(null);
+  const pickedCompId = picked && picked.climberId === climberId ? picked.compId : null;
+  const selectedRegistration =
+    registrations.find((r) => r.comp_id === pickedCompId) ?? registrations[0] ?? null;
+  const selectedCompId = selectedRegistration?.comp_id ?? null;
+  const setSelectedCompId = (compId: number) => {
+    if (climberId !== null) setPicked({ climberId, compId });
+  };
 
-  useEffect(() => {
-    if (!climber) return;
-
-    let active = true;
-    setLoadingRegistrations(true);
-    setError(null);
-    setRegistrations([]);
-    setSelectedCompId(null);
-    setScores([]);
-
-    getClimberRegistrations(climber.id)
-      .then((data) => {
-        if (!active) return;
-        setRegistrations(data);
-        setSelectedCompId(data[0]?.comp_id ?? null);
-      })
-      .catch((err) => {
-        if (active) setError(getUserFriendlyError(err));
-      })
-      .finally(() => {
-        if (active) setLoadingRegistrations(false);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [climber]);
-
-  const fetchScores = useCallback(() => {
-    if (!climber || !selectedRegistration) return;
-
-    let active = true;
-    setLoadingScores(true);
-    setError(null);
-
-    getUserScoresBatch(
-      { comp_id: selectedRegistration.comp_id, level: selectedRegistration.level },
-      climber.id
-    )
-      .then((data) => {
-        if (active) setScores(data);
-      })
-      .catch((err) => {
-        if (active) setError(getUserFriendlyError(err));
-      })
-      .finally(() => {
-        if (active) setLoadingScores(false);
-      });
-
-    return () => {
-      active = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [climber, selectedRegistration?.comp_id, selectedRegistration?.level]);
-
-  useEffect(() => {
-    fetchScores();
-  }, [fetchScores]);
+  const scoresQuery = useClimberScores(climberId, selectedRegistration);
+  const scores = scoresQuery.data;
+  const loadingScores = scoresQuery.loading;
+  const error = registrationsQuery.error ?? scoresQuery.error;
 
   const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen) onClose();

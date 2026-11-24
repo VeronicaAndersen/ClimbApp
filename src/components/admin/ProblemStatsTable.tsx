@@ -1,10 +1,9 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Trophy, Star, Users, LucideIcon } from "lucide-react";
-import { getLevelStats } from "@/services/api";
-import { LevelStatsResponse, ProblemStats } from "@/types";
+import { ProblemStats } from "@/types";
 import CalloutMessage from "../feedback/CalloutMessage";
-import { getUserFriendlyError } from "@/utils/errorMessages";
 import Loader from "@/components/feedback/Loader";
+import { useLevelStats } from "@/hooks/useLevelStats";
 
 interface ProblemStatsTableProps {
   comp_id: number;
@@ -141,28 +140,8 @@ function PercentageBar({ count, percentage, icon: Icon, iconColor }: PercentageB
 }
 
 export function ProblemStatsTable({ comp_id, level }: ProblemStatsTableProps) {
-  const [stats, setStats] = useState<LevelStatsResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { stats, loading, error } = useLevelStats(comp_id, level);
   const [sortMode, setSortMode] = useState<SortMode>("problem_no");
-
-  const fetchStats = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getLevelStats({ comp_id, level });
-      setStats(data);
-    } catch (err) {
-      const message = getUserFriendlyError(err);
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
-  }, [comp_id, level]);
-
-  useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
 
   const sortedProblems = useMemo(
     () => (stats ? sortProblems(stats.problems, sortMode) : []),
