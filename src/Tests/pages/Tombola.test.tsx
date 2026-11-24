@@ -129,6 +129,32 @@ describe("Tombola", () => {
     expect(screen.getByText("Kvarvarande (1)")).toBeInTheDocument();
   });
 
+  it("does not draw with Space while the next competition loads", async () => {
+    let answerSecond: (regs: unknown[]) => void = () => {};
+    const user = userEvent.setup();
+    renderTombola();
+    await selectCompetition(user);
+    getAllRegistrationsMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          answerSecond = resolve;
+        })
+    );
+
+    await user.selectOptions(screen.getByLabelText("Tävling"), "2");
+    vi.useFakeTimers();
+    fireEvent.keyDown(window, { code: "Space" });
+    await act(async () => answerSecond([registration(7, true, 2), registration(8, true, 2)]));
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
+    vi.useRealTimers();
+
+    expect(screen.getByText("Kvarvarande (2)")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /^Vinnare \(/ })).not.toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem("tombola_2") ?? "{}").winnerKeys ?? []).toEqual([]);
+  });
+
   it("adds and removes a guest kept on this device only", async () => {
     const user = userEvent.setup();
     renderTombola();

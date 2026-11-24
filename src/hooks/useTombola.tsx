@@ -114,6 +114,9 @@ export function useTombola() {
 
   // Flicks through random names, slowing down, then settles on the winner.
   const spinTombola = useCallback(() => {
+    // While a competition loads, the pool still holds the previous one's
+    // participants; a winner drawn now would land in the new draw.
+    if (isLoading) return;
     const pool = remainingParticipants;
     if (pool.length === 0) {
       setError("Inga fler deltagare i tombolan!");
@@ -142,7 +145,7 @@ export function useTombola() {
     };
 
     spinTimer.current = setTimeout(snap, 50);
-  }, [remainingParticipants]);
+  }, [isLoading, remainingParticipants]);
 
   // Space draws a winner, unless the user is typing.
   useEffect(() => {
