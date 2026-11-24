@@ -1,14 +1,14 @@
-import { useEffect, useRef, useState } from "react";
-import { getCompetitions, getLeaderboard, getSeasons, getSeasonStandings } from "@/services/api";
-import type {
-  CompetitionResponse,
-  LeaderboardResponse,
-  LevelLeaderboard,
-  SeasonResponse,
-  SeasonStandingsResponse,
-} from "@/types";
+import { useState } from "react";
+import type { LevelLeaderboard } from "@/types";
 import { getGradeColor } from "@/constants/gradeColors";
 import Loader from "@/components/feedback/Loader";
+import { useAllCompetitions } from "@/hooks/useAllCompetitions";
+import { useSeasons } from "@/hooks/useSeasons";
+import {
+  useCompetitionLeaderboard,
+  useSeasonStandings,
+  type StandingsResult,
+} from "@/hooks/useStandings";
 
 type View = "competition" | "season";
 
@@ -89,195 +89,153 @@ function RankedTable({
   );
 }
 
-function CompetitionLeaderboard() {
-  const [competitions, setCompetitions] = useState<CompetitionResponse[]>([]);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [leaderboard, setLeaderboard] = useState<LeaderboardResponse | null>(null);
-  const [activeLevel, setActiveLevel] = useState<number | null>(null);
-  const [loadingComps, setLoadingComps] = useState(true);
-  const [loadingBoard, setLoadingBoard] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+/** Shows the ranking for one level at a time; defaults to the first level. */
+function LevelStandings({
+  levels,
+  scoreLabel,
+}: {
+  levels: LevelLeaderboard[];
+  scoreLabel: string;
+}) {
+  const [chosenLevel, setChosenLevel] = useState<number | null>(null);
+  const active = levels.find((l) => l.level === chosenLevel) ?? levels[0];
 
-  useEffect(() => {
-    getCompetitions()
-      .then((data) => setCompetitions(data ?? []))
-      .catch(() => setError("Kunde inte hämta tävlingar."))
-      .finally(() => setLoadingComps(false));
-  }, []);
+  return (
+    <>
+      <LevelTabs levels={levels} activeLevel={active.level} onSelect={setChosenLevel} />
+      <RankedTable levelData={active} scoreLabel={scoreLabel} />
+    </>
+  );
+}
 
-  const fetchRef = useRef(0);
+interface StandingsTexts {
+  placeholder: string;
+  optionsLoading: string;
+  optionsError: string;
+  standingsLoading: string;
+  standingsError: string;
+  empty: string;
+  scoreLabel: string;
+}
 
-  useEffect(() => {
-    if (selectedId === null) return;
-    const token = ++fetchRef.current;
-    setLoadingBoard(true);
-    setLeaderboard(null);
-    setActiveLevel(null);
-    setError(null);
-    getLeaderboard(selectedId)
-      .then((data) => {
-        if (token !== fetchRef.current) return;
-        if (!data) return;
-        setLeaderboard(data);
-        if (data.levels.length > 0) setActiveLevel(data.levels[0].level);
-      })
-      .catch(() => {
-        if (token !== fetchRef.current) return;
-        setError("Kunde inte hämta resultatlista.");
-      })
-      .finally(() => {
-        if (token !== fetchRef.current) return;
-        setLoadingBoard(false);
-      });
-  }, [selectedId]);
+const COMPETITION_TEXTS: StandingsTexts = {
+  placeholder: "Välj tävling...",
+  optionsLoading: "Laddar tävlingar",
+  optionsError: "Kunde inte hämta tävlingar.",
+  standingsLoading: "Laddar resultatlista",
+  standingsError: "Kunde inte hämta resultatlista.",
+  empty: "Inga godkända resultat för denna tävling.",
+  scoreLabel: "Poäng",
+};
 
-  const activeLevelData = leaderboard?.levels.find((l) => l.level === activeLevel);
+const SEASON_TEXTS: StandingsTexts = {
+  placeholder: "Välj säsong...",
+  optionsLoading: "Laddar säsonger",
+  optionsError: "Kunde inte hämta säsonger.",
+  standingsLoading: "Laddar resultat",
+  standingsError: "Kunde inte hämta säsongsresultat.",
+  empty: "Inga godkända resultat för denna säsong.",
+  scoreLabel: "Totalpoäng",
+};
+
+/** Select a competition or season, then show its per-level standings. */
+function StandingsPanel({
+  texts,
+  options,
+  optionsLoading,
+  optionsFailed,
+  selectedId,
+  onSelect,
+  standings,
+}: {
+  texts: StandingsTexts;
+  options: { id: number; label: string }[];
+  optionsLoading: boolean;
+  optionsFailed: boolean;
+  selectedId: number | null;
+  onSelect: (id: number | null) => void;
+  standings: StandingsResult;
+}) {
+  const { levels, loading, failed } = standings;
 
   return (
     <div className="space-y-4">
-      {loadingComps ? (
+      {optionsLoading ? (
         <div className="flex items-center gap-2 text-muted-foreground">
-          <Loader label="Laddar tävlingar" size="sm" />
+          <Loader label={texts.optionsLoading} size="sm" />
         </div>
       ) : (
         <select
           className="input-base p-2"
           value={selectedId ?? ""}
-          onChange={(e) => setSelectedId(e.target.value ? Number(e.target.value) : null)}
+          onChange={(e) => onSelect(e.target.value ? Number(e.target.value) : null)}
         >
-          <option value="">Välj tävling...</option>
-          {competitions.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name} ({c.comp_date})
+          <option value="">{texts.placeholder}</option>
+          {options.map((o) => (
+            <option key={o.id} value={o.id}>
+              {o.label}
             </option>
           ))}
         </select>
       )}
 
-      {error && <p className="text-red-500 dark:text-red-400 text-sm">{error}</p>}
+      {optionsFailed && (
+        <p className="text-red-500 dark:text-red-400 text-sm">{texts.optionsError}</p>
+      )}
+      {failed && <p className="text-red-500 dark:text-red-400 text-sm">{texts.standingsError}</p>}
 
-      {loadingBoard && (
+      {loading && (
         <div className="flex items-center gap-2 text-muted-foreground">
-          <Loader label="Laddar resultatlista" size="sm" />
+          <Loader label={texts.standingsLoading} size="sm" />
         </div>
       )}
 
-      {leaderboard && !loadingBoard && (
-        <>
-          {leaderboard.levels.length === 0 ? (
-            <p className="text-muted-foreground text-sm">
-              Inga godkända resultat för denna tävling.
-            </p>
-          ) : (
-            <>
-              <LevelTabs
-                levels={leaderboard.levels}
-                activeLevel={activeLevel}
-                onSelect={setActiveLevel}
-              />
-              {activeLevelData && <RankedTable levelData={activeLevelData} scoreLabel="Poäng" />}
-            </>
-          )}
-        </>
-      )}
+      {levels &&
+        !loading &&
+        !failed &&
+        (levels.length === 0 ? (
+          <p className="text-muted-foreground text-sm">{texts.empty}</p>
+        ) : (
+          // Keyed so the level tab resets when another selection is shown.
+          <LevelStandings key={selectedId} levels={levels} scoreLabel={texts.scoreLabel} />
+        ))}
     </div>
   );
 }
 
-function SeasonLeaderboard() {
-  const [seasons, setSeasons] = useState<SeasonResponse[]>([]);
+function CompetitionLeaderboard() {
+  const { competitions, loading, error } = useAllCompetitions();
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [standings, setStandings] = useState<SeasonStandingsResponse | null>(null);
-  const [activeLevel, setActiveLevel] = useState<number | null>(null);
-  const [loadingSeasons, setLoadingSeasons] = useState(true);
-  const [loadingStandings, setLoadingStandings] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    getSeasons()
-      .then((data) => setSeasons(data ?? []))
-      .catch(() => setError("Kunde inte hämta säsonger."))
-      .finally(() => setLoadingSeasons(false));
-  }, []);
-
-  const fetchRef = useRef(0);
-
-  useEffect(() => {
-    if (selectedId === null) return;
-    const token = ++fetchRef.current;
-    setLoadingStandings(true);
-    setStandings(null);
-    setActiveLevel(null);
-    setError(null);
-    getSeasonStandings(selectedId)
-      .then((data) => {
-        if (token !== fetchRef.current) return;
-        if (!data) return;
-        setStandings(data);
-        if (data.levels.length > 0) setActiveLevel(data.levels[0].level);
-      })
-      .catch(() => {
-        if (token !== fetchRef.current) return;
-        setError("Kunde inte hämta säsongsresultat.");
-      })
-      .finally(() => {
-        if (token !== fetchRef.current) return;
-        setLoadingStandings(false);
-      });
-  }, [selectedId]);
-
-  const activeLevelData = standings?.levels.find((l) => l.level === activeLevel);
+  const standings = useCompetitionLeaderboard(selectedId);
 
   return (
-    <div className="space-y-4">
-      {loadingSeasons ? (
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Loader label="Laddar säsonger" size="sm" />
-        </div>
-      ) : (
-        <select
-          className="input-base p-2"
-          value={selectedId ?? ""}
-          onChange={(e) => setSelectedId(e.target.value ? Number(e.target.value) : null)}
-        >
-          <option value="">Välj säsong...</option>
-          {seasons.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name} ({s.year})
-            </option>
-          ))}
-        </select>
-      )}
+    <StandingsPanel
+      texts={COMPETITION_TEXTS}
+      options={competitions.map((c) => ({ id: c.id, label: `${c.name} (${c.comp_date})` }))}
+      optionsLoading={loading}
+      optionsFailed={error !== null}
+      selectedId={selectedId}
+      onSelect={setSelectedId}
+      standings={standings}
+    />
+  );
+}
 
-      {error && <p className="text-red-500 dark:text-red-400 text-sm">{error}</p>}
+function SeasonLeaderboard() {
+  const { seasons, loading, error } = useSeasons();
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const standings = useSeasonStandings(selectedId);
 
-      {loadingStandings && (
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Loader label="Laddar resultat" size="sm" />
-        </div>
-      )}
-
-      {standings && !loadingStandings && (
-        <>
-          {standings.levels.length === 0 ? (
-            <p className="text-muted-foreground text-sm">
-              Inga godkända resultat för denna säsong.
-            </p>
-          ) : (
-            <>
-              <LevelTabs
-                levels={standings.levels}
-                activeLevel={activeLevel}
-                onSelect={setActiveLevel}
-              />
-              {activeLevelData && (
-                <RankedTable levelData={activeLevelData} scoreLabel="Totalpoäng" />
-              )}
-            </>
-          )}
-        </>
-      )}
-    </div>
+  return (
+    <StandingsPanel
+      texts={SEASON_TEXTS}
+      options={seasons.map((s) => ({ id: s.id, label: `${s.name} (${s.year})` }))}
+      optionsLoading={loading}
+      optionsFailed={error !== null}
+      selectedId={selectedId}
+      onSelect={setSelectedId}
+      standings={standings}
+    />
   );
 }
 
