@@ -84,6 +84,22 @@ describe("AssignToCompetitionsList approval refresh", () => {
     expect(getCompRegistrationInfoMock).toHaveBeenCalledTimes(2);
   });
 
+  it("re-checks a pending registration when the tab becomes visible", async () => {
+    mockCompetition(localDate(0));
+    getCompRegistrationInfoMock.mockResolvedValueOnce(registration(false));
+    render(<AssignToCompetitionsList />);
+    await flush();
+
+    getCompRegistrationInfoMock.mockResolvedValueOnce(registration(true));
+    await act(async () => {
+      document.dispatchEvent(new Event("visibilitychange"));
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    expect(getCompRegistrationInfoMock).toHaveBeenCalledTimes(2);
+    expect(screen.getByText("✓ Registrerad och godkänd")).toBeInTheDocument();
+  });
+
   it("does not poll for a competition on another day", async () => {
     mockCompetition(localDate(3));
     getCompRegistrationInfoMock.mockResolvedValue(registration(false));
