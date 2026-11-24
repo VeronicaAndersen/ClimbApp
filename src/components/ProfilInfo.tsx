@@ -10,6 +10,7 @@ import { CompleteProfileForm } from "./forms/CompleteProfileForm";
 import { updateMyInfo } from "@/services/api";
 import { getUserFriendlyError } from "@/utils/errorMessages";
 import { validatePersonName } from "@/utils/inputValidation";
+import Loader from "@/components/feedback/Loader";
 
 export default function ProfilInfo() {
   const { userInfo, messageInfo, loading, refetch } = useGetUserInfo();
@@ -81,8 +82,7 @@ export default function ProfilInfo() {
         {messageInfo && <CalloutMessage message={messageInfo.message} color={messageInfo.color} />}
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <Spinner size="3" />
-            <span className="ml-2">Hämtar profilinformation...</span>
+            <Loader label="Hämtar profilinformation" />
           </div>
         ) : userInfo ? (
           <div className="space-y-2">
@@ -176,8 +176,7 @@ export default function ProfilInfo() {
 
         {competitionsLoading ? (
           <div className="flex items-center justify-center py-8">
-            <Spinner size="3" />
-            <span className="ml-2">Hämtar tävlingshistorik...</span>
+            <Loader label="Hämtar tävlingshistorik" />
           </div>
         ) : competitions.length > 0 ? (
           <div className="space-y-4">

@@ -260,8 +260,40 @@
   }
 }
 
+/* Activity indicator: steps one spoke at a time, like the iOS spinner. */
+.loader {
+  opacity: 0;
+  animation:
+    loader-in 200ms ease-out 150ms forwards,
+    loader-spin 0.8s steps(8) infinite;
+}
+
+@keyframes loader-in {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes loader-pulse {
+  50% {
+    opacity: 0.4;
+  }
+}
+
 /* Reduced motion: keep feedback, drop scaling and movement. */
 @media (prefers-reduced-motion: reduce) {
+  /* No rotation; a gentle pulse still shows that work is in progress. */
+  .loader {
+    opacity: 1;
+    animation: loader-pulse 1.6s ease-in-out infinite !important;
+  }
+
   *,
   *::before,
   *::after {

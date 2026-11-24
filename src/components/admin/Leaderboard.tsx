@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { Spinner } from "@radix-ui/themes";
 import { getCompetitions, getLeaderboard, getSeasons, getSeasonStandings } from "@/services/api";
 import type {
   CompetitionResponse,
@@ -9,6 +8,7 @@ import type {
   SeasonStandingsResponse,
 } from "@/types";
 import { getGradeColor } from "@/constants/gradeColors";
+import Loader from "@/components/feedback/Loader";
 
 type View = "competition" | "season";
 
@@ -137,7 +137,7 @@ function CompetitionLeaderboard() {
     <div className="space-y-4">
       {loadingComps ? (
         <div className="flex items-center gap-2 text-muted-foreground">
-          <Spinner size="2" /> Laddar tävlingar...
+          <Loader label="Laddar tävlingar" size="sm" />
         </div>
       ) : (
         <select
@@ -158,7 +158,7 @@ function CompetitionLeaderboard() {
 
       {loadingBoard && (
         <div className="flex items-center gap-2 text-muted-foreground">
-          <Spinner size="2" /> Laddar resultatlista...
+          <Loader label="Laddar resultatlista" size="sm" />
         </div>
       )}
 
@@ -232,7 +232,7 @@ function SeasonLeaderboard() {
     <div className="space-y-4">
       {loadingSeasons ? (
         <div className="flex items-center gap-2 text-muted-foreground">
-          <Spinner size="2" /> Laddar säsonger...
+          <Loader label="Laddar säsonger" size="sm" />
         </div>
       ) : (
         <select
@@ -253,7 +253,7 @@ function SeasonLeaderboard() {
 
       {loadingStandings && (
         <div className="flex items-center gap-2 text-muted-foreground">
-          <Spinner size="2" /> Laddar resultat...
+          <Loader label="Laddar resultat" size="sm" />
         </div>
       )}
 

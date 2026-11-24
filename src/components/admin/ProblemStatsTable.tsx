@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Spinner } from "@radix-ui/themes";
 import { Trophy, Star, Users, LucideIcon } from "lucide-react";
 import { getLevelStats } from "@/services/api";
 import { LevelStatsResponse, ProblemStats } from "@/types";
 import CalloutMessage from "../feedback/CalloutMessage";
 import { getUserFriendlyError } from "@/utils/errorMessages";
+import Loader from "@/components/feedback/Loader";
 
 interface ProblemStatsTableProps {
   comp_id: number;
@@ -197,8 +197,7 @@ export function ProblemStatsTable({ comp_id, level }: ProblemStatsTableProps) {
 
       {loading ? (
         <div className="flex items-center justify-center py-8">
-          <Spinner size="3" />
-          <span className="ml-2">Hämtar statistik...</span>
+          <Loader label="Hämtar statistik" />
         </div>
       ) : stats && stats.problems.length > 0 ? (
         <>

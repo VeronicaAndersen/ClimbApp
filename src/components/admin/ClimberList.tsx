@@ -1,6 +1,5 @@
 import { useState } from "react";
 import CalloutMessage from "../feedback/CalloutMessage";
-import { Spinner } from "@radix-ui/themes";
 import { useClimbers } from "@/hooks/useClimbers";
 import { useClimberEditing } from "@/hooks/useClimberEditing";
 import {
@@ -13,6 +12,7 @@ import { Search, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { ClimberStatsModal } from "./ClimberStatsModal";
 import { ClimberRow } from "./climbers/ClimberRow";
 import { ClimberEditRow } from "./climbers/ClimberEditRow";
+import Loader from "@/components/feedback/Loader";
 
 interface ClimberListProps {
   refreshKey?: number;
@@ -71,8 +71,7 @@ export function ClimberList({ refreshKey }: ClimberListProps = {}) {
 
       {loading ? (
         <div className="flex items-center justify-center py-8">
-          <Spinner size="3" />
-          <span className="ml-2">Hämtar klättrare...</span>
+          <Loader label="Hämtar klättrare" />
         </div>
       ) : climberList.length > 0 ? (
         displayedClimbers.length === 0 ? (

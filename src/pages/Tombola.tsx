@@ -1,5 +1,4 @@
 import { useNavigate } from "react-router-dom";
-import { Spinner } from "@radix-ui/themes";
 import { Trophy, Users } from "lucide-react";
 import CalloutMessage from "@/components/feedback/CalloutMessage";
 import { AddGuestForm } from "@/components/tombola/AddGuestForm";
@@ -11,6 +10,7 @@ import { TombolaStats } from "@/components/tombola/TombolaStats";
 import { WinnerDisplay } from "@/components/tombola/WinnerDisplay";
 import { WinnersList } from "@/components/tombola/WinnersList";
 import { useTombola } from "@/hooks/useTombola";
+import Loader from "@/components/feedback/Loader";
 
 export default function Tombola() {
   const navigate = useNavigate();
@@ -20,8 +20,7 @@ export default function Tombola() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <Spinner size="3" />
-          <p className="text-lg text-muted-foreground font-medium">Laddar tävlingar...</p>
+          <Loader label="Laddar tävlingar" />
         </div>
       </div>
     );
@@ -72,8 +71,7 @@ export default function Tombola() {
 
             {t.isLoading ? (
               <div className="bg-card rounded-2xl shadow-soft p-12 flex flex-col items-center justify-center border border-border min-h-[280px]">
-                <Spinner size="3" />
-                <p className="mt-4 text-muted-foreground font-medium">Laddar deltagare...</p>
+                <Loader label="Laddar deltagare" />
               </div>
             ) : t.allParticipants.length === 0 ? (
               <div className="bg-card rounded-2xl shadow-soft p-12 flex flex-col items-center justify-center border border-border min-h-[280px]">

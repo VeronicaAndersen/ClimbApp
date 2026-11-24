@@ -1,8 +1,8 @@
 import { useScores } from "@/hooks/useScores";
-import { Spinner } from "@radix-ui/themes";
 import CalloutMessage from "./feedback/CalloutMessage";
 import ScoreSummary from "./ScoreSummary";
 import ProblemGrid from "./ProblemGrid";
+import Loader from "@/components/feedback/Loader";
 
 interface CompetitionScoresProps {
   competitionId: number;
@@ -39,8 +39,7 @@ export default function CompetitionScores({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <Spinner size="3" />
-        <span className="ml-2">Hämtar poäng...</span>
+        <Loader label="Hämtar poäng" />
       </div>
     );
   }

@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
-import { Spinner } from "@radix-ui/themes";
 import { getCompetitions, getCompRegistrationInfo, getMyInfo } from "@/services/api";
 import { CompetitionResponse, MessageProps } from "@/types";
 import CalloutMessage from "./feedback/CalloutMessage";
 import CompetitionScores from "./CompetitionScores";
 import { SessionSwitcher } from "./SessionSwitcher";
+import Loader from "@/components/feedback/Loader";
 
 interface ActiveCompetitionProps {
   onHasChangesChange?: (hasChanges: boolean) => void;
@@ -104,8 +104,7 @@ export function ActiveCompetition({ onHasChangesChange }: ActiveCompetitionProps
       <div className="flex flex-col bg-card/90 backdrop-blur p-4 rounded-lg shadow-soft">
         <h2 className="text-2xl font-semibold text-center mb-4">Aktiv Tävling</h2>
         <div className="flex items-center justify-center py-8">
-          <Spinner size="3" />
-          <span className="ml-2">Hämtar aktiv tävling...</span>
+          <Loader label="Hämtar aktiv tävling" />
         </div>
       </div>
     );

@@ -11,6 +11,7 @@ import { SessionSwitcher } from "./SessionSwitcher";
 import { getGradeColor, LEVEL_NAMES } from "@/constants/gradeColors";
 import { getUserFriendlyError } from "@/utils/errorMessages";
 import { isToday } from "@/utils/competitionUtils";
+import Loader from "@/components/feedback/Loader";
 
 /** How often a pending registration is re-checked on the competition day. */
 export const APPROVAL_POLL_INTERVAL_MS = 30_000;
@@ -148,8 +149,7 @@ export function AssignToCompetitionsList() {
     if (isChecking) {
       return (
         <div className="flex items-center py-2">
-          <Spinner size="2" />
-          <span className="ml-2 text-sm">Kontrollerar registrering...</span>
+          <Loader label="Kontrollerar registrering" size="sm" />
         </div>
       );
     }
@@ -249,8 +249,7 @@ export function AssignToCompetitionsList() {
       <div className="mb-6 flex flex-col bg-card/90 backdrop-blur p-4 rounded-lg shadow-soft">
         <h2 className="text-xl font-semibold mb-4">Tävlingar</h2>
         <div className="flex items-center justify-center py-8">
-          <Spinner size="3" />
-          <span className="ml-2">Hämtar tävlingar...</span>
+          <Loader label="Hämtar tävlingar" />
         </div>
       </div>
     );

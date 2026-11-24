@@ -6,6 +6,7 @@ import { CompetitionResponse, CompetitionRequest } from "@/types";
 import { Pencil, Trash2, Check, X } from "lucide-react";
 import { getUserFriendlyError } from "@/utils/errorMessages";
 import { useAllCompetitions } from "@/hooks/useAllCompetitions";
+import Loader from "@/components/feedback/Loader";
 
 interface CompetitionListProps {
   refreshKey?: number;
@@ -184,8 +185,7 @@ export function CompetitionList({ refreshKey }: CompetitionListProps = {}) {
 
       {loading ? (
         <div className="flex items-center justify-center py-8">
-          <Spinner size="3" />
-          <span className="ml-2">Hämtar tävlingar...</span>
+          <Loader label="Hämtar tävlingar" />
         </div>
       ) : compList.length > 0 ? (
         <div className="overflow-x-auto">
