@@ -1,7 +1,6 @@
-import { Star, Medal, ChevronDown } from "lucide-react";
+import { Star, Medal, ChevronDown, Check } from "lucide-react";
 import { Button } from "@radix-ui/themes";
 import { ScoreBatchResponse } from "@/types";
-import CalloutMessage from "./feedback/CalloutMessage";
 import {
   MIN_SCORE_VALUE,
   SCORE_FIELDS,
@@ -57,14 +56,9 @@ export function ProblemCard({
                 ${isChanged ? "border-amber-400/80 ring-4 ring-amber-400/15" : "border-border"}
               `}
     >
-      {savedMessage && <CalloutMessage message={savedMessage} color="green" />}
-      {errorMessage && <CalloutMessage message={errorMessage} color="red" />}
-
+      {/* Sits on the card's top edge, so it never covers the header or shifts the layout. */}
       {isChanged && !savedMessage && (
-        <span
-          className={`absolute top-2 right-2 text-xs font-medium text-yellow-700 dark:text-yellow-300
-                      bg-yellow-100 dark:bg-yellow-500/15 border border-yellow-300 dark:border-yellow-500/30 rounded-md px-2 py-0.5`}
-        >
+        <span className="absolute -top-2.5 left-4 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-medium leading-none text-amber-800 dark:border-amber-500/40 dark:bg-amber-950 dark:text-amber-200">
           Ej sparad
         </span>
       )}
@@ -164,11 +158,32 @@ export function ProblemCard({
             <Button
               onClick={() => onSave(problem)}
               disabled={saveDisabled}
-              className={`bg-primary hover:bg-primary-hover text-primary-foreground px-6 py-2 mt-4 mb-4 rounded-full
+              className={`bg-primary hover:bg-primary-hover text-primary-foreground px-6 py-2 mt-4 rounded-full
                         shadow font-medium cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed w-full`}
             >
               {saveLabel}
             </Button>
+          </div>
+          {/*
+           * Save result, anchored to the button that caused it; the line is reserved so
+           * nothing jumps. Two stable live regions: screen readers can skip a region whose
+           * role changes together with its text.
+           */}
+          <div className="flex min-h-5 items-center justify-center py-2.5 text-center text-sm font-medium">
+            <p
+              role="status"
+              className="flex items-center gap-1.5 text-green-700 dark:text-green-300"
+            >
+              {savedMessage && !errorMessage && (
+                <>
+                  <Check className="h-4 w-4" aria-hidden />
+                  {savedMessage}
+                </>
+              )}
+            </p>
+            <p role="alert" className="text-destructive">
+              {errorMessage}
+            </p>
           </div>
         </div>
       </div>

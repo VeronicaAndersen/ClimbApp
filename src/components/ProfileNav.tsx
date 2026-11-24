@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import * as Menubar from "@radix-ui/react-menubar";
 import { MoreHorizontal } from "lucide-react";
+import { Drawer, DrawerContent, DrawerDescription, DrawerTitle } from "@/components/ui/drawer";
 import {
   ADMIN_ITEMS,
   CLIMBER_ITEMS,
@@ -55,6 +56,19 @@ export function ProfileMenubar({ activeView, isAdmin, onNavigate }: ProfileNavPr
 export function ProfileBottomNav({ activeView, isAdmin, onNavigate }: ProfileNavProps) {
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 
+  // The sheet is mobile-only: close it if the viewport grows to desktop
+  // (tablet rotation), or its scrim and scroll lock would stay with no sheet.
+  useEffect(() => {
+    if (!moreMenuOpen || !window.matchMedia) return;
+    const desktop = window.matchMedia("(min-width: 768px)");
+    const close = () => {
+      if (desktop.matches) setMoreMenuOpen(false);
+    };
+    close();
+    desktop.addEventListener("change", close);
+    return () => desktop.removeEventListener("change", close);
+  }, [moreMenuOpen]);
+
   const navigate = (item: MenuItem) => {
     const navigated = navigateTo(item, onNavigate);
     if (navigated) setMoreMenuOpen(false);
@@ -64,35 +78,36 @@ export function ProfileBottomNav({ activeView, isAdmin, onNavigate }: ProfileNav
 
   return (
     <>
-      {/* Admin overflow panel, outside <nav>: its backdrop-filter would trap position:fixed children. */}
-      {isAdmin && moreMenuOpen && (
-        <>
-          <div
-            className="fixed inset-0 z-40 bg-black/10 md:hidden animate-in fade-in duration-200 dark:bg-black/30"
-            onClick={() => setMoreMenuOpen(false)}
-          />
-          {/* Grows out of the "Mer" button it belongs to. */}
-          <div className="material fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] right-2 z-[60] md:hidden min-w-44 origin-bottom-right rounded-2xl border border-border/60 py-1.5 shadow-material animate-in fade-in zoom-in-90 slide-in-from-bottom-2 duration-200 ease-apple">
-            {ADMIN_ITEMS.map((item) => {
-              const Icon = item.icon;
-              const isActive = !item.to && activeView === item.value;
-              return (
-                <button
-                  key={item.value}
-                  onClick={() => navigate(item)}
-                  className={`pressable flex items-center gap-3 w-full px-4 py-3 text-sm font-medium active:bg-muted/70 ${
-                    isActive
-                      ? "text-foreground bg-muted/50"
-                      : "text-muted-foreground hover:bg-muted/50"
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  {item.mobileLabel}
-                </button>
-              );
-            })}
-          </div>
-        </>
+      {/* Admin overflow as a bottom sheet: drag or flick down to dismiss, Escape to close. */}
+      {isAdmin && (
+        <Drawer open={moreMenuOpen} onOpenChange={setMoreMenuOpen}>
+          <DrawerContent className="md:hidden">
+            <DrawerTitle className="sr-only">Mer</DrawerTitle>
+            <DrawerDescription className="sr-only">Administrativa vyer</DrawerDescription>
+            <div className="px-2 pt-2 pb-3">
+              {ADMIN_ITEMS.map((item) => {
+                const Icon = item.icon;
+                const isActive = !item.to && activeView === item.value;
+                return (
+                  <button
+                    key={item.value}
+                    type="button"
+                    onClick={() => navigate(item)}
+                    aria-current={isActive ? "page" : undefined}
+                    className={`pressable flex w-full items-center gap-3 rounded-xl px-4 py-3.5 text-base font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring active:bg-muted/70 ${
+                      isActive
+                        ? "bg-muted/60 text-foreground"
+                        : "text-muted-foreground hover:bg-muted/50"
+                    }`}
+                  >
+                    <Icon className="w-5 h-5" aria-hidden />
+                    {item.mobileLabel}
+                  </button>
+                );
+              })}
+            </div>
+          </DrawerContent>
+        </Drawer>
       )}
       <nav className="material fixed bottom-0 left-0 right-0 z-50 border-t border-border/60 pb-[env(safe-area-inset-bottom)] md:hidden">
         <div className="flex justify-around items-stretch h-16">
@@ -122,7 +137,7 @@ export function ProfileBottomNav({ activeView, isAdmin, onNavigate }: ProfileNav
             <button
               onClick={() => setMoreMenuOpen((prev) => !prev)}
               aria-expanded={moreMenuOpen}
-              aria-haspopup="menu"
+              aria-haspopup="dialog"
               className={`pressable flex flex-col items-center justify-center flex-1 gap-1 text-xs font-medium tracking-[0.01em] ${
                 moreMenuOpen || adminViewActive
                   ? "text-foreground"

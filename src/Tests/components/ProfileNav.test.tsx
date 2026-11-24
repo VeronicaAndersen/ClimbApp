@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ProfileBottomNav, ProfileMenubar } from "@/components/ProfileNav";
 
@@ -40,7 +40,10 @@ describe("ProfileBottomNav", () => {
     await userEvent.click(screen.getByRole("button", { name: "Resultat" }));
 
     expect(onNavigate).toHaveBeenCalledWith("leaderboard");
-    expect(screen.queryByRole("button", { name: "Resultat" })).not.toBeInTheDocument();
+    // The sheet stays mounted while it animates out (jsdom never ends the animation).
+    await waitFor(() =>
+      expect(screen.getByRole("dialog", { hidden: true })).toHaveAttribute("data-state", "closed")
+    );
   });
 
   it("keeps the overflow panel open when navigation is cancelled", async () => {

@@ -249,6 +249,11 @@
       0 24px 56px -20px hsl(0 0% 0% / 0.6);
   }
 
+  /* Inline status notice (locked editing, admin override); themed by tokens. */
+  .notice {
+    @apply flex items-start gap-3 rounded-2xl border border-border bg-muted/60 p-4 text-sm text-foreground;
+  }
+
   /* Tabular digits so changing numbers don't shift the layout. */
   .tabular {
     font-variant-numeric: tabular-nums;
@@ -274,6 +279,11 @@
 
   .collapsible {
     transition: none !important;
+  }
+
+  /* The save bar still fades, but no longer slides. */
+  .floating-bar {
+    transform: none !important;
   }
 }
 
