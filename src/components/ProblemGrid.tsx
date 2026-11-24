@@ -44,6 +44,7 @@ export default function ProblemGrid({
   const {
     saving: batchSaving,
     error: batchSaveError,
+    problemErrors: batchProblemErrors,
     saveMessage: batchSaveMessage,
     saveAll: saveAllBatch,
   } = useUpdateScoreBatch();
@@ -136,6 +137,17 @@ export default function ProblemGrid({
   useEffect(() => {
     onHasChangesChange?.(hasAnyChanges);
   }, [hasAnyChanges, onHasChangesChange]);
+
+  // Bring the first problem that failed a batch save into view; its card shows why.
+  useEffect(() => {
+    const firstFailed = Object.keys(batchProblemErrors)
+      .map(Number)
+      .sort((a, b) => a - b)[0];
+    if (firstFailed === undefined) return;
+    document
+      .getElementById(`problem-card-${firstFailed}`)
+      ?.scrollIntoView?.({ behavior: "smooth", block: "center" });
+  }, [batchProblemErrors]);
 
   const handleSaveAll = async () => {
     if (!gradeLevel) return;
@@ -263,7 +275,11 @@ export default function ProblemGrid({
               isChanged={isScoreChanged(problem.score, initialScoreMap.get(problem.problem_no))}
               isCollapsed={collapsedProblems.has(problem.problem_no)}
               savedMessage={savedProblemNo === problem.problem_no ? saveMessage : null}
-              errorMessage={errorProblemNo === problem.problem_no ? saveError : null}
+              errorMessage={
+                (errorProblemNo === problem.problem_no ? saveError : null) ??
+                batchProblemErrors[problem.problem_no] ??
+                null
+              }
               gradeColor={gradeColor}
               gradeLabel={gradeLabel}
               inputsDisabled={inputsDisabled}
