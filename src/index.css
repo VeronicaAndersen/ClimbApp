@@ -304,8 +304,46 @@
   }
 }
 
+/* Messages materialize from where they rest: the banner drops from the top
+   edge, a field error settles in under its field. Critically damped feel,
+   no overshoot, since no gesture caused them. */
+.callout-in {
+  animation: callout-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.field-error-in {
+  animation: field-error-in 200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes callout-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+    filter: blur(4px);
+  }
+}
+
+@keyframes field-error-in {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes message-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
 /* Reduced motion: keep feedback, drop scaling and movement. */
 @media (prefers-reduced-motion: reduce) {
+  /* A short cross-fade replaces the drop-in (overrides the 1ms rule below). */
+  .callout-in,
+  .field-error-in {
+    animation: message-fade-in 200ms ease-out both !important;
+  }
+
   /* No rotation; a gentle pulse still shows that work is in progress. */
   .loader {
     opacity: 1;
