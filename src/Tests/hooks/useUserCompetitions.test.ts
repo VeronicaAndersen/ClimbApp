@@ -77,6 +77,28 @@ describe("useUserCompetitions", () => {
     expect(getScoresBatchMock).toHaveBeenCalledWith({ comp_id: 2, level: 2 });
   });
 
+  it("leaves out future competitions but keeps today's", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(2026, 3, 4, 12)); // 2026-04-04 local noon
+    try {
+      getCompetitionsMock.mockResolvedValue([
+        competition(1, "2026-04-03"),
+        competition(2, "2026-04-04"),
+        competition(3, "2026-04-05"),
+      ]);
+      getCompRegistrationInfoMock.mockResolvedValue({ level: 1 });
+      getScoresBatchMock.mockResolvedValue([score(1, 1, 1, 1)]);
+
+      const { result } = renderHookWithQueryClient(() => useUserCompetitions());
+
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+      expect(result.current.competitions.map((c) => c.competition.id)).toEqual([2, 1]);
+      expect(getCompRegistrationInfoMock).not.toHaveBeenCalledWith(3);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("hides a competition whose scores fail to load", async () => {
     getCompetitionsMock.mockResolvedValue([competition(1, "2026-01-10")]);
     getCompRegistrationInfoMock.mockResolvedValue({ level: 1 });

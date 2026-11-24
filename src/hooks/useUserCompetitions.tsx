@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getCompetitions, getCompRegistrationInfo, getScoresBatch } from "@/services/api";
 import { CompetitionResponse, ScoreBatchResponse } from "@/types";
 import { getUserFriendlyError } from "@/utils/errorMessages";
+import { isFutureDate } from "@/utils/competitionUtils";
 
 export interface CompetitionWithScores {
   competition: CompetitionResponse;
@@ -59,10 +60,13 @@ async function fetchCompetitionWithScores(
 
 async function fetchUserCompetitions(): Promise<CompetitionWithScores[]> {
   const allCompetitions = await getCompetitions();
-  if (!allCompetitions || allCompetitions.length === 0) return NO_COMPETITIONS;
+  // Only today's and past competitions belong in the history; skipping
+  // future ones also saves their registration and score requests.
+  const heldCompetitions = (allCompetitions ?? []).filter((c) => !isFutureDate(c.comp_date));
+  if (heldCompetitions.length === 0) return NO_COMPETITIONS;
 
   // A failure for one competition hides that competition, not the whole list.
-  const results = await Promise.allSettled(allCompetitions.map(fetchCompetitionWithScores));
+  const results = await Promise.allSettled(heldCompetitions.map(fetchCompetitionWithScores));
 
   return results
     .filter(

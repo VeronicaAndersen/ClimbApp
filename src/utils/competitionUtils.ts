@@ -36,6 +36,15 @@ export const isToday = (dateString: string): boolean => {
 };
 
 /**
+ * Checks if a "YYYY-MM-DD" competition date is after today (local time).
+ * Compares date strings so a UTC-parsed date cannot shift the day.
+ */
+export const isFutureDate = (dateString: string): boolean => {
+  const today = new Date().toLocaleDateString("sv-SE"); // "YYYY-MM-DD"
+  return dateString.slice(0, 10) > today;
+};
+
+/**
  * Checks if the user is an admin
  */
 export const isAdmin = (userScope: string): boolean => {
