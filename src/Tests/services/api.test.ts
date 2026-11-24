@@ -191,7 +191,7 @@ const apiCases: ApiCase[] = [
   {
     name: "getScoresBatch",
     method: "get",
-    args: ["/competitions/12/level/3/scores/batch", true],
+    args: ["/competitions/12/level/3/scores/batch", true, true],
     invoke: () => service.getScoresBatch(params),
   },
   {
@@ -320,7 +320,12 @@ describe("edge cases", () => {
     await service.updateScore({ comp_id: 0, level: 0, problem_no: 0 }, payload);
 
     expect(apiMock.get).toHaveBeenNthCalledWith(1, "/climber/0", true);
-    expect(apiMock.get).toHaveBeenNthCalledWith(2, "/competitions/0/level/0/scores/batch", true);
+    expect(apiMock.get).toHaveBeenNthCalledWith(
+      2,
+      "/competitions/0/level/0/scores/batch",
+      true,
+      true
+    );
     expect(apiMock.put).toHaveBeenCalledWith(
       "/competitions/0/level/0/problems/0/score",
       payload,
