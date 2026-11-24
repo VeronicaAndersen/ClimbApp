@@ -52,15 +52,29 @@ export function ProblemCard({
 
   return (
     <div
+      id={`problem-card-${problem.problem_no}`}
       className={`relative px-4 rounded-2xl bg-card shadow-soft flex flex-col border transition-[border-color,box-shadow] duration-300 ease-apple
-                ${isChanged ? "border-amber-400/80 ring-4 ring-amber-400/15" : "border-border"}
+                ${
+                  errorMessage
+                    ? "border-destructive ring-4 ring-destructive/15"
+                    : isChanged
+                      ? "border-amber-400/80 ring-4 ring-amber-400/15"
+                      : "border-border"
+                }
               `}
     >
       {/* Sits on the card's top edge, so it never covers the header or shifts the layout. */}
-      {isChanged && !savedMessage && (
-        <span className="absolute -top-2.5 left-4 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-medium leading-none text-amber-800 dark:border-amber-500/40 dark:bg-amber-950 dark:text-amber-200">
-          Ej sparad
+      {errorMessage ? (
+        <span className="absolute -top-2.5 left-4 rounded-full border border-destructive/40 bg-destructive px-2 py-0.5 text-xs font-medium leading-none text-destructive-foreground">
+          Kunde inte sparas
         </span>
+      ) : (
+        isChanged &&
+        !savedMessage && (
+          <span className="absolute -top-2.5 left-4 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-medium leading-none text-amber-800 dark:border-amber-500/40 dark:bg-amber-950 dark:text-amber-200">
+            Ej sparad
+          </span>
+        )
       )}
 
       {/* The whole row toggles on click; the heading button gives it a keyboard and screen-reader handle. */}

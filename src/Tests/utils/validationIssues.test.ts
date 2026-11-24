@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { ApiError, type ValidationIssue } from "../../lib/apiError";
-import { fieldErrorsFromError } from "../../utils/validationIssues";
+import {
+  fieldErrorsFromError,
+  formatProblemList,
+  problemErrorsFromBatchError,
+} from "../../utils/validationIssues";
 
 const unprocessable = (validationIssues: ValidationIssue[]) =>
   new ApiError({ status: 422, message: "x", validationIssues });
@@ -55,5 +59,45 @@ describe("fieldErrorsFromError", () => {
     ).toEqual({});
     expect(fieldErrorsFromError(new ApiError({ status: 400, message: "x" }))).toEqual({});
     expect(fieldErrorsFromError(new Error("x"))).toEqual({});
+  });
+});
+
+describe("problemErrorsFromBatchError", () => {
+  it("maps each failing item index to the problem number sent there", () => {
+    const errors = problemErrorsFromBatchError(
+      unprocessable([
+        {
+          loc: ["body", "items", 1],
+          msg: "Value error, attempts_to_top is required when got_top is true",
+          type: "value_error",
+        },
+        {
+          loc: ["body", "items", 2, "attempts_total"],
+          msg: "too small",
+          type: "greater_than_equal",
+        },
+      ]),
+      [4, 7, 9]
+    );
+    expect(errors).toEqual({
+      7: "Ange antal försök till topp när toppen är tagen.",
+      9: "Kontrollera uppgifterna och försök igen.",
+    });
+  });
+
+  it("returns nothing for issues without an item index or non-422 errors", () => {
+    expect(
+      problemErrorsFromBatchError(unprocessable([{ loc: ["body"], msg: "x", type: null }]), [1])
+    ).toEqual({});
+    expect(problemErrorsFromBatchError(new ApiError({ status: 500, message: "x" }), [1])).toEqual(
+      {}
+    );
+  });
+});
+
+describe("formatProblemList", () => {
+  it("joins numbers in Swedish", () => {
+    expect(formatProblemList([3])).toBe("problem 3");
+    expect(formatProblemList([3, 5, 7])).toBe("problem 3, 5 och 7");
   });
 });

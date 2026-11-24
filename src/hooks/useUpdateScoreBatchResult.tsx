@@ -3,10 +3,13 @@ import { updateScoreBatch } from "@/services/api";
 import { ScoreBatchResponse, ScoreBatch } from "@/types";
 import { getUserFriendlyError } from "@/utils/errorMessages";
 import { normalizeScorePayload } from "@/utils/competitionUtils";
+import { formatProblemList, problemErrorsFromBatchError } from "@/utils/validationIssues";
 
 type UseUpdateScoreBatchResult = {
   saving: boolean;
   error: string | null;
+  /** Error per problem number when the API named the failing items. */
+  problemErrors: Record<number, string>;
   saveMessage: string | null;
   saveAll: (
     competitionId: number,
@@ -18,6 +21,7 @@ type UseUpdateScoreBatchResult = {
 export function useUpdateScoreBatch(): UseUpdateScoreBatchResult {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [problemErrors, setProblemErrors] = useState<Record<number, string>>({});
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
   const saveAll = useCallback(
@@ -28,6 +32,7 @@ export function useUpdateScoreBatch(): UseUpdateScoreBatchResult {
     ): Promise<boolean> => {
       setSaving(true);
       setError(null);
+      setProblemErrors({});
       setSaveMessage(null);
 
       try {
@@ -48,7 +53,19 @@ export function useUpdateScoreBatch(): UseUpdateScoreBatchResult {
         setSaveMessage("Alla poäng sparades.");
         return true;
       } catch (err) {
-        setError(getUserFriendlyError(err));
+        const perProblem = problemErrorsFromBatchError(
+          err,
+          problems.map((p) => p.problem_no)
+        );
+        const failedNos = Object.keys(perProblem)
+          .map(Number)
+          .sort((a, b) => a - b);
+        setProblemErrors(perProblem);
+        setError(
+          failedNos.length > 0
+            ? `Kunde inte spara ${formatProblemList(failedNos)}. Inget sparades.`
+            : getUserFriendlyError(err)
+        );
         return false;
       } finally {
         setSaving(false);
@@ -57,5 +74,5 @@ export function useUpdateScoreBatch(): UseUpdateScoreBatchResult {
     []
   );
 
-  return { saving, error, saveMessage, saveAll };
+  return { saving, error, problemErrors, saveMessage, saveAll };
 }

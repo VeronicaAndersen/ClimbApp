@@ -5,9 +5,10 @@ import { useState } from "react";
 import type { ScoreBatchResponse } from "@/types";
 import ProblemGrid from "@/components/ProblemGrid";
 
-const { saveAllMock, saveAllBatchMock } = vi.hoisted(() => ({
+const { saveAllMock, saveAllBatchMock, batchState } = vi.hoisted(() => ({
   saveAllMock: vi.fn(),
   saveAllBatchMock: vi.fn(),
+  batchState: { error: null as string | null, problemErrors: {} as Record<number, string> },
 }));
 vi.mock("@/hooks/useUpdateScore", () => ({
   useUpdateScore: () => ({ saving: false, error: null, saveMessage: null, saveAll: saveAllMock }),
@@ -15,7 +16,8 @@ vi.mock("@/hooks/useUpdateScore", () => ({
 vi.mock("@/hooks/useUpdateScoreBatchResult", () => ({
   useUpdateScoreBatch: () => ({
     saving: false,
-    error: null,
+    error: batchState.error,
+    problemErrors: batchState.problemErrors,
     saveMessage: null,
     saveAll: saveAllBatchMock,
   }),
@@ -70,6 +72,8 @@ beforeEach(() => {
   vi.setSystemTime(new Date(`${TODAY}T12:00:00`));
   saveAllMock.mockReset().mockResolvedValue(true);
   saveAllBatchMock.mockReset().mockResolvedValue(true);
+  batchState.error = null;
+  batchState.problemErrors = {};
 });
 
 afterEach(() => {
@@ -148,5 +152,18 @@ describe("ProblemGrid", () => {
     await userEvent.click(screen.getByRole("heading", { name: "Problem 1" }));
 
     expect(screen.getAllByRole("button", { name: "Öka Topp" })).toHaveLength(1);
+  });
+
+  it("marks the problem that failed a batch save and says why", () => {
+    batchState.error = "Kunde inte spara problem 2. Inget sparades.";
+    batchState.problemErrors = { 2: "Ange antal försök till topp när toppen är tagen." };
+    render(<Harness />);
+
+    expect(screen.getByText("Kunde inte spara problem 2. Inget sparades.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Ange antal försök till topp när toppen är tagen.")
+    ).toBeInTheDocument();
+    expect(screen.getAllByText("Kunde inte sparas")).toHaveLength(1);
+    expect(document.getElementById("problem-card-2")).toHaveTextContent("Kunde inte sparas");
   });
 });

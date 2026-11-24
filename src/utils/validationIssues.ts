@@ -137,3 +137,35 @@ function issuesOf422(error: unknown): readonly ValidationIssue[] {
 export function fieldErrorsFromError(error: unknown): FieldErrors {
   return fieldErrorsFromIssues(issuesOf422(error));
 }
+
+/**
+ * Swedish messages per problem from a failed batch score save. A 422 names the
+ * failing item by its index (loc ["body", "items", <index>, ...]); the index is
+ * mapped back to the problem number that was sent at that position. Issues
+ * without an item index are ignored.
+ */
+export function problemErrorsFromBatchError(
+  error: unknown,
+  sentProblemNos: readonly number[]
+): Record<number, string> {
+  const errors: Record<number, string> = {};
+  for (const issue of issuesOf422(error)) {
+    const [root, list, index] = issue.loc;
+    if (root !== "body" || list !== "items" || typeof index !== "number") continue;
+    const problemNo = sentProblemNos[index];
+    if (problemNo === undefined || errors[problemNo] !== undefined) continue;
+    const field = fieldOf(issue);
+    errors[problemNo] =
+      translateKnownIssueText(issue.msg) ??
+      (field !== null && FIELD_LABELS[field]
+        ? messageFor(field, issue.type)
+        : VALIDATION_FAILED_MESSAGE);
+  }
+  return errors;
+}
+
+/** "problem 3" or "problem 3, 5 och 7". */
+export function formatProblemList(problemNos: readonly number[]): string {
+  if (problemNos.length <= 1) return `problem ${problemNos.join("")}`;
+  return `problem ${problemNos.slice(0, -1).join(", ")} och ${problemNos[problemNos.length - 1]}`;
+}
