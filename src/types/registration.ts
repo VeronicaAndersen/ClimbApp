@@ -16,7 +16,10 @@ export type RegistrationWithClimber = {
   level: number;
   approved: boolean;
   created_at: string;
+  /** The climber's username. */
   climber_name: string;
+  firstname?: string | null;
+  lastname?: string | null;
 };
 
 export type RegistrationWithCompetition = {

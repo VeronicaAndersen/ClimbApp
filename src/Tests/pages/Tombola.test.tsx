@@ -5,16 +5,14 @@ import { MemoryRouter } from "react-router-dom";
 import { Theme } from "@radix-ui/themes";
 import Tombola from "@/pages/Tombola";
 
-const { getCompetitionsMock, getAllRegistrationsMock, getClimberByIdMock } = vi.hoisted(() => ({
+const { getCompetitionsMock, getAllRegistrationsMock } = vi.hoisted(() => ({
   getCompetitionsMock: vi.fn(),
   getAllRegistrationsMock: vi.fn(),
-  getClimberByIdMock: vi.fn(),
 }));
 
 vi.mock("@/services/api", () => ({
   getCompetitions: getCompetitionsMock,
   getAllRegistrations: getAllRegistrationsMock,
-  getClimberById: getClimberByIdMock,
 }));
 
 const climbers: Record<number, { firstname: string; lastname: string }> = {
@@ -23,12 +21,14 @@ const climbers: Record<number, { firstname: string; lastname: string }> = {
   9: { firstname: "Cia", lastname: "Lind" },
 };
 
-const registration = (user_id: number, approved = true) => ({
-  comp_id: 1,
+const registration = (user_id: number, approved = true, comp_id = 1) => ({
+  comp_id,
   user_id,
   level: 2,
   approved,
   created_at: "2026-01-01",
+  climber_name: `user${user_id}`,
+  ...climbers[user_id],
 });
 
 function renderTombola() {
@@ -73,7 +73,6 @@ beforeEach(() => {
     registration(8),
     registration(9, false),
   ]);
-  getClimberByIdMock.mockImplementation((id: number) => Promise.resolve(climbers[id]));
 });
 
 afterEach(() => {
@@ -100,8 +99,8 @@ describe("Tombola", () => {
     renderTombola();
     await selectCompetition(user);
 
+    expect(getAllRegistrationsMock).toHaveBeenCalledTimes(1);
     expect(getAllRegistrationsMock).toHaveBeenCalledWith(1);
-    expect(getClimberByIdMock).not.toHaveBeenCalledWith(9);
     expect(within(remainingList()).getByText("Anna Berg")).toBeInTheDocument();
     expect(within(remainingList()).getByText("Bo Ek")).toBeInTheDocument();
     expect(screen.queryByText("Cia Lind")).not.toBeInTheDocument();

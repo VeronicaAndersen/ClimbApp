@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { getAllRegistrations, getCompetitions, getClimberById } from "@/services/api";
+import { getAllRegistrations, getCompetitions } from "@/services/api";
 import { CompetitionResponse } from "@/types";
 import { getUserFriendlyError } from "@/utils/errorMessages";
 import {
-  climberKey,
+  climberFromRegistration,
   newGuest,
   parseSavedTombola,
   remainingFromKeys,
@@ -68,16 +68,7 @@ export function useTombola() {
         setIsLoading(true);
         setError(null);
         const registrations = await getAllRegistrations(selectedCompetitionId);
-        const approved = registrations.filter((reg) => reg.approved);
-
-        const climberInfo = await Promise.all(approved.map((r) => getClimberById(r.user_id)));
-        setClimbers(
-          approved.map((reg, i) => ({
-            key: climberKey(reg.user_id),
-            name: `${climberInfo[i].firstname} ${climberInfo[i].lastname}`,
-            level: reg.level,
-          }))
-        );
+        setClimbers(registrations.filter((reg) => reg.approved).map(climberFromRegistration));
 
         const saved = parseSavedTombola(
           localStorage.getItem(tombolaStorageKey(selectedCompetitionId))

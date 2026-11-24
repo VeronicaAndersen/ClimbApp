@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   GUEST_NAME_MAX_LENGTH,
+  climberFromRegistration,
   climberKey,
   newGuest,
   parseSavedTombola,
@@ -74,5 +75,35 @@ describe("winnersFromKeys / remainingFromKeys", () => {
   it("leaves everyone who has not won, in participant order", () => {
     expect(remainingFromKeys(all, ["c1"])).toEqual([bo, guest]);
     expect(remainingFromKeys(all, [])).toEqual(all);
+  });
+});
+
+describe("climberFromRegistration", () => {
+  const reg = {
+    comp_id: 1,
+    user_id: 5,
+    level: 3,
+    approved: true,
+    created_at: "2026-01-01",
+    climber_name: "bergsget",
+  };
+
+  it("uses the full name when known", () => {
+    expect(climberFromRegistration({ ...reg, firstname: "Ada", lastname: "Lind" })).toEqual({
+      key: "c5",
+      name: "Ada Lind",
+      level: 3,
+    });
+  });
+
+  it("uses the part of the name that is known", () => {
+    expect(climberFromRegistration({ ...reg, firstname: "Ada", lastname: null }).name).toBe("Ada");
+  });
+
+  it("falls back to the username when no name is known or the API sends none", () => {
+    expect(climberFromRegistration({ ...reg, firstname: null, lastname: null }).name).toBe(
+      "bergsget"
+    );
+    expect(climberFromRegistration(reg).name).toBe("bergsget");
   });
 });
