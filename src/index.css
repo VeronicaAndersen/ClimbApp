@@ -144,6 +144,24 @@
       radial-gradient(60rem 30rem at 0% -10%, hsl(var(--sage) / 0.1), transparent 60%),
       radial-gradient(50rem 30rem at 110% 110%, hsl(var(--sage) / 0.06), transparent 60%);
   }
+
+  /*
+   * iOS Safari renders date/time inputs as native pills: its own background,
+   * centered value, a width that ignores w-full, and a collapsed height when
+   * empty. Drop the native look so they match the text inputs around them.
+   */
+  input[type="date"],
+  input[type="time"],
+  input[type="datetime-local"] {
+    -webkit-appearance: none;
+    appearance: none;
+    min-width: 0;
+  }
+
+  input::-webkit-date-and-time-value {
+    text-align: left;
+    min-height: 1.5em;
+  }
 }
 
 /* Radix Themes: accent "gray" + gray "olive", with steps 9-11 pinned to the brand. */
