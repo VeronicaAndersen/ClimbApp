@@ -87,6 +87,12 @@ const apiCases: ApiCase[] = [
     invoke: () => service.getClimberRegistrations(12),
   },
   {
+    name: "getMyRegistrations",
+    method: "get",
+    args: ["/climber/me/registrations", true, true],
+    invoke: () => service.getMyRegistrations(),
+  },
+  {
     name: "registerClimber",
     method: "post",
     args: ["/climber", registrationPayload],

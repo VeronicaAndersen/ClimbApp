@@ -59,6 +59,11 @@ export const deleteClimberById = (climberId: number) => api.delete(`/climber/${c
 export const getClimberRegistrations = (climberId: number) =>
   api.get<RegistrationWithCompetition[]>(`/climber/${climberId}/registrations`, true);
 
+// Not cached: approval is changed by an admin on another device, and
+// registering or withdrawing does not clear this path from the read cache.
+export const getMyRegistrations = () =>
+  api.get<RegistrationWithCompetition[]>("/climber/me/registrations", true, true);
+
 export const registerClimber = (payload: RegistrationRequest) => api.post("/climber", payload);
 
 // Competition
