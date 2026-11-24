@@ -1,4 +1,4 @@
-import { useQueries } from "@tanstack/react-query";
+import { useQueries, type Query } from "@tanstack/react-query";
 import { getCompRegistrationInfo } from "@/services/api";
 import type { CompetitionResponse, RegisterToCompResponse } from "@/types";
 import { isToday } from "@/utils/competitionUtils";
@@ -31,9 +31,9 @@ export function useRegistrationDetails(
       queryFn: async () => (await getCompRegistrationInfo(comp.id)) ?? null,
       // Approval can change at any time, so refetch on every mount, as before.
       staleTime: 0,
-      refetchInterval: (query: { state: { data?: RegisterToCompResponse | null } }) =>
+      refetchInterval: (query: Query<RegisterToCompResponse | null>) =>
         isPendingToday(comp, query.state.data ?? undefined) ? APPROVAL_POLL_INTERVAL_MS : false,
-      refetchOnWindowFocus: (query: { state: { data?: RegisterToCompResponse | null } }) =>
+      refetchOnWindowFocus: (query: Query<RegisterToCompResponse | null>) =>
         isPendingToday(comp, query.state.data ?? undefined) ? ("always" as const) : false,
     })),
   });

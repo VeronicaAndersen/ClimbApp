@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, render, screen } from "@testing-library/react";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { createTestQueryClient } from "../utils/renderWithQueryClient";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AssignToCompetitionsList } from "../../components/AssignToCompetitionsList";
 import { APPROVAL_POLL_INTERVAL_MS } from "@/hooks/useRegistrationDetails";
 
@@ -45,8 +44,12 @@ function mockCompetition(compDate: string) {
 }
 
 function renderList() {
+  // Same focus default as production, so only the hook's own option refetches.
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } },
+  });
   return render(
-    <QueryClientProvider client={createTestQueryClient()}>
+    <QueryClientProvider client={queryClient}>
       <AssignToCompetitionsList />
     </QueryClientProvider>
   );
@@ -105,6 +108,18 @@ describe("AssignToCompetitionsList approval refresh", () => {
 
     expect(getCompRegistrationInfoMock).toHaveBeenCalledTimes(2);
     expect(screen.getByText("✓ Registrerad och godkänd")).toBeInTheDocument();
+  });
+
+  it("does not re-check an approved registration when the tab becomes visible", async () => {
+    mockCompetition(localDate(0));
+    getCompRegistrationInfoMock.mockResolvedValue(registration(true));
+    renderList();
+    await advance();
+
+    document.dispatchEvent(new Event("visibilitychange", { bubbles: true }));
+    await advance();
+
+    expect(getCompRegistrationInfoMock).toHaveBeenCalledTimes(1);
   });
 
   it("does not poll for a competition on another day", async () => {
