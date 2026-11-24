@@ -96,8 +96,13 @@ describe("climberFromRegistration", () => {
     });
   });
 
-  it("uses the part of the name that is known", () => {
-    expect(climberFromRegistration({ ...reg, firstname: "Ada", lastname: null }).name).toBe("Ada");
+  it("uses the username when only part of the name is known", () => {
+    expect(climberFromRegistration({ ...reg, firstname: "Ada", lastname: null }).name).toBe(
+      "bergsget"
+    );
+    expect(climberFromRegistration({ ...reg, firstname: "", lastname: "Lind" }).name).toBe(
+      "bergsget"
+    );
   });
 
   it("falls back to the username when no name is known or the API sends none", () => {

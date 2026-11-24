@@ -25,10 +25,10 @@ export const tombolaStorageKey = (compId: number) => `tombola_${compId}`;
 
 export const climberKey = (userId: number) => `c${userId}`;
 
-/** A registered climber in the draw: full name when known, else the username. */
+/** A registered climber in the draw: full name when both parts are known, else the username. */
 export const climberFromRegistration = (reg: RegistrationWithClimber): TombolaParticipant => ({
   key: climberKey(reg.user_id),
-  name: [reg.firstname, reg.lastname].filter(Boolean).join(" ") || reg.climber_name,
+  name: reg.firstname && reg.lastname ? `${reg.firstname} ${reg.lastname}` : reg.climber_name,
   level: reg.level,
 });
 
