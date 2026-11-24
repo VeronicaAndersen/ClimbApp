@@ -82,7 +82,8 @@ describe("ProblemGrid", () => {
 
     expect(screen.getByRole("heading", { name: "Problem 1" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Problem 2" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Spara alla ändringar" })).toBeDisabled();
+    // The floating save bar stays hidden until there is something to save.
+    expect(screen.queryByRole("button", { name: "Spara alla ändringar" })).not.toBeInTheDocument();
   });
 
   it("marks an edited problem and saves all changes in one batch", async () => {
@@ -96,6 +97,7 @@ describe("ProblemGrid", () => {
       screen.getByLabelText("Antal försök", { selector: "#problem-1-attempts_total" })
     ).toHaveValue(1);
     expect(onHasChangesChange).toHaveBeenLastCalledWith(true);
+    expect(screen.getByText("1 osparat problem")).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "Spara alla ändringar" }));
 
@@ -115,6 +117,7 @@ describe("ProblemGrid", () => {
 
     expect(saveAllMock).toHaveBeenCalledWith(3, 4, 2, { ...emptyScore, attempts_to_bonus: 1 });
     await waitFor(() => expect(screen.queryByText("Ej sparad")).not.toBeInTheDocument());
+    expect(screen.queryByRole("button", { name: "Spara alla ändringar" })).not.toBeInTheDocument();
   });
 
   it("locks editing before the competition day for climbers", () => {
@@ -134,7 +137,9 @@ describe("ProblemGrid", () => {
 
     expect(screen.getByRole("button", { name: "Inaktivera" })).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "Öka Topp" })[0]).toBeEnabled();
-    expect(screen.getByRole("button", { name: "Spara alla ändringar" })).toBeInTheDocument();
+
+    await userEvent.click(screen.getAllByRole("button", { name: "Öka Topp" })[0]);
+    expect(screen.getByRole("button", { name: "Spara alla ändringar" })).toBeEnabled();
   });
 
   it("collapses a problem when its header is clicked", async () => {

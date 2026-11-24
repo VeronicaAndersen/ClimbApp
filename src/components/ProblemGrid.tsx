@@ -1,12 +1,12 @@
-import { useCallback, useMemo, useState, useEffect } from "react";
-import { Lock, Unlock } from "lucide-react";
+import { useCallback, useMemo, useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
+import { Check, Lock, Unlock } from "lucide-react";
 import { ScoreBatchResponse } from "@/types";
-import CalloutMessage from "./feedback/CalloutMessage";
-import { Button } from "@radix-ui/themes";
 import { useUpdateScore } from "@/hooks/useUpdateScore";
 import { useUpdateScoreBatch } from "@/hooks/useUpdateScoreBatchResult";
 import { canEditCompetition, isAdmin, isToday } from "@/utils/competitionUtils";
 import { getGradeColor } from "@/constants/gradeColors";
+import { haptic } from "@/lib/utils";
 import {
   buildScoreMap,
   isScoreChanged,
@@ -112,13 +112,26 @@ export default function ProblemGrid({
     });
   }, []);
 
-  const hasAnyChanges = useMemo(
+  const changedCount = useMemo(
     () =>
-      problems.some((problem) =>
+      problems.filter((problem) =>
         isScoreChanged(problem.score, initialScoreMap.get(problem.problem_no))
-      ),
+      ).length,
     [problems, initialScoreMap]
   );
+  const hasAnyChanges = changedCount > 0;
+
+  // The bar keeps its last count while it fades out instead of flashing "0".
+  const lastChangedCount = useRef(changedCount);
+  if (changedCount > 0) lastChangedCount.current = changedCount;
+
+  // After a batch save the bar stays up briefly to confirm it, then leaves.
+  const [batchJustSaved, setBatchJustSaved] = useState(false);
+  useEffect(() => {
+    if (!batchJustSaved) return;
+    const timer = setTimeout(() => setBatchJustSaved(false), 2000);
+    return () => clearTimeout(timer);
+  }, [batchJustSaved]);
 
   useEffect(() => {
     onHasChangesChange?.(hasAnyChanges);
@@ -130,6 +143,8 @@ export default function ProblemGrid({
     const success = await saveAllBatch(competitionId, gradeLevel, problems);
 
     if (success) {
+      haptic();
+      setBatchJustSaved(true);
       // Update initialProblems to reflect all saved states
       setInitialProblems(JSON.parse(JSON.stringify(problems)));
       setSavedProblemNo(null);
@@ -142,6 +157,7 @@ export default function ProblemGrid({
     setSavingProblemNo(problem.problem_no);
     const success = await saveAll(competitionId, gradeLevel, problem.problem_no, problem.score);
     if (success) {
+      haptic();
       // Track which problem was saved to show message over it
       setSavedProblemNo(problem.problem_no);
       setErrorProblemNo(null); // Clear any previous error
@@ -176,6 +192,12 @@ export default function ProblemGrid({
     }
   };
 
+  const saveBarVisible =
+    canEdit &&
+    problems.length > 0 &&
+    (hasAnyChanges || batchSaving || batchJustSaved || Boolean(batchSaveError));
+  const showBatchSuccess = batchJustSaved && !hasAnyChanges && !batchSaveError;
+
   const idleSaveLabel = !canEdit
     ? "Redigering inaktiverad"
     : gradeLevel
@@ -183,65 +205,44 @@ export default function ProblemGrid({
       : "Välj gradnivå för att spara";
 
   return (
-    <div className="space-y-4">
-      {batchSaveMessage && <CalloutMessage message={batchSaveMessage} color="green" />}
-      {batchSaveError && <CalloutMessage message={batchSaveError} color="red" />}
-
+    // Reserve room at the bottom so the floating save bar never covers the last card.
+    <div className={canEdit ? "space-y-4 pb-20" : "space-y-4"}>
       {/* Edit status and admin controls */}
       {!canEdit && (
-        <div className="bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-200 dark:border-yellow-500/30 rounded-lg p-4 mb-4">
-          <div className="flex items-start gap-3">
-            <Lock className="w-5 h-5 text-yellow-700 dark:text-yellow-300 mt-0.5" />
-            <div className="flex-1">
-              <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
-                {isCompetitionToday
-                  ? "Redigering är aktiverad för tävlingsdagen"
-                  : "Tävlingen har inte öppnat ännu."}
-              </p>
-            </div>
-          </div>
+        <div className="notice">
+          <Lock className="w-5 h-5 shrink-0 text-muted-foreground" aria-hidden />
+          <p className="font-medium">
+            {isCompetitionToday
+              ? "Redigering är aktiverad för tävlingsdagen"
+              : "Tävlingen har inte öppnat ännu."}
+          </p>
         </div>
       )}
 
       {/* Admin override toggle */}
       {userIsAdmin && !isCompetitionToday && (
-        <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 rounded-lg p-4 mb-4">
+        <div className="notice items-center justify-between">
           <div className="flex items-center gap-3">
             {adminOverride ? (
-              <Unlock className="w-5 h-5 text-blue-700 dark:text-blue-300" />
+              <Unlock className="w-5 h-5 shrink-0 text-muted-foreground" aria-hidden />
             ) : (
-              <Lock className="w-5 h-5 text-blue-700 dark:text-blue-300" />
+              <Lock className="w-5 h-5 shrink-0 text-muted-foreground" aria-hidden />
             )}
             <div>
-              <p className="text-sm font-medium text-blue-800 dark:text-blue-200">Admin</p>
-              <p className="text-xs text-blue-700 dark:text-blue-300">
+              <p className="font-medium">Admin</p>
+              <p className="text-xs text-muted-foreground">
                 Aktivera för att redigera utanför tävlingsdagen
               </p>
             </div>
           </div>
-          <Button
+          <button
+            type="button"
             onClick={() => setAdminOverride((prev) => !prev)}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-              adminOverride
-                ? "bg-blue-600 hover:bg-blue-700 text-white"
-                : "bg-card hover:bg-blue-100 dark:hover:bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-500/30"
-            }`}
+            aria-pressed={adminOverride}
+            className={`${adminOverride ? "btn-primary" : "btn-secondary"} shrink-0 px-4 text-sm`}
           >
             {adminOverride ? "Inaktivera" : "Aktivera"}
-          </Button>
-        </div>
-      )}
-
-      {problems.length > 0 && canEdit && (
-        <div className="flex justify-end mb-4">
-          <Button
-            onClick={handleSaveAll}
-            disabled={batchSaving || !gradeLevel || !hasAnyChanges}
-            className={`bg-primary hover:bg-primary-hover text-primary-foreground px-6 py-2 rounded-full
-              shadow font-medium cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed`}
-          >
-            {batchSaving ? "Sparar alla..." : "Spara alla ändringar"}
-          </Button>
+          </button>
         </div>
       )}
 
@@ -276,6 +277,55 @@ export default function ProblemGrid({
           );
         })}
       </div>
+
+      {/*
+       * Floating save bar: rises from the bottom edge when there is unsaved work
+       * and leaves the same way. Portalled so no transformed or blurred ancestor
+       * can trap its fixed position.
+       */}
+      {createPortal(
+        <div
+          aria-hidden={!saveBarVisible}
+          ref={(el) => el?.toggleAttribute("inert", !saveBarVisible)}
+          className={`floating-bar pointer-events-none fixed inset-x-0 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-40 flex justify-center px-4 transition-[transform,opacity] duration-500 ease-apple md:bottom-6 ${
+            saveBarVisible ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
+          }`}
+        >
+          <div className="material pointer-events-auto flex w-full max-w-md items-center justify-between gap-3 rounded-full border border-border/60 py-2 pl-5 pr-2 shadow-material">
+            {/* Result of the batch save lives where the user tapped, not at the top of the page. */}
+            <span
+              role="status"
+              className={`tabular min-w-0 text-sm font-medium text-foreground ${batchSaveError ? "hidden" : ""}`}
+            >
+              {batchSaveError ? null : showBatchSuccess ? (
+                <span className="flex items-center gap-1.5 text-green-700 dark:text-green-300">
+                  <Check className="h-4 w-4" aria-hidden />
+                  {batchSaveMessage || "Allt sparat"}
+                </span>
+              ) : lastChangedCount.current === 1 ? (
+                "1 osparat problem"
+              ) : (
+                `${lastChangedCount.current} osparade problem`
+              )}
+            </span>
+            <span
+              role="alert"
+              className={`min-w-0 text-sm font-medium text-destructive ${batchSaveError ? "" : "sr-only"}`}
+            >
+              {batchSaveError}
+            </span>
+            <button
+              type="button"
+              onClick={handleSaveAll}
+              disabled={batchSaving || !gradeLevel}
+              className="btn-primary shrink-0 text-sm"
+            >
+              {batchSaving ? "Sparar alla..." : "Spara alla ändringar"}
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

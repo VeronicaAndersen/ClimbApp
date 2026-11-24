@@ -23,6 +23,15 @@ export function SessionSwitcher({ onSwitch }: Props) {
     onExpire: () => setLoginError(null),
   });
   const bootstrapped = useRef(false);
+  // Focus returns here when the form closes, instead of dropping to <body>.
+  const addButtonRef = useRef<HTMLButtonElement>(null);
+
+  const closeLogin = () => {
+    setShowLogin(false);
+    setLoginError(null);
+    setPassword("");
+    addButtonRef.current?.focus();
+  };
 
   // Bootstrap: seed the sessions list on first mount.
   // - If sessions were persisted (localStorage), restore the active session's
@@ -62,8 +71,7 @@ export function SessionSwitcher({ onSwitch }: Props) {
     onSwitch();
   };
 
-  const handleRemove = (e: React.MouseEvent, id: number) => {
-    e.stopPropagation();
+  const handleRemove = (id: number) => {
     const remaining = sessions.filter((s) => s.id !== id);
     if (id === activeId && remaining.length > 0) {
       const next = remaining[0];
@@ -98,9 +106,8 @@ export function SessionSwitcher({ onSwitch }: Props) {
 
       addOrUpdateSession({ id: info.id, name, accessToken, refreshToken });
       setActiveId(info.id);
-      setShowLogin(false);
       setUsername("");
-      setPassword("");
+      closeLogin();
       onSwitch();
     } catch (err) {
       setLoginError(getUserFriendlyError(err));
@@ -113,97 +120,117 @@ export function SessionSwitcher({ onSwitch }: Props) {
   return (
     <div className="mb-4">
       <div className="flex flex-wrap gap-2 items-center">
-        {sessions.map((s) => (
-          <button
-            key={s.id}
-            onClick={() => handleSwitch(s)}
-            className={`flex items-center gap-1.5 py-1 rounded-full text-sm font-medium transition-colors ${sessions.length > 1 ? "pl-3 pr-1" : "px-3"} ${
-              s.id === activeId
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-            }`}
-          >
-            {s.name}
-            {sessions.length > 1 && (
-              <span
-                onClick={(e) => handleRemove(e, s.id)}
-                className={`ml-0.5 w-5 h-5 rounded-full flex items-center justify-center hover:bg-foreground/15 transition-colors ${
-                  s.id === activeId ? "text-primary-foreground/80" : "text-muted-foreground/70"
+        {sessions.map((s) => {
+          const isActive = s.id === activeId;
+          return (
+            <div
+              key={s.id}
+              className={`flex items-center rounded-full text-sm font-medium transition-colors ${
+                isActive
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => handleSwitch(s)}
+                aria-current={isActive ? "true" : undefined}
+                className={`pressable rounded-full py-1 outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                  sessions.length > 1 ? "pl-3 pr-1" : "px-3"
                 }`}
               >
-                <X className="w-3 h-3" />
-              </span>
-            )}
-          </button>
-        ))}
+                {s.name}
+              </button>
+              {sessions.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => handleRemove(s.id)}
+                  aria-label={`Ta bort ${s.name}`}
+                  className={`pressable mr-1 flex h-5 w-5 items-center justify-center rounded-full outline-none transition-colors hover:bg-foreground/15 focus-visible:ring-2 focus-visible:ring-ring ${
+                    isActive ? "text-primary-foreground/80" : "text-muted-foreground/70"
+                  }`}
+                >
+                  <X className="w-3 h-3" aria-hidden />
+                </button>
+              )}
+            </div>
+          );
+        })}
 
         <button
-          onClick={() => setShowLogin((v) => !v)}
-          className="flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-card text-muted-foreground hover:bg-muted/50 transition-colors border border-dashed border-border"
+          type="button"
+          ref={addButtonRef}
+          onClick={() => (showLogin ? closeLogin() : setShowLogin(true))}
+          aria-expanded={showLogin}
+          aria-controls="session-login-form"
+          className="pressable flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-card text-muted-foreground hover:bg-muted/50 transition-colors border border-dashed border-border outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <Plus className="w-3.5 h-3.5" />
+          <Plus className="w-3.5 h-3.5" aria-hidden />
           Lägg till
         </button>
       </div>
 
-      {showLogin && (
-        <form
-          onSubmit={handleAddLogin}
-          className="mt-3 p-4 bg-muted/50 rounded-xl border border-border space-y-2"
+      {/* Kept mounted so it can open and close smoothly; inert while closed. */}
+      <div className="collapsible" data-open={showLogin}>
+        <div
+          aria-hidden={!showLogin}
+          ref={(el) => el?.toggleAttribute("inert", !showLogin)}
+          className={`transition-opacity duration-300 ease-apple ${showLogin ? "opacity-100" : "opacity-0"}`}
         >
-          <p className="text-sm font-medium text-muted-foreground">
-            Logga in som en annan klättrare
-          </p>
-          <p
-            id="session-login-error"
-            role="alert"
-            className={cn("text-xs text-red-700 dark:text-red-300", !loginError && "sr-only")}
+          <form
+            id="session-login-form"
+            onSubmit={handleAddLogin}
+            className="mt-3 p-4 bg-muted/50 rounded-xl border border-border space-y-2"
           >
-            {loginError}
-          </p>
-          <input
-            type="text"
-            placeholder="Användarnamn"
-            aria-label="Användarnamn"
-            aria-invalid={loginError !== null}
-            aria-describedby={loginError ? "session-login-error" : undefined}
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            className="w-full px-3 py-2 text-base rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-ring"
-            required
-          />
-          <input
-            type="password"
-            placeholder="Lösenord"
-            aria-label="Lösenord"
-            aria-invalid={loginError !== null}
-            aria-describedby={loginError ? "session-login-error" : undefined}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-3 py-2 text-base rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-ring"
-            required
-          />
-          <div className="flex gap-2 pt-1">
-            <button
-              type="submit"
-              disabled={loginLoading || isCoolingDown}
-              className="flex-1 py-2 text-sm font-medium rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground disabled:opacity-50 transition-colors"
+            <p className="text-sm font-medium text-muted-foreground">
+              Logga in som en annan klättrare
+            </p>
+            <p
+              id="session-login-error"
+              role="alert"
+              className={cn("text-xs text-red-700 dark:text-red-300", !loginError && "sr-only")}
             >
-              {loginLoading ? "Loggar in..." : "Logga in"}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setShowLogin(false);
-                setLoginError(null);
-              }}
-              className="px-4 py-2 text-sm font-medium rounded-lg bg-muted text-muted-foreground hover:bg-accent transition-colors"
-            >
-              Avbryt
-            </button>
-          </div>
-        </form>
-      )}
+              {loginError}
+            </p>
+            <input
+              type="text"
+              autoComplete="off"
+              placeholder="Användarnamn"
+              aria-label="Användarnamn"
+              aria-invalid={loginError !== null}
+              aria-describedby={loginError ? "session-login-error" : undefined}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="input-base"
+              required
+            />
+            <input
+              type="password"
+              autoComplete="new-password"
+              placeholder="Lösenord"
+              aria-label="Lösenord"
+              aria-invalid={loginError !== null}
+              aria-describedby={loginError ? "session-login-error" : undefined}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="input-base"
+              required
+            />
+            <div className="flex gap-2 pt-1">
+              <button
+                type="submit"
+                disabled={loginLoading || isCoolingDown}
+                className="btn-primary flex-1 text-sm"
+              >
+                {loginLoading ? "Loggar in..." : "Logga in"}
+              </button>
+              <button type="button" onClick={closeLogin} className="btn-secondary text-sm">
+                Avbryt
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }
