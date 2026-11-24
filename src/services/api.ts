@@ -143,12 +143,15 @@ export const updateScoreBatch = ({ comp_id, level }: UrlParams, payload: ScoreBa
     true
   );
 
+// Not cached: climbers save scores on their own devices while an admin
+// watches, so these must reflect the server, not a five-minute-old copy.
 export const getLevelStats = ({ comp_id, level }: UrlParams) =>
-  api.get<LevelStatsResponse>(`/competitions/${comp_id}/level/${level}/stats`, true);
+  api.get<LevelStatsResponse>(`/competitions/${comp_id}/level/${level}/stats`, true, true);
 
 export const getUserScoresBatch = ({ comp_id, level }: UrlParams, userId: number) =>
   api.get<ProblemScoreBulkResult[]>(
     `/competitions/${comp_id}/level/${level}/users/${userId}/scores`,
+    true,
     true
   );
 

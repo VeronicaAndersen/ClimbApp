@@ -209,13 +209,13 @@ const apiCases: ApiCase[] = [
   {
     name: "getLevelStats",
     method: "get",
-    args: ["/competitions/12/level/3/stats", true],
+    args: ["/competitions/12/level/3/stats", true, true],
     invoke: () => service.getLevelStats(params),
   },
   {
     name: "getUserScoresBatch",
     method: "get",
-    args: ["/competitions/12/level/3/users/34/scores", true],
+    args: ["/competitions/12/level/3/users/34/scores", true, true],
     invoke: () => service.getUserScoresBatch(params, 34),
   },
   {
