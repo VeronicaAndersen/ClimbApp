@@ -1,92 +1,73 @@
-import { useCallback, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { checkRegistration, getCompetitions } from "@/services/api";
-import { CompetitionResponse } from "@/types";
-import { getUserFriendlyError } from "@/utils/errorMessages";
+import { useCallback, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import type { CompetitionResponse } from "@/types";
+import { useAllCompetitions } from "@/hooks/useAllCompetitions";
+import {
+  myRegistrationsKey,
+  useMyRegistrations,
+  type RegistrationsByCompetition,
+} from "@/hooks/useMyRegistrations";
 
 interface UseCompetitionsResult {
   competitions: CompetitionResponse[];
   loading: boolean;
   error: string | null;
+  /** Whether the climber is registered, for every listed competition. */
   registrationStatus: Record<number, boolean>;
+  /** Level and approval of the climber's registrations, keyed by competition id. */
+  registrations: RegistrationsByCompetition;
   checkingRegistration: Record<number, boolean>;
+  /** Reloads the climber's registrations after registering or withdrawing. */
   refreshRegistrationStatus: (competitionId: number) => Promise<void>;
   refetch: () => Promise<void>;
 }
 
-interface CompetitionsWithRegistration {
-  competitions: CompetitionResponse[];
-  registrationStatus: Record<number, boolean>;
-}
-
-const NO_COMPETITIONS: CompetitionResponse[] = [];
-const NO_STATUS: Record<number, boolean> = {};
-
-/** A failed check counts as "not registered", as the list offers to register then. */
-async function isRegistered(competitionId: number): Promise<boolean> {
-  try {
-    return !!(await checkRegistration(competitionId));
-  } catch (err) {
-    console.error(`Error checking registration for competition ${competitionId}:`, err);
-    return false;
-  }
-}
-
-async function fetchCompetitionsWithRegistration(): Promise<CompetitionsWithRegistration> {
-  const competitions = (await getCompetitions()) ?? NO_COMPETITIONS;
-  const statuses = await Promise.all(competitions.map((comp) => isRegistered(comp.id)));
-  const registrationStatus: Record<number, boolean> = {};
-  competitions.forEach((comp, i) => {
-    registrationStatus[comp.id] = statuses[i];
-  });
-  return { competitions, registrationStatus };
-}
-
-const competitionsKey = (refreshKey?: number) =>
-  ["competitionsWithRegistration", refreshKey] as const;
-
+/**
+ * Competitions with the signed-in climber's registrations: two requests in
+ * total, however many competitions there are. If the registrations fail to
+ * load, every competition counts as "not registered" and `error` says so.
+ */
 export function useCompetitions(refreshKey?: number): UseCompetitionsResult {
   const queryClient = useQueryClient();
-  // Per-user data: storeTokens resets every query on an account change.
-  const query = useQuery({
-    queryKey: competitionsKey(refreshKey),
-    queryFn: fetchCompetitionsWithRegistration,
-    // Registrations change from this list and from admins approving them,
-    // so always refetch on mount instead of trusting the five-minute staleTime.
-    staleTime: 0,
-  });
+  const competitionsQuery = useAllCompetitions(refreshKey);
+  const registrationsQuery = useMyRegistrations();
+  const { competitions } = competitionsQuery;
+  const { registrations } = registrationsQuery;
+
+  const registrationStatus = useMemo(
+    () => Object.fromEntries(competitions.map((comp) => [comp.id, comp.id in registrations])),
+    [competitions, registrations]
+  );
 
   const [checkingRegistration, setCheckingRegistration] = useState<Record<number, boolean>>({});
 
   const refreshRegistrationStatus = useCallback(
     async (competitionId: number) => {
       setCheckingRegistration((prev) => ({ ...prev, [competitionId]: true }));
-      const registered = await isRegistered(competitionId);
-      queryClient.setQueryData<CompetitionsWithRegistration>(
-        competitionsKey(refreshKey),
-        (prev) =>
-          prev && {
-            ...prev,
-            registrationStatus: { ...prev.registrationStatus, [competitionId]: registered },
-          }
-      );
-      setCheckingRegistration((prev) => ({ ...prev, [competitionId]: false }));
+      try {
+        // Refetches the mounted query and waits for it; a failure lands in `error`.
+        await queryClient.invalidateQueries({ queryKey: myRegistrationsKey });
+      } finally {
+        setCheckingRegistration((prev) => ({ ...prev, [competitionId]: false }));
+      }
     },
-    [queryClient, refreshKey]
+    [queryClient]
   );
 
-  const { refetch } = query;
-  const refetchCompetitions = useCallback(async () => {
-    await refetch();
-  }, [refetch]);
+  const { refetch: refetchCompetitions } = competitionsQuery;
+  const { refetch: refetchRegistrations } = registrationsQuery;
+  const refetch = useCallback(async () => {
+    await Promise.all([refetchCompetitions(), refetchRegistrations()]);
+  }, [refetchCompetitions, refetchRegistrations]);
 
   return {
-    competitions: query.data?.competitions ?? NO_COMPETITIONS,
-    loading: query.isPending,
-    error: query.error ? getUserFriendlyError(query.error) : null,
-    registrationStatus: query.data?.registrationStatus ?? NO_STATUS,
+    competitions,
+    loading: competitionsQuery.loading || registrationsQuery.loading,
+    error: competitionsQuery.error ?? registrationsQuery.error,
+    registrationStatus,
+    registrations,
     checkingRegistration,
     refreshRegistrationStatus,
-    refetch: refetchCompetitions,
+    refetch,
   };
 }

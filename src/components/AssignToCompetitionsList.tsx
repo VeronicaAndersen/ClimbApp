@@ -5,9 +5,7 @@ import { ChevronRight, X } from "lucide-react";
 import RegisterToCompForm from "./forms/RegisterToCompForm";
 import CalloutMessage from "./feedback/CalloutMessage";
 import { withdrawRegistration } from "@/services/api";
-import { registrationDetailsKey, useRegistrationDetails } from "@/hooks/useRegistrationDetails";
 import { useState, useMemo } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { sortCompetitions } from "@/utils/competitionSort";
 import { SessionSwitcher } from "./SessionSwitcher";
 import { getGradeColor, LEVEL_NAMES } from "@/constants/gradeColors";
@@ -31,17 +29,12 @@ export function AssignToCompetitionsList() {
     loading,
     error,
     registrationStatus,
+    registrations: registrationDetails,
     checkingRegistration,
     refreshRegistrationStatus,
     refetch,
   } = useCompetitions();
 
-  const queryClient = useQueryClient();
-  const registeredCompetitions = useMemo(
-    () => competitionList.filter((comp) => registrationStatus[comp.id]),
-    [competitionList, registrationStatus]
-  );
-  const registrationDetails = useRegistrationDetails(registeredCompetitions);
   const [withdrawing, setWithdrawing] = useState<number | null>(null);
   const [withdrawConfirm, setWithdrawConfirm] = useState<number | null>(null);
   const [withdrawError, setWithdrawError] = useState<{ id: number; message: string } | null>(null);
@@ -53,9 +46,6 @@ export function AssignToCompetitionsList() {
       await withdrawRegistration(competitionId);
       setWithdrawConfirm(null);
       await refreshRegistrationStatus(competitionId);
-      // No longer registered, so nothing observes it; drop it so a new
-      // registration loads fresh details.
-      queryClient.removeQueries({ queryKey: registrationDetailsKey(competitionId) });
     } catch (err) {
       setWithdrawError({ id: competitionId, message: getUserFriendlyError(err) });
     } finally {

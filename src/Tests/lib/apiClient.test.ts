@@ -172,11 +172,11 @@ describe("caches on account change", () => {
   });
 
   // The keys of the per-user hooks (useGetUserInfo, useUserCompetitions,
-  // useCompetitions, useScores) rely on this reset to avoid leaking data.
+  // useMyRegistrations, useScores) rely on this reset to avoid leaking data.
   it.each([
     [["myInfo"]],
     [["userCompetitions"]],
-    [["competitionsWithRegistration", undefined]],
+    [["myRegistrations"]],
     [["scores", 3, undefined]],
   ])("drops per-user query %j on logout", (queryKey) => {
     queryClient.setQueryData(queryKey, { id: 1 });

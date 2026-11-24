@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { getCompetitions, getCompRegistrationInfo, getScoresBatch } from "@/services/api";
-import { CompetitionResponse, ScoreBatchResponse } from "@/types";
+import { getCompetitions, getMyRegistrations, getScoresBatch } from "@/services/api";
+import type { CompetitionResponse, ScoreBatchResponse } from "@/types";
 import { getUserFriendlyError } from "@/utils/errorMessages";
 import { isFutureDate } from "@/utils/competitionUtils";
 
@@ -44,29 +44,37 @@ function summarize(scores: ScoreBatchResponse[]): CompetitionWithScores["summary
   };
 }
 
-/** One competition with the user's scores, or null if not registered or no scores. */
+/** One competition with the user's scores at their level, or null if there are none. */
 async function fetchCompetitionWithScores(
-  comp: CompetitionResponse
+  comp: CompetitionResponse,
+  level: number
 ): Promise<CompetitionWithScores | null> {
-  // getCompRegistrationInfo throws 404 if not registered — catch means "not registered"
-  const registration = await getCompRegistrationInfo(comp.id).catch(() => null);
-  if (!registration?.level) return null;
-
-  const scores = await getScoresBatch({ comp_id: comp.id, level: registration.level });
+  const scores = await getScoresBatch({ comp_id: comp.id, level });
   if (scores.length === 0) return null;
 
-  return { competition: comp, level: registration.level, scores, summary: summarize(scores) };
+  return { competition: comp, level, scores, summary: summarize(scores) };
 }
 
 async function fetchUserCompetitions(): Promise<CompetitionWithScores[]> {
-  const allCompetitions = await getCompetitions();
-  // Only today's and past competitions belong in the history; skipping
-  // future ones also saves their registration and score requests.
-  const heldCompetitions = (allCompetitions ?? []).filter((c) => !isFutureDate(c.comp_date));
-  if (heldCompetitions.length === 0) return NO_COMPETITIONS;
+  const [allCompetitions, myRegistrations] = await Promise.all([
+    getCompetitions(),
+    getMyRegistrations(),
+  ]);
+  const levelByCompetition = new Map(
+    (myRegistrations ?? []).map((reg) => [reg.comp_id, reg.level] as const)
+  );
+  // Only today's and past competitions the user is registered for belong in
+  // the history, so only those cost a score request.
+  const registeredHeld = (allCompetitions ?? []).flatMap((comp) => {
+    const level = levelByCompetition.get(comp.id);
+    return level && !isFutureDate(comp.comp_date) ? [{ comp, level }] : [];
+  });
+  if (registeredHeld.length === 0) return NO_COMPETITIONS;
 
   // A failure for one competition hides that competition, not the whole list.
-  const results = await Promise.allSettled(heldCompetitions.map(fetchCompetitionWithScores));
+  const results = await Promise.allSettled(
+    registeredHeld.map(({ comp, level }) => fetchCompetitionWithScores(comp, level))
+  );
 
   return results
     .filter(
