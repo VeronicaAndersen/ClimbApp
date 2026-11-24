@@ -112,7 +112,7 @@ export function ProblemCard({
           className={`transition-opacity duration-300 ease-apple ${isCollapsed ? "opacity-0" : "opacity-100"}`}
         >
           {SCORE_FIELDS.map((key) => (
-            <div key={key} className="flex flex-row items-center justify-between m-2">
+            <div key={key} className="flex flex-row items-center justify-between mx-2 my-4">
               <label
                 htmlFor={`problem-${problem.problem_no}-${key}`}
                 className="block text-sm text-muted-foreground font-medium capitalize mb-1"
@@ -120,7 +120,7 @@ export function ProblemCard({
                 {SCORE_FIELD_LABELS[key]}
               </label>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-4">
                 <Button
                   onClick={() => step(key, -1)}
                   disabled={inputsDisabled}
