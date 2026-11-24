@@ -3,7 +3,7 @@ import { clearTokens, isLoggedIn } from "@/lib/apiClient";
 import { useSessionsStore } from "@/store/sessions";
 import { useCallback, useEffect, useState, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button, Spinner } from "@radix-ui/themes/components/index";
+import { Button } from "@radix-ui/themes/components/index";
 import useGetUserInfo from "@/hooks/useGetUserInfo";
 import { AppHeader } from "@/components/AppHeader";
 import CalloutMessage from "@/components/feedback/CalloutMessage";
@@ -13,6 +13,7 @@ import { CompleteProfileForm } from "@/components/forms/CompleteProfileForm";
 import { SessionSwitcher } from "@/components/SessionSwitcher";
 import { ProfileBottomNav, ProfileMenubar, type NavigationView } from "@/components/ProfileNav";
 import { ADMIN_VIEWS } from "@/constants/profileMenu";
+import Loader from "@/components/feedback/Loader";
 
 const ActiveCompetition = lazy(() =>
   import("@/components/ActiveCompetition").then((m) => ({ default: m.ActiveCompetition }))
@@ -46,8 +47,7 @@ const StatisticsView = lazy(() =>
 
 const LoadingFallback = () => (
   <div className="flex items-center justify-center py-8">
-    <Spinner size="3" />
-    <span className="ml-2">Laddar...</span>
+    <Loader label="Laddar" />
   </div>
 );
 
@@ -196,8 +196,7 @@ export default function Profile() {
       <div className="h-screen flex flex-col items-center justify-center">
         <AppHeader />
         <div className="flex items-center justify-center py-8">
-          <Spinner size="3" />
-          <span className="ml-2">Laddar...</span>
+          <Loader label="Laddar" />
         </div>
       </div>
     );

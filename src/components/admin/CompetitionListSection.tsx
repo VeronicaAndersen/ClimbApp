@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import { CompetitionRegistrations } from "./CompetitionRegistrations";
 import { sortCompetitions } from "@/utils/competitionSort";
-import { Spinner } from "@radix-ui/themes";
 import { useAllCompetitions } from "@/hooks/useAllCompetitions";
+import Loader from "@/components/feedback/Loader";
 
 interface CompetitionListSectionProps {
   refreshKey: number;
@@ -16,8 +16,7 @@ export function CompetitionListSection({ refreshKey }: CompetitionListSectionPro
   if (loading) {
     return (
       <div className="flex items-center justify-center py-4">
-        <Spinner size="2" />
-        <span className="ml-2 text-sm">Hämtar tävlingar...</span>
+        <Loader label="Hämtar tävlingar" size="sm" />
       </div>
     );
   }

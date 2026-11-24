@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { Spinner } from "@radix-ui/themes/components/index";
 import { getCompetitions } from "@/services/api";
 import type { CompetitionResponse } from "@/types";
 import { getGradeColor } from "@/constants/gradeColors";
 import { ProblemStatsTable } from "@/components/admin/ProblemStatsTable";
+import Loader from "@/components/feedback/Loader";
 
 const LEVELS = [1, 2, 3, 4, 5, 6, 7];
 
@@ -39,8 +39,7 @@ export function StatisticsView() {
           </label>
           {competitionsLoading ? (
             <div className="flex items-center gap-2 text-muted-foreground p-2.5">
-              <Spinner size="2" />
-              <span>Hämtar tävlingar...</span>
+              <Loader label="Hämtar tävlingar" size="sm" />
             </div>
           ) : competitions.length === 0 ? (
             <p className="text-muted-foreground p-2.5">Inga tävlingar tillgängliga.</p>

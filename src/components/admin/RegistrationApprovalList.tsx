@@ -6,6 +6,7 @@ import CalloutMessage from "../feedback/CalloutMessage";
 import { getUserFriendlyError } from "@/utils/errorMessages";
 import { getGradeColor, LEVEL_NAMES } from "@/constants/gradeColors";
 import { useRegistrations } from "@/hooks/useRegistrations";
+import Loader from "@/components/feedback/Loader";
 
 const LEVELS = [1, 2, 3, 4, 5, 6, 7];
 
@@ -97,8 +98,7 @@ export function RegistrationApprovalList({
 
       {loading ? (
         <div className="flex items-center justify-center py-8">
-          <Spinner size="3" />
-          <span className="ml-2">Hämtar anmälda...</span>
+          <Loader label="Hämtar anmälda" />
         </div>
       ) : registrations.length > 0 ? (
         <div className="overflow-x-auto">

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Dialog, Spinner } from "@radix-ui/themes";
+import { Dialog } from "@radix-ui/themes";
 import { Trophy, Star } from "lucide-react";
 import { getClimberRegistrations, getUserScoresBatch } from "@/services/api";
 import { ClimberResponse, RegistrationWithCompetition, ScoreBatchResponse } from "@/types";
@@ -7,6 +7,7 @@ import CalloutMessage from "../feedback/CalloutMessage";
 import ScoreSummary from "../ScoreSummary";
 import { getGradeColor, LEVEL_NAMES } from "@/constants/gradeColors";
 import { getUserFriendlyError } from "@/utils/errorMessages";
+import Loader from "@/components/feedback/Loader";
 
 interface ClimberStatsModalProps {
   climber: ClimberResponse | null;
@@ -102,8 +103,7 @@ export function ClimberStatsModal({ climber, onClose }: ClimberStatsModalProps) 
 
         {loadingRegistrations ? (
           <div className="flex items-center justify-center py-8">
-            <Spinner size="3" />
-            <span className="ml-2">Hämtar tävlingar...</span>
+            <Loader label="Hämtar tävlingar" />
           </div>
         ) : registrations.length === 0 ? (
           <p className="text-center text-muted-foreground py-4">
@@ -133,8 +133,7 @@ export function ClimberStatsModal({ climber, onClose }: ClimberStatsModalProps) 
 
             {loadingScores ? (
               <div className="flex items-center justify-center py-8">
-                <Spinner size="3" />
-                <span className="ml-2">Hämtar poäng...</span>
+                <Loader label="Hämtar poäng" />
               </div>
             ) : selectedRegistration ? (
               <div className="max-h-[70vh] overflow-y-auto">

@@ -6,6 +6,7 @@ import { SeasonResponse, SeasonRequest } from "@/types";
 import { Pencil, Trash2, Check, X } from "lucide-react";
 import CalloutMessage from "../feedback/CalloutMessage";
 import { getUserFriendlyError } from "@/utils/errorMessages";
+import Loader from "@/components/feedback/Loader";
 
 interface SeasonListProps {
   refreshKey?: number;
@@ -111,8 +112,7 @@ export function SeasonList({ refreshKey }: SeasonListProps = {}) {
 
       {loading ? (
         <div className="flex items-center justify-center py-8">
-          <Spinner size="3" />
-          <span className="ml-2">Hämtar säsonger...</span>
+          <Loader label="Hämtar säsonger" />
         </div>
       ) : seasonList.length > 0 ? (
         <div className="overflow-x-auto">
