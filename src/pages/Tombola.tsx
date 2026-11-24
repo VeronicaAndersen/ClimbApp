@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Trophy, Users } from "lucide-react";
 import CalloutMessage from "@/components/feedback/CalloutMessage";
@@ -15,6 +16,8 @@ import Loader from "@/components/feedback/Loader";
 export default function Tombola() {
   const navigate = useNavigate();
   const t = useTombola();
+  // Kept here, not in the form: the form unmounts while a competition loads.
+  const [isGuestFormOpen, setIsGuestFormOpen] = useState(true);
 
   if (t.isLoading && t.competitions.length === 0) {
     return (
@@ -66,6 +69,8 @@ export default function Tombola() {
                 onNameChange={t.setGuestName}
                 onSubmit={t.addGuest}
                 isSpinning={t.isSpinning}
+                isOpen={isGuestFormOpen}
+                onToggle={() => setIsGuestFormOpen((open) => !open)}
               />
             )}
 
