@@ -1,20 +1,19 @@
 import { useCompetitions } from "@/hooks/useCompetitions";
-import { CompetitionResponse, RegisterToCompResponse } from "@/types";
+import { CompetitionResponse } from "@/types";
 import { Spinner } from "@radix-ui/themes";
 import { ChevronRight, X } from "lucide-react";
 import RegisterToCompForm from "./forms/RegisterToCompForm";
 import CalloutMessage from "./feedback/CalloutMessage";
-import { getCompRegistrationInfo, withdrawRegistration } from "@/services/api";
-import { useState, useEffect, useMemo, useRef } from "react";
+import { withdrawRegistration } from "@/services/api";
+import { registrationDetailsKey, useRegistrationDetails } from "@/hooks/useRegistrationDetails";
+import { useState, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { sortCompetitions } from "@/utils/competitionSort";
 import { SessionSwitcher } from "./SessionSwitcher";
 import { getGradeColor, LEVEL_NAMES } from "@/constants/gradeColors";
 import { getUserFriendlyError } from "@/utils/errorMessages";
 import { isToday } from "@/utils/competitionUtils";
 import Loader from "@/components/feedback/Loader";
-
-/** How often a pending registration is re-checked on the competition day. */
-export const APPROVAL_POLL_INTERVAL_MS = 30_000;
 
 /** Day and short month of a "YYYY-MM-DD" date, parsed as local time so the day cannot shift. */
 const formatDateTile = (dateString: string) => {
@@ -37,10 +36,12 @@ export function AssignToCompetitionsList() {
     refetch,
   } = useCompetitions();
 
-  const [registrationDetails, setRegistrationDetails] = useState<
-    Record<number, RegisterToCompResponse>
-  >({});
-  const fetchedIdsRef = useRef(new Set<number>());
+  const queryClient = useQueryClient();
+  const registeredCompetitions = useMemo(
+    () => competitionList.filter((comp) => registrationStatus[comp.id]),
+    [competitionList, registrationStatus]
+  );
+  const registrationDetails = useRegistrationDetails(registeredCompetitions);
   const [withdrawing, setWithdrawing] = useState<number | null>(null);
   const [withdrawConfirm, setWithdrawConfirm] = useState<number | null>(null);
   const [withdrawError, setWithdrawError] = useState<{ id: number; message: string } | null>(null);
@@ -51,50 +52,16 @@ export function AssignToCompetitionsList() {
     try {
       await withdrawRegistration(competitionId);
       setWithdrawConfirm(null);
-      fetchedIdsRef.current.delete(competitionId);
-      setRegistrationDetails((prev) => {
-        const next = { ...prev };
-        delete next[competitionId];
-        return next;
-      });
       await refreshRegistrationStatus(competitionId);
+      // No longer registered, so nothing observes it; drop it so a new
+      // registration loads fresh details.
+      queryClient.removeQueries({ queryKey: registrationDetailsKey(competitionId) });
     } catch (err) {
       setWithdrawError({ id: competitionId, message: getUserFriendlyError(err) });
     } finally {
       setWithdrawing(null);
     }
   };
-
-  // Fetch registration details for registered competitions.
-  // Uses a ref to track already-fetched IDs to avoid re-fetching on every render
-  // without needing registrationDetails in the deps array (which would cause a loop).
-  useEffect(() => {
-    if (competitionList.length === 0) return;
-
-    const toFetch = competitionList.filter(
-      (comp) => registrationStatus[comp.id] && !fetchedIdsRef.current.has(comp.id)
-    );
-    if (toFetch.length === 0) return;
-
-    toFetch.forEach((comp) => fetchedIdsRef.current.add(comp.id));
-
-    Promise.allSettled(
-      toFetch.map(async (comp) => {
-        const regInfo = await getCompRegistrationInfo(comp.id);
-        return { id: comp.id, regInfo };
-      })
-    ).then((results) => {
-      const newDetails: Record<number, RegisterToCompResponse> = {};
-      results.forEach((result) => {
-        if (result.status === "fulfilled" && result.value.regInfo) {
-          newDetails[result.value.id] = result.value.regInfo;
-        }
-      });
-      if (Object.keys(newDetails).length > 0) {
-        setRegistrationDetails((prev) => ({ ...prev, ...newDetails }));
-      }
-    });
-  }, [competitionList, registrationStatus]);
 
   const { upcoming: upcomingCompetitions, past: pastCompetitions } = useMemo(
     () => sortCompetitions(competitionList),
@@ -107,49 +74,6 @@ export function AssignToCompetitionsList() {
       registrationDetails[comp.id] &&
       !registrationDetails[comp.id].approved
   );
-
-  // On the competition day, re-check pending registrations so the climber
-  // sees the approval without reloading. Paused while the tab is hidden.
-  const pendingTodayKey = competitionList
-    .filter(
-      (comp) =>
-        registrationStatus[comp.id] &&
-        registrationDetails[comp.id] &&
-        !registrationDetails[comp.id].approved &&
-        isToday(comp.comp_date)
-    )
-    .map((comp) => comp.id)
-    .join(",");
-
-  useEffect(() => {
-    if (!pendingTodayKey) return;
-    const ids = pendingTodayKey.split(",").map(Number);
-    let cancelled = false;
-
-    const checkApproval = async () => {
-      if (document.hidden) return;
-      const results = await Promise.allSettled(ids.map((id) => getCompRegistrationInfo(id)));
-      if (cancelled) return;
-      setRegistrationDetails((prev) => {
-        const next = { ...prev };
-        results.forEach((result, i) => {
-          // Skip registrations withdrawn while the request was in flight.
-          if (result.status === "fulfilled" && result.value && next[ids[i]]) {
-            next[ids[i]] = result.value;
-          }
-        });
-        return next;
-      });
-    };
-
-    const timer = window.setInterval(checkApproval, APPROVAL_POLL_INTERVAL_MS);
-    document.addEventListener("visibilitychange", checkApproval);
-    return () => {
-      cancelled = true;
-      window.clearInterval(timer);
-      document.removeEventListener("visibilitychange", checkApproval);
-    };
-  }, [pendingTodayKey]);
 
   const renderRegistrationStatus = (comp: CompetitionResponse) => {
     const isChecking = checkingRegistration[comp.id];
@@ -297,8 +221,6 @@ export function AssignToCompetitionsList() {
       {header}
       <SessionSwitcher
         onSwitch={() => {
-          fetchedIdsRef.current.clear();
-          setRegistrationDetails({});
           refetch();
         }}
       />
