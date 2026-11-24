@@ -5,6 +5,8 @@
 // remaining pool is always "all participants minus winners".
 // ----------------------------------------------------------
 
+import type { RegistrationWithClimber } from "@/types";
+
 export type TombolaParticipant = {
   key: string;
   name: string;
@@ -22,6 +24,13 @@ export const GUEST_NAME_MAX_LENGTH = 60;
 export const tombolaStorageKey = (compId: number) => `tombola_${compId}`;
 
 export const climberKey = (userId: number) => `c${userId}`;
+
+/** A registered climber in the draw: full name when both parts are known, else the username. */
+export const climberFromRegistration = (reg: RegistrationWithClimber): TombolaParticipant => ({
+  key: climberKey(reg.user_id),
+  name: reg.firstname && reg.lastname ? `${reg.firstname} ${reg.lastname}` : reg.climber_name,
+  level: reg.level,
+});
 
 export const newGuest = (name: string, id: string): TombolaParticipant => ({
   key: `g${id}`,
