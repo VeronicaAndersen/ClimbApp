@@ -2,9 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Theme } from "@radix-ui/themes";
+import { QueryClientProvider } from "@tanstack/react-query";
 import type { ClimberResponse } from "@/types";
 import { toApiError } from "@/lib/apiError";
 import { ClimberList } from "../../../components/admin/ClimberList";
+import { createTestQueryClient } from "../../utils/renderWithQueryClient";
 
 const { useClimbersMock, updateClimberByIdMock } = vi.hoisted(() => ({
   useClimbersMock: vi.fn(),
@@ -41,9 +43,11 @@ beforeEach(() => {
 
 async function startEditing(user: ReturnType<typeof userEvent.setup>) {
   render(
-    <Theme>
-      <ClimberList />
-    </Theme>
+    <QueryClientProvider client={createTestQueryClient()}>
+      <Theme>
+        <ClimberList />
+      </Theme>
+    </QueryClientProvider>
   );
   await user.click(screen.getByRole("button", { name: `Redigera ${LEGACY_USERNAME}` }));
 }
