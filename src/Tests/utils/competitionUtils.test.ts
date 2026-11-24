@@ -1,12 +1,36 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import {
   isToday,
+  isFutureDate,
   isAdmin,
   canEditCompetition,
   normalizeScorePayload,
 } from "../../utils/competitionUtils";
 
 const TODAY = "2026-04-04";
+
+describe("isFutureDate", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 3, 4, 23, 30)); // late evening local time
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("returns false for today", () => {
+    expect(isFutureDate("2026-04-04")).toBe(false);
+  });
+
+  it("returns false for a past date", () => {
+    expect(isFutureDate("2026-04-03")).toBe(false);
+  });
+
+  it("returns true for tomorrow", () => {
+    expect(isFutureDate("2026-04-05")).toBe(true);
+  });
+});
 
 describe("isToday", () => {
   beforeEach(() => {
