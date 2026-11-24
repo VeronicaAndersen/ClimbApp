@@ -1,105 +1,31 @@
-import { useState, useEffect, useCallback } from "react";
-import { getCompetitions, getCompRegistrationInfo, getMyInfo } from "@/services/api";
-import { CompetitionResponse, MessageProps } from "@/types";
 import CalloutMessage from "./feedback/CalloutMessage";
 import CompetitionScores from "./CompetitionScores";
 import { SessionSwitcher } from "./SessionSwitcher";
 import Loader from "@/components/feedback/Loader";
+import useGetUserInfo from "@/hooks/useGetUserInfo";
+import { useActiveCompetition } from "@/hooks/useActiveCompetition";
+
+const ERROR_MESSAGE = "Ett fel uppstod vid hämtning av aktiv tävling.";
+
+// Switching session resets every query (storeTokens), so both hooks refetch
+// for the new climber without SessionSwitcher having to trigger it.
+const noop = () => {};
 
 interface ActiveCompetitionProps {
   onHasChangesChange?: (hasChanges: boolean) => void;
 }
 
 export function ActiveCompetition({ onHasChangesChange }: ActiveCompetitionProps) {
-  const [activeCompetition, setActiveCompetition] = useState<CompetitionResponse | null>(null);
-  const [messageInfo, setMessageInfo] = useState<MessageProps | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [userScope, setUserScope] = useState<string>("");
-  const [currentUserName, setCurrentUserName] = useState<string>("");
+  const { userInfo, messageInfo: userInfoError, loading: userLoading } = useGetUserInfo();
+  const { activeCompetition: found, loading: compLoading, failed } = useActiveCompetition();
 
-  const fetchActiveCompetition = useCallback(async () => {
-    setLoading(true);
-    setMessageInfo(null);
+  // Like `failed`, a failed refetch of cached user info is not an error here.
+  const hasError = failed || (userInfoError !== null && userInfo === null);
+  const activeCompetition = hasError ? null : found;
+  const userScope = userInfo?.user_scope ?? "";
+  const currentUserName = userInfo?.username ?? "";
 
-    try {
-      // Fetch user info and competitions in parallel
-      const [userInfo, competitions] = await Promise.all([getMyInfo(), getCompetitions()]);
-
-      if (userInfo) {
-        setUserScope(userInfo.user_scope);
-        setCurrentUserName(userInfo.username);
-      }
-
-      if (competitions.length === 0) {
-        setActiveCompetition(null);
-        setLoading(false);
-        return;
-      }
-
-      // Check all registrations in parallel
-      const registrationChecks = await Promise.allSettled(
-        competitions.map(async (comp) => {
-          const regInfo = await getCompRegistrationInfo(comp.id).catch(() => null);
-          return regInfo?.approved ? { competition: comp, registrationInfo: regInfo } : null;
-        })
-      );
-
-      // Filter approved competitions and find the nearest future competition
-      // Keep only approved competitions
-      const approvedCompetitions = registrationChecks
-        .filter((result) => result.status === "fulfilled" && result.value)
-        .map(
-          (result) =>
-            (
-              result as PromiseFulfilledResult<{
-                competition: CompetitionResponse;
-                registrationInfo: { approved: boolean };
-              }>
-            ).value.competition
-        );
-
-      // Normalize today
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      // Split into today and future
-      const todayComps = approvedCompetitions.filter((comp) => {
-        const d = new Date(comp.comp_date);
-        d.setHours(0, 0, 0, 0);
-        return d.getTime() === today.getTime();
-      });
-
-      const futureComps = approvedCompetitions.filter((comp) => {
-        const d = new Date(comp.comp_date);
-        d.setHours(0, 0, 0, 0);
-        return d.getTime() > today.getTime();
-      });
-
-      // Sort by date ascending
-      todayComps.sort((a, b) => new Date(a.comp_date).getTime() - new Date(b.comp_date).getTime());
-      futureComps.sort((a, b) => new Date(a.comp_date).getTime() - new Date(b.comp_date).getTime());
-
-      // Pick competition: today first, otherwise nearest future
-      const selectedCompetition = todayComps[0] ?? futureComps[0] ?? null;
-
-      setActiveCompetition(selectedCompetition);
-    } catch (error) {
-      console.error("Error fetching active competition:", error);
-      setMessageInfo({
-        message: "Ett fel uppstod vid hämtning av aktiv tävling.",
-        color: "red",
-      });
-      setActiveCompetition(null);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchActiveCompetition();
-  }, [fetchActiveCompetition]);
-
-  if (loading) {
+  if (userLoading || compLoading) {
     return (
       <div className="flex flex-col bg-card/90 backdrop-blur p-4 rounded-lg shadow-soft">
         <h2 className="text-2xl font-semibold text-center mb-4">Aktiv Tävling</h2>
@@ -116,9 +42,9 @@ export function ActiveCompetition({ onHasChangesChange }: ActiveCompetitionProps
         <h2 className="text-2xl font-semibold text-center">Aktiv Tävling</h2>
       </div>
 
-      <SessionSwitcher onSwitch={fetchActiveCompetition} />
+      <SessionSwitcher onSwitch={noop} />
 
-      {messageInfo && <CalloutMessage message={messageInfo.message} color={messageInfo.color} />}
+      {hasError && <CalloutMessage message={ERROR_MESSAGE} color="red" />}
 
       {!activeCompetition ? (
         <div>

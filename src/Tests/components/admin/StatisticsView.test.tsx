@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { CompetitionResponse } from "@/types";
 import { StatisticsView } from "@/components/admin/StatisticsView";
+import { renderWithQueryClient } from "@/Tests/utils/renderWithQueryClient";
 
 const { getCompetitionsMock } = vi.hoisted(() => ({ getCompetitionsMock: vi.fn() }));
 
@@ -32,15 +33,22 @@ describe("StatisticsView", () => {
 
   it("shows an empty message when there are no competitions", async () => {
     getCompetitionsMock.mockResolvedValue([]);
-    render(<StatisticsView />);
+    renderWithQueryClient(<StatisticsView />);
 
     expect(await screen.findByText("Inga tävlingar tillgängliga.")).toBeInTheDocument();
     expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
   });
 
+  it("shows the empty message when the competitions cannot be loaded", async () => {
+    getCompetitionsMock.mockRejectedValue(new Error("boom"));
+    renderWithQueryClient(<StatisticsView />);
+
+    expect(await screen.findByText("Inga tävlingar tillgängliga.")).toBeInTheDocument();
+  });
+
   it("renders the stats table after picking a competition and a level", async () => {
     getCompetitionsMock.mockResolvedValue([competition]);
-    render(<StatisticsView />);
+    renderWithQueryClient(<StatisticsView />);
 
     const select = await screen.findByRole("combobox");
     expect(screen.getByText("Välj en tävling ovan för att visa statistik.")).toBeInTheDocument();

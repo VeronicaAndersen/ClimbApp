@@ -1,9 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { act, screen } from "@testing-library/react";
 import type { CompetitionResponse } from "@/types";
 import { ActiveCompetition } from "@/components/ActiveCompetition";
-import { createTestQueryClient } from "@/Tests/utils/renderWithQueryClient";
+import { renderWithQueryClient } from "@/Tests/utils/renderWithQueryClient";
 
 const { getMyInfoMock, getCompetitionsMock, getCompRegistrationInfoMock } = vi.hoisted(() => ({
   getMyInfoMock: vi.fn(),
@@ -47,11 +46,7 @@ function approveOnly(...approvedIds: number[]) {
 }
 
 function renderActiveCompetition() {
-  return render(
-    <QueryClientProvider client={createTestQueryClient()}>
-      <ActiveCompetition />
-    </QueryClientProvider>
-  );
+  return renderWithQueryClient(<ActiveCompetition />);
 }
 
 describe("ActiveCompetition", () => {
@@ -127,5 +122,24 @@ describe("ActiveCompetition", () => {
 
     expect(await screen.findByText(ERROR_TEXT)).toBeInTheDocument();
     expect(screen.queryByTestId("competition-scores")).not.toBeInTheDocument();
+  });
+
+  it("keeps the competition when a background refetch fails", async () => {
+    getCompetitionsMock.mockResolvedValue([competition(3, "Today", "2026-06-15")]);
+    approveOnly(3);
+    const { queryClient } = renderActiveCompetition();
+    expect(await screen.findByTestId("competition-scores")).toBeInTheDocument();
+
+    getMyInfoMock.mockRejectedValue(new Error("offline"));
+    getCompetitionsMock.mockRejectedValue(new Error("offline"));
+    await act(async () => {
+      await queryClient.refetchQueries();
+      // React Query notifies observers on a 0 ms timer; let it render.
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(queryClient.getQueryState(["activeCompetition"])?.status).toBe("error");
+
+    expect(screen.getByTestId("competition-scores")).toBeInTheDocument();
+    expect(screen.queryByText(ERROR_TEXT)).not.toBeInTheDocument();
   });
 });
