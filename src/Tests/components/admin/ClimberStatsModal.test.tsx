@@ -107,6 +107,18 @@ describe("ClimberStatsModal", () => {
     expect(getUserScoresBatchMock).toHaveBeenLastCalledWith({ comp_id: 3, level: 1 }, 10);
   });
 
+  it("starts at the first competition again when reopened", async () => {
+    const anna = climber(9, "Anna");
+    const { rerenderWith } = renderModal(anna);
+    await userEvent.click(await screen.findByRole("button", { name: /Höstcupen/ }));
+    expect(await screen.findByText("2 problems level 5")).toBeInTheDocument();
+
+    rerenderWith(null);
+    rerenderWith(anna);
+
+    expect(await screen.findByText("2 problems level 2")).toBeInTheDocument();
+  });
+
   it("says so when the climber has no registrations", async () => {
     getClimberRegistrationsMock.mockResolvedValue([]);
     renderModal(climber(9, "Anna"));

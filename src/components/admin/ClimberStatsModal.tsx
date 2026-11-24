@@ -21,9 +21,10 @@ export function ClimberStatsModal({ climber, onClose }: ClimberStatsModalProps) 
   const registrations = registrationsQuery.data;
   const loadingRegistrations = registrationsQuery.loading;
 
-  // The picked competition belongs to one climber; another climber starts
-  // at their first registration again.
+  // The picked competition belongs to one open of the modal: reopening, or
+  // opening another climber, starts at the first registration again.
   const [picked, setPicked] = useState<{ climberId: number; compId: number } | null>(null);
+  if (climberId === null && picked !== null) setPicked(null);
   const pickedCompId = picked && picked.climberId === climberId ? picked.compId : null;
   const selectedRegistration =
     registrations.find((r) => r.comp_id === pickedCompId) ?? registrations[0] ?? null;
