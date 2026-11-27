@@ -23,6 +23,14 @@ export type ProblemScoreBulkResult = {
   score: ScoreData;
 };
 
+/** A climber who reached top or bonus on a problem, as listed in level stats. */
+export interface StatsClimber {
+  id: number;
+  username: string;
+  firstname: string | null;
+  lastname: string | null;
+}
+
 // In @/types
 export interface ProblemStats {
   problem_no: number;
@@ -31,6 +39,10 @@ export interface ProblemStats {
   got_bonus_count: number;
   got_top_percentage: number;
   got_bonus_percentage: number;
+  /** Sorted by name server-side. */
+  got_top_climbers: StatsClimber[];
+  /** Sorted by name server-side. */
+  got_bonus_climbers: StatsClimber[];
 }
 
 export interface LevelStatsResponse {
