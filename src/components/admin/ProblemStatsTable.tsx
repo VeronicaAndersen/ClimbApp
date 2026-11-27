@@ -4,6 +4,7 @@ import { ProblemStats } from "@/types";
 import CalloutMessage from "../feedback/CalloutMessage";
 import Loader from "@/components/feedback/Loader";
 import { useLevelStats } from "@/hooks/useLevelStats";
+import { ProblemClimbersDialog, type ClimberListKind } from "./ProblemClimbersDialog";
 
 interface ProblemStatsTableProps {
   comp_id: number;
@@ -120,28 +121,67 @@ interface PercentageBarProps {
   percentage: number;
   icon: typeof Trophy;
   iconColor: string;
+  /** Accessible name of the button that opens the climber list. */
+  label: string;
+  onClick: () => void;
 }
 
-function PercentageBar({ count, percentage, icon: Icon, iconColor }: PercentageBarProps) {
+function PercentageBar({
+  count,
+  percentage,
+  icon: Icon,
+  iconColor,
+  label,
+  onClick,
+}: PercentageBarProps) {
   return (
-    <div className="flex flex-col items-center gap-1 min-w-24">
+    <button
+      type="button"
+      onClick={onClick}
+      // Starts with the visible text so voice control can target it (WCAG 2.5.3).
+      aria-label={`${count} (${percentage}%) – ${label}`}
+      className="flex w-full flex-col items-center gap-1 min-w-24 rounded-md p-1 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
       <span className="flex items-center gap-1 text-sm font-medium text-foreground">
         <Icon className={`w-3.5 h-3.5 ${iconColor}`} aria-hidden="true" />
         {count} <span className="text-muted-foreground">({percentage}%)</span>
       </span>
-      <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-        <div
-          className={`h-full rounded-full transition-all ${getBarColor(percentage)}`}
+      <span className="block w-full h-2 bg-muted rounded-full overflow-hidden">
+        <span
+          className={`block h-full rounded-full transition-all ${getBarColor(percentage)}`}
           style={{ width: `${Math.min(100, Math.max(0, percentage))}%` }}
         />
-      </div>
-    </div>
+      </span>
+    </button>
   );
 }
+
+type OpenClimberList = { problemNo: number; kind: ClimberListKind };
+
+const CLIMBER_LIST_NOUNS = {
+  top: "topp",
+  bonus: "bonus",
+} as const satisfies Record<ClimberListKind, string>;
+
+const climberListLabel = (kind: ClimberListKind, problemNo: number): string =>
+  `Visa vem som klarat ${CLIMBER_LIST_NOUNS[kind]} på problem ${problemNo}`;
 
 export function ProblemStatsTable({ comp_id, level }: ProblemStatsTableProps) {
   const { stats, loading, error } = useLevelStats(comp_id, level);
   const [sortMode, setSortMode] = useState<SortMode>("problem_no");
+  // The last opened list stays set while the dialog closes, so its content
+  // does not change during the close animation.
+  const [openList, setOpenList] = useState<OpenClimberList | null>(null);
+  const [listOpen, setListOpen] = useState(false);
+  const showList = (problemNo: number, kind: ClimberListKind) => {
+    setOpenList({ problemNo, kind });
+    setListOpen(true);
+  };
+
+  const openProblem =
+    openList && stats
+      ? (stats.problems.find((p) => p.problem_no === openList.problemNo) ?? null)
+      : null;
 
   const sortedProblems = useMemo(
     () => (stats ? sortProblems(stats.problems, sortMode) : []),
@@ -210,6 +250,8 @@ export function ProblemStatsTable({ comp_id, level }: ProblemStatsTableProps) {
                         percentage={problem.got_top_percentage}
                         icon={Trophy}
                         iconColor="text-amber-500"
+                        label={climberListLabel("top", problem.problem_no)}
+                        onClick={() => showList(problem.problem_no, "top")}
                       />
                     </td>
                     <td className="p-2">
@@ -218,6 +260,8 @@ export function ProblemStatsTable({ comp_id, level }: ProblemStatsTableProps) {
                         percentage={problem.got_bonus_percentage}
                         icon={Star}
                         iconColor="text-green-500"
+                        label={climberListLabel("bonus", problem.problem_no)}
+                        onClick={() => showList(problem.problem_no, "bonus")}
                       />
                     </td>
                   </tr>
@@ -229,6 +273,13 @@ export function ProblemStatsTable({ comp_id, level }: ProblemStatsTableProps) {
       ) : (
         <p className="text-center text-muted-foreground py-4">Ingen statistik tillgänglig.</p>
       )}
+
+      <ProblemClimbersDialog
+        open={listOpen && openProblem !== null}
+        problem={openProblem}
+        kind={openList?.kind ?? "top"}
+        onClose={() => setListOpen(false)}
+      />
     </div>
   );
 }
